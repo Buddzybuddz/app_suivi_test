@@ -1,10 +1,9 @@
 // Initialize Icons
 lucide.createIcons();
 
-// --- Data Models and Persistence ---
-const STORAGE_KEY = 'testtracker_pro_data';
+// --- Data Models and Persistence (Appwrite) ---
 
-const defaultStore = {
+const Store = {
     users: [],
     projects: [],
     versions: [],
@@ -18,25 +17,29 @@ const defaultStore = {
     filters: { tickets: {}, projects: {}, versions: {}, users: {} }
 };
 
-function loadStore() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : defaultStore;
+async function loadStore() {
+    try {
+        const [users, projects, versions, tickets] = await Promise.all([
+            databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS),
+            databases.listDocuments(DATABASE_ID, COLLECTIONS.PROJECTS),
+            databases.listDocuments(DATABASE_ID, COLLECTIONS.VERSIONS),
+            databases.listDocuments(DATABASE_ID, COLLECTIONS.TICKETS)
+        ]);
+
+        Store.users = users.documents.map(d => ({ id: d.$id, ...d }));
+        Store.projects = projects.documents.map(d => ({ id: d.$id, ...d }));
+        Store.versions = versions.documents.map(d => ({ id: d.$id, ...d }));
+        Store.tickets = tickets.documents.map(d => ({ id: d.$id, ...d }));
+        
+        console.log("Store loaded from Appwrite:", Store);
+    } catch (error) {
+        console.error("Error loading Store from Appwrite:", error);
+    }
 }
 
-function saveStore() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(Store));
-}
-
-const Store = loadStore();
-
-// --- State Management ---
-let currentProjectId = Store.projects.length > 0 ? Store.projects[0].id : '';
-let currentVersionId = ''; // Will be set in init() or version select
-if (currentProjectId) {
-    const versions = Store.versions.filter(v => v.projectId === currentProjectId);
-    if (versions.length > 0) currentVersionId = versions[0].id;
-}
-
+// State Management
+let currentProjectId = '';
+let currentVersionId = '';
 let activeTab = 'details';
 let filterUserId = '';
 let chartInstances = {};
@@ -353,7 +356,18 @@ const DOM = {
 };
 
 // --- Initialization ---
-function init() {
+async function init() {
+    await loadStore();
+
+    if (Store.projects.length > 0) {
+        currentProjectId = Store.projects[0].id;
+        const versions = Store.versions.filter(v => v.projectId === currentProjectId);
+        if (versions.length > 0) currentVersionId = versions[0].id;
+    } else {
+        currentProjectId = '';
+        currentVersionId = '';
+    }
+
     populateHeaderSelects();
     populateFormSelects();
     updateFormUsers();
@@ -494,21 +508,26 @@ function setupEventListeners() {
             }
         });
         
-        DOM.btnCreateAndAddUser.addEventListener('click', () => {
+        DOM.btnCreateAndAddUser.addEventListener('click', async () => {
             const name = DOM.pNewUserName.value.trim();
             if(name) {
-                const newUser = {
-                    id: 'u' + Date.now(),
+                const data = {
                     name: name,
-                    email: name.replace(/\\s+/g, '.').toLowerCase() + '@test.com',
+                    email: name.replace(/\s+/g, '.').toLowerCase() + '@test.com',
                     role: 'Testeur'
                 };
-                Store.users.push(newUser);
-                currentProjectUsers.push(newUser.id);
-                DOM.pNewUserName.value = '';
-                renderProjectMembersBadge();
-                if (typeof renderUsersTable === 'function') renderUsersTable();
-                updateFormUsers();
+                try {
+                    await databases.createDocument(DATABASE_ID, COLLECTIONS.USERS, ID.unique(), data);
+                    await loadStore();
+                    const newUser = Store.users.find(u => u.name === name);
+                    if (newUser) currentProjectUsers.push(newUser.id);
+                    DOM.pNewUserName.value = '';
+                    renderProjectMembersBadge();
+                    if (typeof renderUsersTable === 'function') renderUsersTable();
+                    updateFormUsers();
+                } catch (error) {
+                    console.error("Error creating user from project modal:", error);
+                }
             }
         });
     }
@@ -522,40 +541,39 @@ function setupEventListeners() {
             DOM.projectModal.classList.remove('show');
         });
 
-        DOM.projectForm.addEventListener('submit', (e) => {
+        DOM.projectForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const pId = DOM.pId.value;
             const stateArray = DOM.pStates.value.split(',').map(s => s.trim()).filter(s => s);
             const selectedUsers = [...currentProjectUsers];
             
-            if (pId) {
-                // Update
-                const p = Store.projects.find(proj => proj.id === pId);
-                if(p) {
-                    p.name = DOM.pName.value;
-                    p.ticketStates = stateArray.length > 0 ? stateArray : ['Nouveau'];
-                    p.userIds = selectedUsers;
-                    p.designRatio = parseFloat(DOM.pRatioC.value) || 1;
-                    p.executionRatio = parseFloat(DOM.pRatioE.value) || 1;
+            const data = {
+                name: DOM.pName.value,
+                ticketStates: stateArray.length > 0 ? stateArray : ['Nouveau'],
+                userIds: selectedUsers,
+                designRatio: parseFloat(DOM.pRatioC.value) || 1,
+                executionRatio: parseFloat(DOM.pRatioE.value) || 1
+            };
+
+            try {
+                if (pId) {
+                    await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROJECTS, pId, data);
+                } else {
+                    const res = await databases.createDocument(DATABASE_ID, COLLECTIONS.PROJECTS, ID.unique(), data);
+                    currentProjectId = res.$id;
                 }
-            } else {
-                // Create
-                const newProject = {
-                    id: 'p' + Date.now(),
-                    name: DOM.pName.value,
-                    ticketStates: stateArray.length > 0 ? stateArray : ['Nouveau'],
-                    userIds: selectedUsers,
-                    designRatio: parseFloat(DOM.pRatioC.value) || 1,
-                    executionRatio: parseFloat(DOM.pRatioE.value) || 1
-                };
-                Store.projects.push(newProject);
+                
+                await loadStore(); // Refresh local store
+                DOM.projectModal.classList.remove('show');
+                renderProjectsTable();
+                populateHeaderSelects();
+                updateFormUsers();
+                if (typeof renderVersionsTable === 'function') renderVersionsTable();
+                updateUI();
+            } catch (error) {
+                console.error("Error saving project:", error);
+                alert("Erreur lors de l'enregistrement du projet.");
             }
-            DOM.projectModal.classList.remove('show');
-            renderProjectsTable();
-            populateHeaderSelects();
-            updateFormUsers();
-            if (typeof renderVersionsTable === 'function') renderVersionsTable();
-            updateUI();
         });
     }
 
@@ -601,35 +619,36 @@ function setupEventListeners() {
             DOM.versionModal.classList.remove('show');
         });
 
-        DOM.versionForm.addEventListener('submit', (e) => {
+        DOM.versionForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const vId = DOM.vId.value;
-            if (vId) {
-                // Update
-                const v = Store.versions.find(ver => ver.id === vId);
-                if(v) {
-                    v.name = DOM.vName.value;
-                    v.deliveryDate = DOM.vDate.value;
+            const data = {
+                projectId: DOM.vProject.value,
+                name: DOM.vName.value,
+                deliveryDate: DOM.vDate.value || null
+            };
+
+            try {
+                if (vId) {
+                    await databases.updateDocument(DATABASE_ID, COLLECTIONS.VERSIONS, vId, data);
+                } else {
+                    const res = await databases.createDocument(DATABASE_ID, COLLECTIONS.VERSIONS, ID.unique(), data);
+                    currentVersionId = res.$id;
                 }
-            } else {
-                // Create
-                const newVersion = {
-                    id: 'v' + Date.now(),
-                    projectId: DOM.vProject.value,
-                    name: DOM.vName.value,
-                    deliveryDate: DOM.vDate.value
-                };
-                Store.versions.push(newVersion);
-                currentVersionId = newVersion.id;
+                
+                await loadStore();
+                DOM.versionModal.classList.remove('show');
+                updateVersionSelect();
+                if(DOM.versionSelect.querySelector(`option[value="${currentVersionId}"]`)) {
+                    DOM.versionSelect.value = currentVersionId;
+                }
+                updateUI();
+                if(activeTab === 'versions') renderVersionsTable();
+                renderVersionsTable(); 
+            } catch (error) {
+                console.error("Error saving version:", error);
+                alert("Erreur lors de l'enregistrement de la version.");
             }
-            DOM.versionModal.classList.remove('show');
-            updateVersionSelect();
-            if(DOM.versionSelect.querySelector(`option[value="${currentVersionId}"]`)) {
-                DOM.versionSelect.value = currentVersionId;
-            }
-            updateUI();
-            if(activeTab === 'versions') renderVersionsTable();
-            renderVersionsTable(); // Update the versions view if open
         });
     }
 
@@ -659,33 +678,33 @@ function setupEventListeners() {
             DOM.userModal.classList.remove('show');
         });
 
-        DOM.userForm.addEventListener('submit', (e) => {
+        DOM.userForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const uid = DOM.uId.value;
-            if (uid) {
-                // Update
-                const u = Store.users.find(usr => usr.id === uid);
-                if (u) {
-                    u.name = DOM.uiName.value;
-                    u.email = DOM.uiEmail.value;
-                    u.role = DOM.uRole.value;
+            const data = {
+                name: DOM.uiName.value,
+                email: DOM.uiEmail.value,
+                role: DOM.uRole.value
+            };
+
+            try {
+                if (uid) {
+                    await databases.updateDocument(DATABASE_ID, COLLECTIONS.USERS, uid, data);
+                } else {
+                    await databases.createDocument(DATABASE_ID, COLLECTIONS.USERS, ID.unique(), data);
                 }
-            } else {
-                // Create
-                const newUser = {
-                    id: 'u' + Date.now(),
-                    name: DOM.uiName.value,
-                    email: DOM.uiEmail.value,
-                    role: DOM.uRole.value
-                };
-                Store.users.push(newUser);
+                
+                await loadStore();
+                DOM.userModal.classList.remove('show');
+                renderUsersTable();
+                populateFormSelects(); 
+                updateFormUsers(); 
+                renderTicketsTable(); 
+                updateUI();
+            } catch (error) {
+                console.error("Error saving user:", error);
+                alert("Erreur lors de l'enregistrement de l'utilisateur.");
             }
-            DOM.userModal.classList.remove('show');
-            renderUsersTable();
-            populateFormSelects(); // update project multiple select members
-            updateFormUsers(); // update tickets form users
-            renderTicketsTable(); // update display on tracker just in case name changed
-            updateUI();
         });
     }
 
@@ -787,46 +806,41 @@ function setupEventListeners() {
         DOM.modal.classList.remove('show');
     });
 
-    DOM.ticketForm.addEventListener('submit', (e) => {
+    DOM.ticketForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const tIdValue = DOM.tId ? DOM.tId.value : null;
-        const nbTests = parseInt(DOM.fTests.value) || 0;
+        const nbTests = parseFloat(DOM.fTests.value) || 0;
         
-        if (tIdValue) {
-            // Update
-            const t = Store.tickets.find(tick => tick.id === tIdValue);
-            if (t) {
-                t.feature = DOM.fFeat.value;
-                t.type = DOM.fType.value;
-                t.number = parseInt(DOM.fNum.value);
-                t.priority = DOM.fPrio.value;
-                t.assignDesignId = DOM.fAssC.value || null;
-                t.assignExecutionId = DOM.fAssE.value || null;
-                t.nbTestCases = nbTests;
-                t.ticketState = DOM.fState.value;
+        const data = {
+            versionId: currentVersionId,
+            feature: DOM.fFeat.value,
+            type: DOM.fType.value,
+            number: parseInt(DOM.fNum.value) || 0,
+            priority: DOM.fPrio.value,
+            assignDesignId: DOM.fAssC.value || null,
+            assignExecutionId: DOM.fAssE.value || null,
+            nbTestCases: nbTests,
+            ticketState: DOM.fState.value,
+            consumed: tIdValue ? (Store.tickets.find(t=>t.id===tIdValue)?.consumed || 0) : 0,
+            statusDesign: tIdValue ? (Store.tickets.find(t=>t.id===tIdValue)?.statusDesign || 'À faire') : 'À faire',
+            statusExecution: tIdValue ? (Store.tickets.find(t=>t.id===tIdValue)?.statusExecution || 'À exécuter') : 'À exécuter',
+            comment: tIdValue ? (Store.tickets.find(t=>t.id===tIdValue)?.comment || '') : ''
+        };
+
+        try {
+            if (tIdValue) {
+                await databases.updateDocument(DATABASE_ID, COLLECTIONS.TICKETS, tIdValue, data);
+            } else {
+                await databases.createDocument(DATABASE_ID, COLLECTIONS.TICKETS, ID.unique(), data);
             }
-        } else {
-            // Create
-            const newTicket = {
-                id: 't' + Date.now(),
-                versionId: currentVersionId,
-                feature: DOM.fFeat.value,
-                type: DOM.fType.value,
-                number: parseInt(DOM.fNum.value) || 0,
-                priority: DOM.fPrio.value,
-                assignDesignId: DOM.fAssC.value || null,
-                assignExecutionId: DOM.fAssE.value || null,
-                nbTestCases: nbTests,
-                ticketState: DOM.fState.value,
-                consumed: 0,
-                statusDesign: 'À faire',
-                statusExecution: 'À exécuter',
-                comment: ''
-            };
-            Store.tickets.push(newTicket);
+            
+            await loadStore();
+            DOM.modal.classList.remove('show');
+            updateUI();
+        } catch (error) {
+            console.error("Error saving ticket:", error);
+            alert("Erreur lors de l'enregistrement du ticket.");
         }
-        DOM.modal.classList.remove('show');
-        updateUI();
     });
 }
 
@@ -834,11 +848,14 @@ function getUserName(id) {
     return Store.users.find(u => u.id === id)?.name || '-';
 }
 
-function updateTicket(id, field, value) {
-    const ticket = Store.tickets.find(t => t.id === id);
-    if (ticket) {
-        ticket[field] = value;
-        updateUI(); // trigger re-render and re-calc
+async function updateTicket(id, field, value) {
+    try {
+        await databases.updateDocument(DATABASE_ID, COLLECTIONS.TICKETS, id, { [field]: value });
+        const ticket = Store.tickets.find(t => t.id === id);
+        if (ticket) ticket[field] = value;
+        updateUI(); 
+    } catch (error) {
+        console.error("Error updating ticket field:", error);
     }
 }
 
@@ -888,15 +905,21 @@ window.editProject = (id) => {
     }
 };
 
-window.deleteProject = (id) => {
-    Store.projects = Store.projects.filter(p => p.id !== id);
-    renderProjectsTable();
-    populateHeaderSelects();
-    
-    if(currentProjectId === id) {
-        currentProjectId = Store.projects[0]?.id || '';
-        updateVersionSelect();
-        updateUI();
+window.deleteProject = async (id) => {
+    if(!confirm("Supprimer ce projet et TOUTES ses données ?")) return;
+    try {
+        await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PROJECTS, id);
+        await loadStore();
+        renderProjectsTable();
+        populateHeaderSelects();
+        
+        if(currentProjectId === id) {
+            currentProjectId = Store.projects[0]?.id || '';
+            updateVersionSelect();
+            updateUI();
+        }
+    } catch (error) {
+        console.error("Error deleting project:", error);
     }
 };
 
@@ -945,11 +968,17 @@ window.editVersion = (id) => {
     }
 };
 
-window.deleteVersion = (id) => {
-    Store.versions = Store.versions.filter(v => v.id !== id);
-    renderVersionsTable();
-    updateVersionSelect();
-    updateUI();
+window.deleteVersion = async (id) => {
+    if(!confirm("Supprimer cette version ?")) return;
+    try {
+        await databases.deleteDocument(DATABASE_ID, COLLECTIONS.VERSIONS, id);
+        await loadStore();
+        renderVersionsTable();
+        updateVersionSelect();
+        updateUI();
+    } catch (error) {
+        console.error("Error deleting version:", error);
+    }
 };
 
 // --- Render Users Table ---
@@ -992,18 +1021,18 @@ window.editUser = (id) => {
     }
 };
 
-window.deleteUser = (id) => {
-    Store.users = Store.users.filter(usr => usr.id !== id);
-    // Cleanup projects userIds
-    Store.projects.forEach(p => {
-        if(p.userIds) {
-            p.userIds = p.userIds.filter(uid => uid !== id);
-        }
-    });
-    renderUsersTable();
-    populateFormSelects();
-    updateFormUsers();
-    renderTicketsTable();
+window.deleteUser = async (id) => {
+    if(!confirm("Supprimer cet utilisateur ?")) return;
+    try {
+        await databases.deleteDocument(DATABASE_ID, COLLECTIONS.USERS, id);
+        await loadStore();
+        renderUsersTable();
+        populateFormSelects();
+        updateFormUsers();
+        renderTicketsTable();
+    } catch (error) {
+        console.error("Error deleting user:", error);
+    }
 };
 
 // --- Render Main Table ---
@@ -1108,10 +1137,15 @@ window.editTicket = (id) => {
     }
 };
 
-window.deleteTicket = (id) => {
+window.deleteTicket = async (id) => {
     if(confirm("Voulez-vous vraiment supprimer ce ticket ?")) {
-        Store.tickets = Store.tickets.filter(t => t.id !== id);
-        updateUI();
+        try {
+            await databases.deleteDocument(DATABASE_ID, COLLECTIONS.TICKETS, id);
+            await loadStore();
+            updateUI();
+        } catch (error) {
+            console.error("Error deleting ticket:", error);
+        }
     }
 };
 
@@ -1512,7 +1546,6 @@ function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progr
 }
 
 function updateUI() {
-    saveStore();
     renderTicketsTable();
     if(activeTab === 'dashboard') {
         renderDashboard();
