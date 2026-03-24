@@ -11,7 +11,8 @@ const Store = {
     sortOptions: {
         tickets: { key: 'feature', dir: 'asc' },
         projects: { key: 'name', dir: 'asc' },
-        versions: { key: 'name', dir: 'asc' }
+        versions: { key: 'name', dir: 'asc' },
+        users: { key: 'name', dir: 'asc' }
     },
     columnWidths: { tickets: {}, projects: {}, versions: {}, users: {} },
     filters: { tickets: {}, projects: {}, versions: {}, users: {} }
