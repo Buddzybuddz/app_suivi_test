@@ -512,11 +512,8 @@ function setupEventListeners() {
         DOM.btnCreateAndAddUser.addEventListener('click', async () => {
             const name = DOM.pNewUserName.value.trim();
             if(name) {
-                // Sanitize name for email (remove accents and special chars)
-                const safeName = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-0]/g, '.').toLowerCase();
                 const data = {
                     name: name,
-                    email: safeName + '@test.com',
                     role: 'Testeur'
                 };
                 try {
@@ -686,7 +683,6 @@ function setupEventListeners() {
             const uid = DOM.uId.value;
             const data = {
                 name: DOM.uiName.value,
-                email: DOM.uiEmail.value,
                 role: DOM.uRole.value
             };
 
