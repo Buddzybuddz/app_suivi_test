@@ -49,13 +49,13 @@
                             <label>Projet</label>
                             <select id="projectSelect" class="select-input"></select>
                         </div>
-                        <div class="dropdown-group" style="flex-direction: row; align-items: flex-end; gap: 0.5rem">
-                            <div style="display: flex; flex-direction: column; gap: 0.25rem">
+                        <div class="dropdown-group header-dropdown-group">
+                            <div class="form-group">
                                 <label>Version</label>
                                 <select id="versionSelect" class="select-input"></select>
                             </div>
-                            <button class="btn" id="btnNewVersion" style="padding: 0.6rem; height: 39px; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: var(--text-main);" title="Nouvelle Version">
-                                <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
+                            <button class="btn btn-icon-only" id="btnNewVersion" title="Nouvelle Version">
+                                <i data-lucide="plus"></i>
                             </button>
                         </div>
                     </div>
@@ -319,49 +319,85 @@
 
     <!-- Modal for New/Edit Project -->
     <div class="modal" id="projectModal">
-        <div class="modal-content glass-panel">
+        <div class="modal-content glass-panel modal-project">
             <div class="modal-header">
                 <h3 id="projectModalTitle">Nouveau Projet</h3>
                 <button class="close-btn" id="btnCloseProjectModal"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
-                <form id="projectForm" class="grid-form">
+                <form id="projectForm" class="project-form">
                     <input type="hidden" id="pId">
-                    <div class="form-group full-width">
-                        <label>Nom du Projet</label>
-                        <input type="text" id="pName" required class="text-input">
+
+                    <!-- Section: Informations du projet -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i data-lucide="info" class="form-section-icon"></i>
+                            <span>Informations du projet</span>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group form-group-flex">
+                                <label>Nom du Projet</label>
+                                <input type="text" id="pName" required class="text-input">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group form-group-flex">
+                                <label>États possibles du ticket (séparés par des virgules)</label>
+                                <input type="text" id="pStates" required class="text-input" placeholder="Ex: Nouveau, En cours, Historisé">
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group full-width">
-                        <label>États possibles du ticket (séparés par des virgules)</label>
-                        <input type="text" id="pStates" required class="text-input" placeholder="Ex: Nouveau, En cours, Historisé">
-                    </div>
-                    <div class="form-group full-width">
-                        <label>Membres du projet</label>
-                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-                            <select id="pUserSelectToAdd" class="select-input" style="flex: 1;">
+
+                    <!-- Section: Membres du projet -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i data-lucide="users" class="form-section-icon"></i>
+                            <span>Membres du projet</span>
+                        </div>
+                        <div class="member-add-row">
+                            <select id="pUserSelectToAdd" class="select-input member-select">
                                 <option value="">-- Sélectionner un utilisateur --</option>
                             </select>
-                            <button type="button" class="btn btn-primary" id="btnAddExistingUser" style="padding: 0.4rem 0.8rem;">Ajouter au projet</button>
+                            <button type="button" class="btn btn-primary btn-compact" id="btnAddExistingUser">
+                                <i data-lucide="user-plus" class="btn-icon-sm"></i>
+                                Ajouter
+                            </button>
                         </div>
-                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                            <input type="text" id="pNewUserName" class="text-input" placeholder="Créer un nouveau membre (Nom Complet)" style="flex: 1;">
-                            <button type="button" class="btn" id="btnCreateAndAddUser" style="padding: 0.4rem 0.8rem; background: var(--success); color: white;">Créer & Ajouter</button>
+                        <div class="member-add-row">
+                            <input type="text" id="pNewUserName" class="text-input member-select" placeholder="Nom complet du nouveau membre">
+                            <button type="button" class="btn btn-success btn-compact" id="btnCreateAndAddUser">
+                                <i data-lucide="plus-circle" class="btn-icon-sm"></i>
+                                Créer
+                            </button>
                         </div>
-                        <div id="projectMembersContainer" style="display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; min-height: 50px;">
-                            <span style="color: var(--text-muted); font-size: 0.8rem; padding: 0.5rem;">Aucun membre sélectionné.</span>
+                        <div id="projectMembersContainer" class="members-container">
+                            <span class="members-placeholder">Aucun membre sélectionné.</span>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>Ratio Conception (tests/jour)</label>
-                        <input type="number" id="pRatioC" required class="text-input" min="1" step="0.5">
+
+                    <!-- Section: Ratios de productivité -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i data-lucide="gauge" class="form-section-icon"></i>
+                            <span>Ratios de productivité</span>
+                        </div>
+                        <div class="form-row form-row-2col">
+                            <div class="form-group">
+                                <label>Ratio Conception (tests/jour)</label>
+                                <input type="number" id="pRatioC" required class="text-input" min="1" step="0.5">
+                            </div>
+                            <div class="form-group">
+                                <label>Ratio Exécution (tests/jour)</label>
+                                <input type="number" id="pRatioE" required class="text-input" min="1" step="0.5">
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Ratio Exécution (tests/jour)</label>
-                        <input type="number" id="pRatioE" required class="text-input" min="1" step="0.5">
-                    </div>
-                    <div class="form-group full-width">
-                        <button type="submit" class="btn btn-primary submit-btn">Enregistrer</button>
-                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn btn-primary submit-btn-full">
+                        <i data-lucide="save" class="btn-icon-sm"></i>
+                        Enregistrer
+                    </button>
                 </form>
             </div>
         </div>
@@ -369,57 +405,93 @@
 
     <!-- Modal for New/Edit Ticket -->
     <div class="modal" id="ticketModal">
-        <div class="modal-content glass-panel">
+        <div class="modal-content glass-panel modal-ticket">
             <div class="modal-header">
                 <h3 id="modalTitle">Nouveau Ticket</h3>
                 <button class="close-btn" id="btnCloseModal"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
-                <form id="ticketForm" class="grid-form">
+                <form id="ticketForm" class="project-form">
                     <input type="hidden" id="tId">
-                    <div class="form-group">
-                        <label>Fonctionnalité</label>
-                        <input type="text" id="fFeat" required class="text-input">
+                    
+                    <!-- Section: Détails du Ticket -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i data-lucide="file-text" class="form-section-icon"></i>
+                            <span>Détails du Ticket</span>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group form-group-flex">
+                                <label>Fonctionnalité</label>
+                                <input type="text" id="fFeat" required class="text-input" placeholder="Ex: Boutique, Panier...">
+                            </div>
+                        </div>
+                        <div class="form-row form-row-2col">
+                            <div class="form-group">
+                                <label>Type</label>
+                                <select id="fType" class="select-input">
+                                    <option>US</option>
+                                    <option>Bug</option>
+                                    <option>Tâche</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Numéro</label>
+                                <input type="number" id="fNum" required class="text-input">
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Type</label>
-                        <select id="fType" class="select-input">
-                            <option>US</option>
-                            <option>Bug</option>
-                            <option>Tâche</option>
-                        </select>
+
+                    <!-- Section: Attribution & État -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i data-lucide="user-check" class="form-section-icon"></i>
+                            <span>Attribution & État</span>
+                        </div>
+                        <div class="form-row form-row-2col">
+                            <div class="form-group">
+                                <label>Assigné Conception</label>
+                                <select id="fAssC" class="select-input"></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Assigné Exécution</label>
+                                <select id="fAssE" class="select-input"></select>
+                            </div>
+                        </div>
+                        <div class="form-row form-row-2col">
+                            <div class="form-group">
+                                <label>Priorité</label>
+                                <select id="fPrio" class="select-input">
+                                    <option>Basse</option>
+                                    <option>Moyenne</option>
+                                    <option>Haute</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>État ticket</label>
+                                <select id="fState" class="select-input"></select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Numéro</label>
-                        <input type="number" id="fNum" required class="text-input">
+
+                    <!-- Section: Métriques -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i data-lucide="bar-chart-3" class="form-section-icon"></i>
+                            <span>Métriques</span>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group form-group-flex">
+                                <label>Nombre de cas de test</label>
+                                <input type="number" id="fTests" class="text-input" min="0" placeholder="Estimation de l'effort">
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Priorité</label>
-                        <select id="fPrio" class="select-input">
-                            <option>Basse</option>
-                            <option>Moyenne</option>
-                            <option>Haute</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Assigné Conception</label>
-                        <select id="fAssC" class="select-input"></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Assigné Exécution</label>
-                        <select id="fAssE" class="select-input"></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Nb de cas de test</label>
-                        <input type="number" id="fTests" class="text-input" min="0">
-                    </div>
-                    <div class="form-group">
-                        <label>État ticket</label>
-                        <select id="fState" class="select-input"></select>
-                    </div>
-                    <div class="form-group full-width">
-                        <button type="submit" class="btn btn-primary submit-btn">Enregistrer</button>
-                    </div>
+
+                    <button type="submit" class="btn btn-primary submit-btn-full">
+                        <i data-lucide="save" class="btn-icon-sm"></i>
+                        Enregistrer
+                    </button>
                 </form>
             </div>
         </div>
@@ -427,29 +499,44 @@
 
     <!-- Modal for New/Edit Version -->
     <div class="modal" id="versionModal">
-        <div class="modal-content glass-panel" style="max-width: 500px;">
+        <div class="modal-content glass-panel modal-version">
             <div class="modal-header">
                 <h3 id="versionModalTitle">Nouvelle Version</h3>
                 <button class="close-btn" id="btnCloseVersionModal"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
-                <form id="versionForm" class="grid-form" style="grid-template-columns: 1fr;">
+                <form id="versionForm" class="project-form">
                     <input type="hidden" id="vId">
-                    <div class="form-group">
-                        <label>Projet</label>
-                        <select id="vProject" required class="select-input"></select>
+                    
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i data-lucide="layers" class="form-section-icon"></i>
+                            <span>Détails de la Version</span>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group form-group-flex">
+                                <label>Projet</label>
+                                <select id="vProject" required class="select-input"></select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group form-group-flex">
+                                <label>Nom de la Version (ex: v1.0.0)</label>
+                                <input type="text" id="vName" required class="text-input" placeholder="Ex: v1.0.0, MVP...">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group form-group-flex">
+                                <label>Date de Livraison Prévue</label>
+                                <input type="date" id="vDate" class="text-input">
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Nom de la Version (ex: v1.0.0)</label>
-                        <input type="text" id="vName" required class="text-input">
-                    </div>
-                    <div class="form-group">
-                        <label>Date de Livraison Prévue</label>
-                        <input type="date" id="vDate" class="text-input">
-                    </div>
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-primary submit-btn">Enregistrer</button>
-                    </div>
+
+                    <button type="submit" class="btn btn-primary submit-btn-full">
+                        <i data-lucide="save" class="btn-icon-sm"></i>
+                        Enregistrer
+                    </button>
                 </form>
             </div>
         </div>
@@ -457,33 +544,48 @@
     
     <!-- Modal for New/Edit User -->
     <div class="modal" id="userModal">
-        <div class="modal-content glass-panel" style="max-width: 400px;">
+        <div class="modal-content glass-panel modal-user">
             <div class="modal-header">
                 <h3 id="userModalTitle">Nouvel Utilisateur</h3>
                 <button class="close-btn" id="btnCloseUserModal"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
-                <form id="userForm" class="grid-form" style="grid-template-columns: 1fr;">
+                <form id="userForm" class="project-form">
                     <input type="hidden" id="uId">
-                    <div class="form-group">
-                        <label>Nom complet</label>
-                        <input type="text" id="uiName" required class="text-input">
+                    
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i data-lucide="user" class="form-section-icon"></i>
+                            <span>Profil Utilisateur</span>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group form-group-flex">
+                                <label>Nom complet</label>
+                                <input type="text" id="uiName" required class="text-input" placeholder="Jean Dupont">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group form-group-flex">
+                                <label>Email</label>
+                                <input type="email" id="uiEmail" required class="text-input" placeholder="jean.dupont@test.com">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group form-group-flex">
+                                <label>Rôle</label>
+                                <select id="uRole" class="select-input">
+                                    <option value="Chef de projet">Chef de projet</option>
+                                    <option value="Concepteur">Concepteur</option>
+                                    <option value="Testeur">Testeur</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="uiEmail" required class="text-input">
-                    </div>
-                    <div class="form-group">
-                        <label>Rôle</label>
-                        <select id="uRole" class="select-input">
-                            <option value="Chef de projet">Chef de projet</option>
-                            <option value="Concepteur">Concepteur</option>
-                            <option value="Testeur">Testeur</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-primary submit-btn">Enregistrer</button>
-                    </div>
+
+                    <button type="submit" class="btn btn-primary submit-btn-full">
+                        <i data-lucide="save" class="btn-icon-sm"></i>
+                        Enregistrer
+                    </button>
                 </form>
             </div>
         </div>

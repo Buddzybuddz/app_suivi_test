@@ -45,8 +45,9 @@ body {
   display: flex;
   flex-direction: column;
   padding: 1.5rem 0;
-  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.05);
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.03);
   z-index: 50;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .logo {
@@ -408,22 +409,25 @@ body {
 }
 
 .kpi-card {
-  background: white;
-  padding: 1.25rem;
-  border-radius: 14px;
-  border: 1px solid var(--border-light);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(15px) saturate(150%);
+  -webkit-backdrop-filter: blur(15px) saturate(150%);
+  padding: 1.5rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+  align-items: center;
+  gap: 1.25rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
 
 .kpi-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-5px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .kpi-icon {
@@ -510,14 +514,14 @@ body {
 }
 
 .chart-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   padding: 1.5rem;
-  border-radius: 16px;
-  border: 1px solid rgba(226, 232, 240, 0.6);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.03);
-  transition: box-shadow 0.2s ease;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .chart-card:hover {
@@ -642,4 +646,211 @@ body {
 }
 .btn-remove-user:hover {
     color: var(--danger);
+}
+
+/* ===== Redesigned Project Modal ===== */
+.modal-project { max-width: 600px; }
+.modal-ticket { max-width: 650px; }
+.modal-version { max-width: 500px; }
+.modal-user { max-width: 450px; }
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 1.25rem;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.modal-header h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.close-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: #f1f5f9;
+    border-radius: 8px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.close-btn:hover {
+    background: #fee2e2;
+    color: var(--danger);
+}
+
+.project-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* Form Sections */
+.form-section {
+    background: #f8fafc;
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+}
+
+.form-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--accent-primary);
+    padding-bottom: 0.625rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.form-section-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--accent-primary);
+}
+
+/* Form Rows */
+.form-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.form-row-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group-flex {
+    flex: 1;
+}
+
+/* Member Management Rows */
+.member-add-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+
+.member-select {
+    flex: 1;
+}
+
+.btn-compact {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+}
+
+.btn-success {
+    background-color: var(--success);
+    color: white;
+    border: none;
+}
+
+.btn-success:hover {
+    background-color: #059669;
+    transform: translateY(-1px);
+}
+
+.btn-icon-sm {
+    width: 15px;
+    height: 15px;
+}
+
+/* Members Container */
+.members-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: white;
+    border: 1px dashed var(--border-light);
+    border-radius: 8px;
+    min-height: 48px;
+    align-items: center;
+}
+
+.members-placeholder {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    font-style: italic;
+}
+
+/* Full-Width Submit Button */
+.submit-btn-full {
+    width: 100%;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9375rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent-primary), #6366f1);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    transition: all 0.2s ease;
+}
+
+/* Member Badge Styles (Refactored from inline) */
+.member-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(79, 70, 229, 0.1);
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid rgba(79, 70, 229, 0.2);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-main);
+    transition: all 0.2s ease;
+}
+
+.member-badge:hover {
+    background: rgba(79, 70, 229, 0.15);
+    border-color: var(--accent-primary);
+}
+
+.member-badge-remove {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    color: var(--danger);
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.header-dropdown-group {
+    flex-direction: row !important;
+    align-items: flex-end !important;
+    gap: 0.5rem !important;
+}
+
+.btn-icon-only {
+    padding: 0.6rem !important;
+    height: 39px !important;
+    width: 39px !important;
+    background: white !important;
+    border: 1px solid var(--border-light) !important;
+    color: var(--text-main) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.btn-icon-only:hover {
+    background: var(--bg-app) !important;
+    border-color: var(--accent-primary) !important;
+    color: var(--accent-primary) !important;
 }

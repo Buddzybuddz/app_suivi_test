@@ -1,70 +1,42 @@
 // Initialize Icons
 lucide.createIcons();
 
-// --- Data Models and Initial Seed ---
-const Store = {
-    users: [
-        { id: 'u1', name: 'Alice Laurent', email: 'alice@test.com', role: 'Chef de projet' },
-        { id: 'u2', name: 'Bob Martin', email: 'bob@test.com', role: 'Concepteur' },
-        { id: 'u3', name: 'Charlie Dubois', email: 'charlie@test.com', role: 'Testeur' },
-        { id: 'u4', name: 'David Lee', email: 'david@test.com', role: 'Testeur' }
-    ],
-    projects: [
-        { 
-            id: 'p1', 
-            name: 'Projet Alpha ERP', 
-            ticketStates: ['Nouveau', 'Validé', 'Rejeté', 'Fermé'],
-            userIds: ['u1', 'u2', 'u3', 'u4'],
-            designRatio: 4,     // 4 tests conçus par jour
-            executionRatio: 8   // 8 tests exécutés par jour
-        }
-    ],
-    versions: [
-        { id: 'v1', projectId: 'p1', name: 'v1.0.0 - MVP', deliveryDate: '2026-04-15' },
-        { id: 'v2', projectId: 'p1', name: 'v1.1.0 - Corrections', deliveryDate: '2026-05-01' }
-    ],
-    tickets: [
-        {
-            id: 't1', versionId: 'v1', feature: 'Authentification', type: 'US',
-            number: 101, priority: 'Haute', assignDesignId: 'u2', assignExecutionId: 'u3',
-            nbTestCases: 12, ticketState: 'Validé', consumed: 0.5,
-            statusDesign: 'Terminée', statusExecution: 'En cours d\'exécution', comment: 'Problème MFA'
-        },
-        {
-            id: 't2', versionId: 'v1', feature: 'Export PDF', type: 'Tâche',
-            number: 102, priority: 'Moyenne', assignDesignId: 'u2', assignExecutionId: 'u4',
-            nbTestCases: 6, ticketState: 'Nouveau', consumed: 0,
-            statusDesign: 'En cours', statusExecution: 'À exécuter', comment: ''
-        },
-        {
-            id: 't3', versionId: 'v1', feature: 'Auth Bug Fix', type: 'Bug',
-            number: 103, priority: 'Haute', assignDesignId: 'u1', assignExecutionId: 'u3',
-            nbTestCases: 3, ticketState: 'Rejeté', consumed: 1.0,
-            statusDesign: 'À faire', statusExecution: 'Bloquée', comment: 'Manque les logs server'
-        }
-    ],
+// --- Data Models and Persistence ---
+const STORAGE_KEY = 'testtracker_pro_data';
+
+const defaultStore = {
+    users: [],
+    projects: [],
+    versions: [],
+    tickets: [],
     sortOptions: {
         tickets: { key: 'feature', dir: 'asc' },
         projects: { key: 'name', dir: 'asc' },
         versions: { key: 'name', dir: 'asc' }
     },
-    columnWidths: {
-        tickets: {},
-        projects: {},
-        versions: {},
-        users: {}
-    },
-    filters: {
-        tickets: {},
-        projects: {},
-        versions: {},
-        users: {}
-    }
+    columnWidths: { tickets: {}, projects: {}, versions: {}, users: {} },
+    filters: { tickets: {}, projects: {}, versions: {}, users: {} }
 };
 
+function loadStore() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : defaultStore;
+}
+
+function saveStore() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(Store));
+}
+
+const Store = loadStore();
+
 // --- State Management ---
-let currentProjectId = 'p1';
-let currentVersionId = 'v1';
+let currentProjectId = Store.projects.length > 0 ? Store.projects[0].id : '';
+let currentVersionId = ''; // Will be set in init() or version select
+if (currentProjectId) {
+    const versions = Store.versions.filter(v => v.projectId === currentProjectId);
+    if (versions.length > 0) currentVersionId = versions[0].id;
+}
+
 let activeTab = 'details';
 let filterUserId = '';
 let chartInstances = {};
@@ -292,6 +264,7 @@ function enableColumnResizing(tableElement, tableKey) {
 }
 
 function getCalculations(ticket, project) {
+    if (!project) return { jConception: '0.00', jExecution: '0.00', raf: '0.00' };
     const jConception = round015Up(ticket.nbTestCases / project.designRatio);
     const jExecution = round015Up(ticket.nbTestCases / project.executionRatio);
     const rawRaf = Math.max(0, (jConception + jExecution) - (parseFloat(ticket.consumed) || 0));
@@ -422,16 +395,16 @@ function populatePUserSelectToAdd() {
 function renderProjectMembersBadge() {
     if(!DOM.projectMembersContainer) return;
     if(currentProjectUsers.length === 0) {
-        DOM.projectMembersContainer.innerHTML = `<span style="color: var(--text-muted); font-size: 0.8rem; padding: 0.5rem;">Aucun membre sélectionné.</span>`;
+        DOM.projectMembersContainer.innerHTML = `<span class="members-placeholder">Aucun membre sélectionné.</span>`;
         return;
     }
     DOM.projectMembersContainer.innerHTML = currentProjectUsers.map(uid => {
         const u = Store.users.find(usr => usr.id === uid);
         const name = u ? u.name : 'Inconnu';
         return `
-            <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(59, 130, 246, 0.2); padding: 0.3rem 0.6rem; border-radius: 16px; border: 1px solid var(--accent-primary); font-size: 0.85rem;">
+            <div class="member-badge">
                 ${name}
-                <i data-lucide="x" style="width: 14px; height: 14px; cursor: pointer; color: var(--danger);" onclick="removeUserFromProjectUI('${uid}')"></i>
+                <i data-lucide="x" class="member-badge-remove" onclick="removeUserFromProjectUI('${uid}')"></i>
             </div>
         `;
     }).join('');
@@ -1036,6 +1009,10 @@ window.deleteUser = (id) => {
 // --- Render Main Table ---
 function renderTicketsTable() {
     const project = Store.projects.find(p => p.id === currentProjectId);
+    if (!project) {
+        DOM.ticketsTbody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding: 2rem; color: var(--text-muted);">Veuillez créer un projet pour commencer.</td></tr>';
+        return;
+    }
     let viewTickets = Store.tickets.filter(t => t.versionId === currentVersionId);
     
     if (filterUserId) {
@@ -1141,6 +1118,7 @@ window.deleteTicket = (id) => {
 // --- Render Dashboard ---
 function renderDashboard() {
     const project = Store.projects.find(p => p.id === currentProjectId);
+    if (!project) return;
     const viewTickets = Store.tickets.filter(t => t.versionId === currentVersionId);
     
     let totalRaf = 0;
@@ -1534,6 +1512,7 @@ function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progr
 }
 
 function updateUI() {
+    saveStore();
     renderTicketsTable();
     if(activeTab === 'dashboard') {
         renderDashboard();
