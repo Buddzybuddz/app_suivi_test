@@ -344,8 +344,17 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group form-group-flex">
-                                <label>États possibles du ticket (séparés par des virgules)</label>
-                                <input type="text" id="pStates" required class="text-input" placeholder="Ex: Nouveau, En cours, Historisé">
+                                <label>États possibles du ticket</label>
+                                <div class="member-add-row">
+                                    <input type="text" id="pStateInput" class="text-input" placeholder="Ex: En cours">
+                                    <button type="button" class="btn btn-primary btn-compact" id="btnAddState">
+                                        <i data-lucide="plus" class="btn-icon-sm"></i>
+                                        Ajouter
+                                    </button>
+                                </div>
+                                <div id="projectStatesContainer" class="members-container">
+                                    <span class="members-placeholder">Aucun état défini.</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -593,6 +602,7 @@
         </div>
     </div>
 
+    <script src="mock_db.js"></script>
     <script src="appwrite_config.js"></script>
     <script src="app.js"></script>
 </body>

@@ -295,7 +295,9 @@ const DOM = {
     projectForm: document.getElementById('projectForm'),
     pId: document.getElementById('pId'),
     pName: document.getElementById('pName'),
-    pStates: document.getElementById('pStates'),
+    pStateInput: document.getElementById('pStateInput'),
+    btnAddState: document.getElementById('btnAddState'),
+    projectStatesContainer: document.getElementById('projectStatesContainer'),
     pUserSelectToAdd: document.getElementById('pUserSelectToAdd'),
     btnAddExistingUser: document.getElementById('btnAddExistingUser'),
     pNewUserName: document.getElementById('pNewUserName'),
@@ -399,6 +401,7 @@ function populateFormSelects() {
 }
 
 let currentProjectUsers = [];
+let currentProjectStates = [];
 
 function populatePUserSelectToAdd() {
     if(!DOM.pUserSelectToAdd) return;
@@ -427,9 +430,29 @@ function renderProjectMembersBadge() {
     populatePUserSelectToAdd();
 }
 
+function renderProjectStatesBadge() {
+    if (!DOM.projectStatesContainer) return;
+    if (currentProjectStates.length === 0) {
+        DOM.projectStatesContainer.innerHTML = `<span class="members-placeholder">Aucun état défini.</span>`;
+        return;
+    }
+    DOM.projectStatesContainer.innerHTML = currentProjectStates.map(state => `
+        <div class="member-badge">
+            ${state}
+            <i data-lucide="x" class="member-badge-remove" onclick="removeProjectStateUI('${state}')"></i>
+        </div>
+    `).join('');
+    lucide.createIcons();
+}
+
 window.removeUserFromProjectUI = (uid) => {
     currentProjectUsers = currentProjectUsers.filter(id => id !== uid);
     renderProjectMembersBadge();
+};
+
+window.removeProjectStateUI = (state) => {
+    currentProjectStates = currentProjectStates.filter(s => s !== state);
+    renderProjectStatesBadge();
 };
 
 function updateFormUsers() {
@@ -486,19 +509,31 @@ function setupEventListeners() {
             DOM.projectModalTitle.textContent = "Modifier le Projet";
             DOM.pId.value = p.id;
             DOM.pName.value = p.name;
-            DOM.pStates.value = (p.ticketStates || []).join(', ');
+            currentProjectStates = p.ticketStates ? [...p.ticketStates] : ['Nouveau'];
             DOM.pRatioC.value = p.designRatio;
             DOM.pRatioE.value = p.executionRatio;
             currentProjectUsers = p.userIds ? [...p.userIds] : [];
         } else {
             DOM.projectModalTitle.textContent = "Nouveau Projet";
             DOM.pId.value = '';
-            DOM.pStates.value = 'Nouveau, Validé, Rejeté, Fermé';
+            currentProjectStates = ['Nouveau', 'Validé', 'Rejeté', 'Fermé'];
             currentProjectUsers = [];
         }
         renderProjectMembersBadge();
+        renderProjectStatesBadge();
         DOM.projectModal.classList.add('show');
     };
+
+    if (DOM.btnAddState) {
+        DOM.btnAddState.addEventListener('click', () => {
+            const val = DOM.pStateInput.value.trim();
+            if (val && !currentProjectStates.includes(val)) {
+                currentProjectStates.push(val);
+                DOM.pStateInput.value = '';
+                renderProjectStatesBadge();
+            }
+        });
+    }
 
     if (DOM.btnAddExistingUser) {
         DOM.btnAddExistingUser.addEventListener('click', () => {
@@ -544,12 +579,12 @@ function setupEventListeners() {
         DOM.projectForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const pId = DOM.pId.value;
-            const stateArray = DOM.pStates.value.split(',').map(s => s.trim()).filter(s => s);
             const selectedUsers = [...currentProjectUsers];
+            const selectedStates = [...currentProjectStates];
             
             const data = {
                 name: DOM.pName.value,
-                ticketStates: stateArray.length > 0 ? stateArray : ['Nouveau'],
+                ticketStates: selectedStates.length > 0 ? selectedStates : ['Nouveau'],
                 userIds: selectedUsers,
                 designRatio: parseFloat(DOM.pRatioC.value) || 1,
                 executionRatio: parseFloat(DOM.pRatioE.value) || 1
