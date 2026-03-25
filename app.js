@@ -349,6 +349,8 @@ const DOM = {
     kpiAdvC: document.getElementById('kpiAdvC'),
     kpiAdvE: document.getElementById('kpiAdvE'),
     kpiAdvTotal: document.getElementById('kpiAdvTotal'),
+    dashProjectName: document.getElementById('dashProjectName'),
+    dashVersionName: document.getElementById('dashVersionName'),
     
     // Form Inputs
     fFeat: document.getElementById('fFeat'), fType: document.getElementById('fType'),
@@ -1028,11 +1030,11 @@ function renderUsersTable() {
             <td>${u.email}</td>
             <td>${u.role}</td>
             <td>
-                <button class="btn" style="padding: 0.4rem; background: var(--accent-primary);" onclick="editUser('${u.id}')" title="Modifier">
-                    <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
+                <button class="btn" style="padding: 0.2rem; background: var(--accent-primary);" onclick="editUser('${u.id}')" title="Modifier">
+                    <i data-lucide="edit-2" style="width: 14px; height: 14px;"></i>
                 </button>
-                <button class="btn" style="padding: 0.4rem; margin-left: 0.5rem; background: var(--danger);" onclick="deleteUser('${u.id}')" title="Supprimer">
-                    <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                <button class="btn" style="padding: 0.2rem; margin-left: 0.5rem; background: var(--danger);" onclick="deleteUser('${u.id}')" title="Supprimer">
+                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
                 </button>
             </td>
         </tr>
@@ -1102,7 +1104,7 @@ function renderTicketsTable() {
         return `
             <tr>
                 <td>${t.feature}</td>
-                <td><span style="padding:4px 8px; border-radius:4px; background:rgba(255,255,255,0.1); font-size:12px">${t.type}</span></td>
+                <td><span style="padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.1); font-size:11px">${t.type}</span></td>
                 <td>#${t.number}</td>
                 <td>${t.priority}</td>
                 <td>${getUserName(t.assignDesignId)}</td>
@@ -1133,11 +1135,11 @@ function renderTicketsTable() {
                     <input type="text" class="editable-field" style="text-align:left;" value="${t.comment}" onchange="onCommentChange('${t.id}', this.value)">
                 </td>
                 <td>
-                    <button class="btn" style="padding: 0.4rem; background: var(--accent-primary);" onclick="editTicket('${t.id}')" title="Modifier">
-                        <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
+                    <button class="btn" style="padding: 0.2rem; background: var(--accent-primary);" onclick="editTicket('${t.id}')" title="Modifier">
+                        <i data-lucide="edit-2" style="width: 14px; height: 14px;"></i>
                     </button>
-                    <button class="btn" style="padding: 0.4rem; background: var(--danger); margin-left: 0.2rem;" onclick="deleteTicket('${t.id}')" title="Supprimer">
-                        <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                    <button class="btn" style="padding: 0.2rem; background: var(--danger); margin-left: 0.2rem;" onclick="deleteTicket('${t.id}')" title="Supprimer">
+                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
                     </button>
                 </td>
             </tr>
@@ -1187,6 +1189,12 @@ window.deleteTicket = async (id) => {
 function renderDashboard() {
     const project = Store.projects.find(p => p.id === currentProjectId);
     if (!project) return;
+    
+    // Update dashboard header info
+    if (DOM.dashProjectName) DOM.dashProjectName.textContent = project.name;
+    const currentVersion = Store.versions.find(v => v.id === currentVersionId);
+    if (DOM.dashVersionName) DOM.dashVersionName.textContent = currentVersion ? `Version : ${currentVersion.name}` : '-';
+
     const viewTickets = Store.tickets.filter(t => t.versionId === currentVersionId);
     
     let totalRaf = 0;

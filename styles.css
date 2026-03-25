@@ -268,7 +268,7 @@ body {
 
 .data-table th {
   background-color: #f8fafc;
-  padding: 0.75rem 1.25rem;
+  padding: 0.45rem 0.75rem;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -328,14 +328,14 @@ body {
 /* Filter Row */
 .filter-row th {
     background-color: #ffffff;
-    padding: 0.4rem 0.75rem;
+    padding: 0.25rem 0.5rem;
     border-bottom: 1px solid var(--border-light);
     position: relative; /* FOR RESIZERS */
 }
 
 .filter-input {
     width: 100%;
-    padding: 0.35rem 0.5rem;
+    padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
     border: 1px solid var(--border-light);
     border-radius: 4px;
@@ -358,7 +358,7 @@ body {
 }
 
 .data-table td {
-  padding: 0.875rem 1.25rem;
+  padding: 0.35rem 0.75rem;
   border-bottom: 1px solid var(--border-light);
   color: var(--text-main);
   vertical-align: middle;
@@ -367,7 +367,7 @@ body {
 .editable-field, .status-select {
   width: 100%;
   box-sizing: border-box;
-  padding: 0.4rem 0.6rem;
+  padding: 0.2rem 0.4rem;
   border: 1px solid transparent;
   border-radius: 4px;
   background: transparent;
