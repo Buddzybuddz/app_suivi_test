@@ -357,6 +357,7 @@ const DOM = {
     fNum: document.getElementById('fNum'), fPrio: document.getElementById('fPrio'),
     fAssC: document.getElementById('fAssC'), fAssE: document.getElementById('fAssE'),
     fTests: document.getElementById('fTests'), fState: document.getElementById('fState'),
+    fVersion: document.getElementById('fVersion'), // VERSION SELECTION
     tId: document.getElementById('tId')
 };
 
@@ -471,11 +472,39 @@ function updateFormUsers() {
     DOM.filterUser.innerHTML = `<option value="">Tous les utilisateurs</option>` + allowedUsers.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
 }
 
+// Project Modal Logic
+const openProjectModal = (p = null) => {
+    DOM.projectForm.reset();
+    if (p) {
+        DOM.projectModalTitle.textContent = "Modifier le Projet";
+        DOM.pId.value = p.id;
+        DOM.pName.value = p.name;
+        currentProjectStates = p.ticketStates ? [...p.ticketStates] : ['Nouveau'];
+        DOM.pRatioC.value = p.designRatio;
+        DOM.pRatioE.value = p.executionRatio;
+        currentProjectUsers = p.userIds ? [...p.userIds] : [];
+    } else {
+        DOM.projectModalTitle.textContent = "Nouveau Projet";
+        DOM.pId.value = '';
+        currentProjectStates = ['Nouveau', 'Validé', 'Rejeté', 'Fermé'];
+        currentProjectUsers = [];
+    }
+    renderProjectMembersBadge();
+    renderProjectStatesBadge();
+    DOM.projectModal.classList.add('show');
+};
+
 function updateFormStates() {
     const project = Store.projects.find(p => p.id === currentProjectId);
     if(project) {
         DOM.fState.innerHTML = project.ticketStates.map(s => `<option value="${s}">${s}</option>`).join('');
     }
+}
+
+function updateFormVersions() {
+    const versions = Store.versions.filter(v => v.projectId === currentProjectId);
+    DOM.fVersion.innerHTML = versions.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+    DOM.fVersion.value = currentVersionId;
 }
 
 // --- Event Listeners ---
@@ -504,27 +533,9 @@ function setupEventListeners() {
         });
     });
 
-    // Project Modal Logic
-    const openProjectModal = (p = null) => {
-        DOM.projectForm.reset();
-        if (p) {
-            DOM.projectModalTitle.textContent = "Modifier le Projet";
-            DOM.pId.value = p.id;
-            DOM.pName.value = p.name;
-            currentProjectStates = p.ticketStates ? [...p.ticketStates] : ['Nouveau'];
-            DOM.pRatioC.value = p.designRatio;
-            DOM.pRatioE.value = p.executionRatio;
-            currentProjectUsers = p.userIds ? [...p.userIds] : [];
-        } else {
-            DOM.projectModalTitle.textContent = "Nouveau Projet";
-            DOM.pId.value = '';
-            currentProjectStates = ['Nouveau', 'Validé', 'Rejeté', 'Fermé'];
-            currentProjectUsers = [];
-        }
-        renderProjectMembersBadge();
-        renderProjectStatesBadge();
-        DOM.projectModal.classList.add('show');
-    };
+
+
+
 
     if (DOM.btnAddState) {
         DOM.btnAddState.addEventListener('click', () => {
@@ -831,8 +842,10 @@ function setupEventListeners() {
     DOM.btnNewTicket.addEventListener('click', () => {
         if(!currentVersionId) return alert("Veuillez sélectionner une version d'abord.");
         updateFormStates();
+        updateFormVersions();
         DOM.ticketForm.reset();
         if(DOM.tId) DOM.tId.value = '';
+        DOM.fVersion.value = currentVersionId;
         const mTitle = document.getElementById('modalTitle');
         if(mTitle) mTitle.textContent = "Nouveau Ticket";
         DOM.modal.classList.add('show');
@@ -848,7 +861,7 @@ function setupEventListeners() {
         const nbTests = parseFloat(DOM.fTests.value) || 0;
         
         const data = {
-            versionId: currentVersionId,
+            versionId: DOM.fVersion.value || currentVersionId,
             feature: DOM.fFeat.value,
             type: DOM.fType.value,
             number: parseInt(DOM.fNum.value) || 0,
@@ -859,7 +872,7 @@ function setupEventListeners() {
             ticketState: DOM.fState.value,
             consumed: tIdValue ? (Store.tickets.find(t=>t.id===tIdValue)?.consumed || 0) : 0,
             statusDesign: tIdValue ? (Store.tickets.find(t=>t.id===tIdValue)?.statusDesign || 'À faire') : 'À faire',
-            statusExecution: tIdValue ? (Store.tickets.find(t=>t.id===tIdValue)?.statusExecution || 'À exécuter') : 'À exécuter',
+            statusExecution: tIdValue ? (Store.tickets.find(t=>t.id===tIdValue)?.statusExecution || 'En attente livraison') : 'En attente livraison',
             comment: tIdValue ? (Store.tickets.find(t=>t.id===tIdValue)?.comment || '') : ''
         };
 
@@ -931,13 +944,7 @@ function renderProjectsTable() {
 window.editProject = (id) => {
     const p = Store.projects.find(proj => proj.id === id);
     if(p) {
-        DOM.projectForm.reset();
-        DOM.projectModalTitle.textContent = "Modifier le Projet";
-        DOM.pId.value = p.id;
-        DOM.pName.value = p.name;
-        DOM.pRatioC.value = p.designRatio;
-        DOM.pRatioE.value = p.executionRatio;
-        DOM.projectModal.classList.add('show');
+        openProjectModal(p);
     }
 };
 
@@ -1103,6 +1110,16 @@ function renderTicketsTable() {
 
         return `
             <tr>
+                <td>
+                    <div style="display: flex; gap: 0.2rem;">
+                        <button class="btn" style="padding: 0.2rem; background: var(--accent-primary);" onclick="editTicket('${t.id}')" title="Modifier">
+                            <i data-lucide="edit-2" style="width: 14px; height: 14px;"></i>
+                        </button>
+                        <button class="btn" style="padding: 0.2rem; background: var(--danger);" onclick="deleteTicket('${t.id}')" title="Supprimer">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                        </button>
+                    </div>
+                </td>
                 <td>${t.feature}</td>
                 <td><span style="padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.1); font-size:11px">${t.type}</span></td>
                 <td>#${t.number}</td>
@@ -1134,14 +1151,6 @@ function renderTicketsTable() {
                 <td>
                     <input type="text" class="editable-field" style="text-align:left;" value="${t.comment}" onchange="onCommentChange('${t.id}', this.value)">
                 </td>
-                <td>
-                    <button class="btn" style="padding: 0.2rem; background: var(--accent-primary);" onclick="editTicket('${t.id}')" title="Modifier">
-                        <i data-lucide="edit-2" style="width: 14px; height: 14px;"></i>
-                    </button>
-                    <button class="btn" style="padding: 0.2rem; background: var(--danger); margin-left: 0.2rem;" onclick="deleteTicket('${t.id}')" title="Supprimer">
-                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-                    </button>
-                </td>
             </tr>
         `;
     }).join('');
@@ -1168,6 +1177,9 @@ window.editTicket = (id) => {
         DOM.fAssE.value = t.assignExecutionId || '';
         DOM.fTests.value = t.nbTestCases;
         DOM.fState.value = t.ticketState;
+        
+        updateFormVersions();
+        DOM.fVersion.value = t.versionId || currentVersionId;
         
         DOM.modal.classList.add('show');
     }

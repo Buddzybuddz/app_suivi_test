@@ -92,6 +92,7 @@
                     <table class="data-table">
                         <thead>
                             <tr>
+                                <th>Actions</th>
                                 <th data-col="feature" onclick="toggleSort('tickets', 'feature')" style="cursor:pointer">Fonctionnalité<span id="sort-tickets-feature"></span></th>
                                 <th data-col="type" onclick="toggleSort('tickets', 'type')" style="cursor:pointer">Type<span id="sort-tickets-type"></span></th>
                                 <th data-col="number" onclick="toggleSort('tickets', 'number')" style="cursor:pointer">N°<span id="sort-tickets-number"></span></th>
@@ -107,9 +108,9 @@
                                 <th data-col="statusDesign" onclick="toggleSort('tickets', 'statusDesign')" style="cursor:pointer">Statut (C)<span id="sort-tickets-statusDesign"></span></th>
                                 <th data-col="statusExecution" onclick="toggleSort('tickets', 'statusExecution')" style="cursor:pointer">Statut (E)<span id="sort-tickets-statusExecution"></span></th>
                                 <th data-col="comment">Commentaire</th>
-                                <th>Actions</th>
                             </tr>
                             <tr class="filter-row">
+                                <th></th>
                                 <th data-col="feature"><select class="filter-input" data-filter-table="tickets" data-filter-col="feature" onchange="onFilterChange('tickets', 'feature', this.value)"><option value="">Tout</option></select></th>
                                 <th data-col="type"><select class="filter-input" data-filter-table="tickets" data-filter-col="type" onchange="onFilterChange('tickets', 'type', this.value)"><option value="">Tout</option></select></th>
                                 <th data-col="number"><select class="filter-input" data-filter-table="tickets" data-filter-col="number" onchange="onFilterChange('tickets', 'number', this.value)"><option value="">Tout</option></select></th>
@@ -125,7 +126,6 @@
                                 <th data-col="statusDesign"><select class="filter-input" data-filter-table="tickets" data-filter-col="statusDesign" onchange="onFilterChange('tickets', 'statusDesign', this.value)"><option value="">Tout</option></select></th>
                                 <th data-col="statusExecution"><select class="filter-input" data-filter-table="tickets" data-filter-col="statusExecution" onchange="onFilterChange('tickets', 'statusExecution', this.value)"><option value="">Tout</option></select></th>
                                 <th data-col="comment"><select class="filter-input" data-filter-table="tickets" data-filter-col="comment" onchange="onFilterChange('tickets', 'comment', this.value)"><option value="">Tout</option></select></th>
-                                <th></th>
                             </tr>
                         </thead>
                         <tbody id="ticketsTbody">
@@ -455,6 +455,12 @@
                             <div class="form-group">
                                 <label>Numéro</label>
                                 <input type="number" id="fNum" required class="text-input">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group form-group-flex">
+                                <label>Version</label>
+                                <select id="fVersion" class="select-input" required></select>
                             </div>
                         </div>
                     </div>
