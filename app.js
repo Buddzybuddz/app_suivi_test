@@ -1158,7 +1158,7 @@ function renderTicketsTable() {
                         </button>
                     </div>
                 </td>
-                <td class="sticky-left-2">${t.feature}</td>
+                <td>${t.feature}</td>
                 <td><span style="padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.1); font-size:11px">${t.type}</span></td>
                 <td>#${t.number}</td>
                 <td>${t.priority}</td>
@@ -1254,58 +1254,28 @@ function renderDashboard() {
     let doneJConception = 0;
     let totalJExecution = 0;
     let doneJExecution = 0;
-    let totalWeightC = 0;
-    let doneWeightC = 0;
-    let totalWeightE = 0;
-    let doneWeightE = 0;
 
     const typeCount = {};
     const featureCount = {};
     const statusCount = {};
     const userRaf = {};
 
+    let totalPointsC = 0;
+    let totalPointsE = 0;
+
     viewTickets.forEach(t => {
         const calcs = getCalculations(t, project);
-        const tRaf = parseFloat(calcs.raf);
-        totalRaf += tRaf;
+        totalRaf += parseFloat(calcs.raf);
 
-        const jC = parseFloat(calcs.jConception);
-        const jE = parseFloat(calcs.jExecution);
+        // Conception logic: 100% si Terminée, sinon 0%
+        if (t.statusDesign === 'Terminée') totalPointsC += 100;
+        else totalPointsC += 0;
 
-        totalJConception += jC;
-        totalJExecution += jE;
+        // Execution logic: 100% if "Terminée OK/KO", 0% else
+        if (t.statusExecution && t.statusExecution.startsWith('Terminée')) totalPointsE += 100;
+        else totalPointsE += 0;
 
-        // Poids effectif pour le calcul des pourcentages KPI (minimum 0.15j)
-        const wC = Math.max(0.15, jC);
-        const wE = Math.max(0.15, jE);
-
-        totalWeightC += wC;
-        totalWeightE += wE;
-
-        const consumedC = (t.consumed * (jC / (jC + jE + 0.001)));
-        const consumedE = (t.consumed * (jE / (jC + jE + 0.001)));
-        const rafC = Math.max(0, jC - consumedC);
-        const rafE = Math.max(0, jE - consumedE);
-
-        if (t.statusDesign === 'Terminée') {
-            doneJConception += jC;
-            doneWeightC += wC;
-        } else if (t.statusDesign === 'En cours') {
-            doneJConception += jC * 0.5;
-            doneWeightC += wC * 0.5;
-        } else {
-            doneJConception += 0;
-            doneWeightC += 0;
-        }
-
-        if (t.statusExecution === 'Terminée OK' || t.statusExecution === 'Terminée KO') {
-            doneJExecution += jE;
-            doneWeightE += wE;
-        } else {
-            doneJExecution += 0;
-            doneWeightE += 0;
-        }
-
+        // Statistics
         if (!typeCount[t.type]) typeCount[t.type] = { success: 0, fail: 0, pending: 0 };
         if (t.statusExecution === 'Terminée OK') typeCount[t.type].success++;
         else if (t.statusExecution === 'Terminée KO') typeCount[t.type].fail++;
@@ -1318,19 +1288,16 @@ function renderDashboard() {
         else if (t.statusExecution === 'Terminée KO') featureCount[t.feature].fail++;
         else featureCount[t.feature].pending++;
 
+        // Workload (still uses RAF for visualization)
         if (t.assignDesignId) {
             if (!userRaf[t.assignDesignId]) userRaf[t.assignDesignId] = 0;
-            userRaf[t.assignDesignId] += rafC;
-        }
-        if (t.assignExecutionId) {
-            if (!userRaf[t.assignExecutionId]) userRaf[t.assignExecutionId] = 0;
-            userRaf[t.assignExecutionId] += rafE;
+            userRaf[t.assignDesignId] += parseFloat(t.nbTestCases * 0.1); // Fallback logic for workload? Or keep RAF?
         }
     });
 
-    const advC = totalWeightC > 0 ? (doneWeightC / totalWeightC * 100) : 0;
-    const advE = totalWeightE > 0 ? (doneWeightE / totalWeightE * 100) : 0;
-    const advTotal = (totalWeightC + totalWeightE) > 0 ? ((doneWeightC + doneWeightE) / (totalWeightC + totalWeightE) * 100) : 0;
+    const advC = viewTickets.length > 0 ? (totalPointsC / viewTickets.length) : 0;
+    const advE = viewTickets.length > 0 ? (totalPointsE / viewTickets.length) : 0;
+    const advTotal = (advC + advE) / 2;
 
     // Update KPI values
     DOM.kpiTotalRaf.textContent = totalRaf.toFixed(2);

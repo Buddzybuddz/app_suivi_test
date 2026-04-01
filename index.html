@@ -95,8 +95,8 @@
                             <thead>
                                 <tr>
                                     <th class="sticky-left-1" style="width: 85px;">ACTIONS</th>
-                                    <th class="sticky-left-2" data-col="feature"
-                                        onclick="toggleSort('tickets', 'feature')" style="cursor:pointer">
+                                    <th data-col="feature"
+                                        onclick="toggleSort('tickets', 'feature')" style="cursor:pointer; min-width: 180px;">
                                         Fonctionnalité<span id="sort-tickets-feature"></span>
                                     </th>
                                     <th data-col="type" onclick="toggleSort('tickets', 'type')" style="cursor:pointer">
@@ -130,7 +130,7 @@
                                 </tr>
                                 <tr class="filter-row">
                                     <th class="sticky-left-1"></th>
-                                    <th class="sticky-left-2" data-col="feature"><select class="filter-input" data-filter-table="tickets"
+                                    <th data-col="feature"><select class="filter-input" data-filter-table="tickets"
                                             data-filter-col="feature"
                                             onchange="onFilterChange('tickets', 'feature', this.value)">
                                             <option value="">Tout</option>

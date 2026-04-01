@@ -287,24 +287,18 @@ body {
 
 .data-table th.sticky-left-1,
 .data-table td.sticky-left-1 {
+  position: sticky;
   left: 0;
-  width: 75px;
-  min-width: 75px;
-}
-
-.data-table th.sticky-left-2,
-.data-table td.sticky-left-2 {
-  left: 75px;
-  width: 220px;
-  min-width: 180px;
-  max-width: 320px;
+  width: 85px;
+  min-width: 85px;
+  z-index: 10;
+  background-color: white !important;
   border-right: 2px solid var(--border-light);
-  box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.08);
+  box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.05);
 }
 
-.data-table th.sticky-left-1,
-.data-table th.sticky-left-2 {
-  z-index: 30; /* Higher than filter inputs */
+.data-table th.sticky-left-1 {
+  z-index: 30;
   background-color: #f8fafc !important;
 }
 
@@ -359,27 +353,19 @@ body {
   cursor: col-resize;
 }
 
-/* Sticky Actions Column */
+/* Last column is no longer sticky */
 .data-table th:last-child,
 .data-table td:last-child {
-  position: sticky;
-  right: 0;
-  z-index: 5;
-  background-color: white;
-  border-left: 2px solid var(--border-light);
-  box-shadow: -4px 0 8px -2px rgba(0, 0, 0, 0.05);
-  /* Shadow to demarcate sticky edge */
+  position: relative;
+  right: auto;
+  z-index: 1;
+  background-color: transparent;
+  border-left: none;
+  box-shadow: none;
 }
 
-/* Header needs a higher z-index and its own background tint */
 .data-table th:last-child {
-  z-index: 20;
   background-color: #f8fafc;
-}
-
-/* Ensure Row hover doesn't make sticky cell transparent */
-.data-table tr:hover td:last-child {
-  background-color: #f1f5f9;
 }
 
 /* Filter Row */
