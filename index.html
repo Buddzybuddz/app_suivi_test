@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,6 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="app-container">
         <!-- Sidebar -->
@@ -61,170 +63,259 @@
                             </button>
                         </div>
                     </div>
-                <div class="header-right">
-                    <button class="btn btn-primary" id="btnNewTicket">
-                        <i data-lucide="plus"></i>
-                        Nouveau Ticket
-                    </button>
-                    <div class="user-profile">
-                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" class="avatar">
-                    </div>
-                </div>
-            </header>
-
-            <!-- Tabs Navigation -->
-            <div class="tabs-container">
-                <button class="tab-btn active" data-tab="details">Détails des Tickets</button>
-                <button class="tab-btn" data-tab="dashboard">Tableau de Bord</button>
-            </div>
-
-            <!-- Tab Content: Details -->
-            <div id="tab-details" class="tab-content active">
-                <div class="toolbar">
-                    <div class="filter-group">
-                        <i data-lucide="filter"></i>
-                        <select id="filterUser" class="select-input">
-                            <option value="">Tous les utilisateurs</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="table-wrapper">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Actions</th>
-                                <th data-col="feature" onclick="toggleSort('tickets', 'feature')" style="cursor:pointer">Fonctionnalité<span id="sort-tickets-feature"></span></th>
-                                <th data-col="type" onclick="toggleSort('tickets', 'type')" style="cursor:pointer">Type<span id="sort-tickets-type"></span></th>
-                                <th data-col="number" onclick="toggleSort('tickets', 'number')" style="cursor:pointer">N°<span id="sort-tickets-number"></span></th>
-                                <th data-col="priority" onclick="toggleSort('tickets', 'priority')" style="cursor:pointer">Priorité<span id="sort-tickets-priority"></span></th>
-                                <th data-col="assignDesignId" onclick="toggleSort('tickets', 'assignDesignId')" style="cursor:pointer">Assigné (C)<span id="sort-tickets-assignDesignId"></span></th>
-                                <th data-col="assignExecutionId" onclick="toggleSort('tickets', 'assignExecutionId')" style="cursor:pointer">Assigné (E)<span id="sort-tickets-assignExecutionId"></span></th>
-                                <th data-col="nbTestCases" onclick="toggleSort('tickets', 'nbTestCases')" style="cursor:pointer">Nb Tests<span id="sort-tickets-nbTestCases"></span></th>
-                                <th data-col="ticketState" onclick="toggleSort('tickets', 'ticketState')" style="cursor:pointer">État<span id="sort-tickets-ticketState"></span></th>
-                                <th data-col="jConception">J/H (C)</th>
-                                <th data-col="jExecution">J/H (E)</th>
-                                <th data-col="consumed" onclick="toggleSort('tickets', 'consumed')" style="cursor:pointer">Consommé<span id="sort-tickets-consumed"></span></th>
-                                <th data-col="raf">RAF</th>
-                                <th data-col="statusDesign" onclick="toggleSort('tickets', 'statusDesign')" style="cursor:pointer">Statut (C)<span id="sort-tickets-statusDesign"></span></th>
-                                <th data-col="statusExecution" onclick="toggleSort('tickets', 'statusExecution')" style="cursor:pointer">Statut (E)<span id="sort-tickets-statusExecution"></span></th>
-                                <th data-col="comment">Commentaire</th>
-                            </tr>
-                            <tr class="filter-row">
-                                <th></th>
-                                <th data-col="feature"><select class="filter-input" data-filter-table="tickets" data-filter-col="feature" onchange="onFilterChange('tickets', 'feature', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="type"><select class="filter-input" data-filter-table="tickets" data-filter-col="type" onchange="onFilterChange('tickets', 'type', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="number"><select class="filter-input" data-filter-table="tickets" data-filter-col="number" onchange="onFilterChange('tickets', 'number', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="priority"><select class="filter-input" data-filter-table="tickets" data-filter-col="priority" onchange="onFilterChange('tickets', 'priority', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="assignDesignId"><select class="filter-input" data-filter-table="tickets" data-filter-col="assignDesignId" onchange="onFilterChange('tickets', 'assignDesignId', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="assignExecutionId"><select class="filter-input" data-filter-table="tickets" data-filter-col="assignExecutionId" onchange="onFilterChange('tickets', 'assignExecutionId', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="nbTestCases"><select class="filter-input" data-filter-table="tickets" data-filter-col="nbTestCases" onchange="onFilterChange('tickets', 'nbTestCases', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="ticketState"><select class="filter-input" data-filter-table="tickets" data-filter-col="ticketState" onchange="onFilterChange('tickets', 'ticketState', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="jConception"><select class="filter-input" data-filter-table="tickets" data-filter-col="jConception" onchange="onFilterChange('tickets', 'jConception', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="jExecution"><select class="filter-input" data-filter-table="tickets" data-filter-col="jExecution" onchange="onFilterChange('tickets', 'jExecution', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="consumed"><select class="filter-input" data-filter-table="tickets" data-filter-col="consumed" onchange="onFilterChange('tickets', 'consumed', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="raf"><select class="filter-input" data-filter-table="tickets" data-filter-col="raf" onchange="onFilterChange('tickets', 'raf', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="statusDesign"><select class="filter-input" data-filter-table="tickets" data-filter-col="statusDesign" onchange="onFilterChange('tickets', 'statusDesign', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="statusExecution"><select class="filter-input" data-filter-table="tickets" data-filter-col="statusExecution" onchange="onFilterChange('tickets', 'statusExecution', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="comment"><select class="filter-input" data-filter-table="tickets" data-filter-col="comment" onchange="onFilterChange('tickets', 'comment', this.value)"><option value="">Tout</option></select></th>
-                            </tr>
-                        </thead>
-                        <tbody id="ticketsTbody">
-                            <!-- Injected by JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Tab Content: Dashboard -->
-            <div id="tab-dashboard" class="tab-content">
-                <div class="dashboard-header-info" style="display:flex; justify-content:space-between; align-items:flex-end; padding: 1.25rem 1.25rem 0 1.25rem;">
-                    <div class="dashboard-title-group">
-                        <h2 id="dashProjectName" style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.25rem;">-</h2>
-                        <p id="dashVersionName" style="font-size: 0.875rem; color: var(--text-muted); font-weight: 500;">-</p>
-                    </div>
-                    <div class="toolbar" style="border-bottom:none; display:flex; padding:0;" data-html2canvas-ignore>
-                        <button class="btn btn-primary" id="btnCopyDashboard" style="background: var(--accent-secondary);">
-                            <i data-lucide="copy"></i>
-                            Copier l'image
+                    <div class="header-right">
+                        <button class="btn btn-primary" id="btnNewTicket">
+                            <i data-lucide="plus"></i>
+                            Nouveau Ticket
                         </button>
+                        <div class="user-profile">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" class="avatar">
+                        </div>
                     </div>
+                </header>
+
+                <!-- Tabs Navigation -->
+                <div class="tabs-container">
+                    <button class="tab-btn active" data-tab="details">Détails des Tickets</button>
+                    <button class="tab-btn" data-tab="dashboard">Tableau de Bord</button>
                 </div>
-                <!-- Global KPI -->
-                <div class="kpi-grid">
-                    <div class="kpi-card">
-                        <div class="kpi-icon"><i data-lucide="target"></i></div>
-                        <div class="kpi-info">
-                            <h3>RAF Global (J/h)</h3>
-                            <p class="kpi-value" id="kpiTotalRaf">0.00</p>
+
+                <!-- Tab Content: Details -->
+                <div id="tab-details" class="tab-content active">
+                    <div class="toolbar">
+                        <div class="filter-group">
+                            <i data-lucide="filter"></i>
+                            <select id="filterUser" class="select-input">
+                                <option value="">Tous les utilisateurs</option>
+                            </select>
                         </div>
                     </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon"><i data-lucide="ticket"></i></div>
-                        <div class="kpi-info">
-                            <h3>Total Tickets</h3>
-                            <p class="kpi-value" id="kpiTotalTickets">0</p>
-                        </div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon"><i data-lucide="pen-tool"></i></div>
-                        <div class="kpi-info">
-                            <h3>Avance. Conception</h3>
-                            <p class="kpi-value" id="kpiAdvC">0%</p>
-                            <div class="kpi-progress"><div class="kpi-progress-bar" id="kpiAdvCBar" style="width: 0%"></div></div>
-                        </div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon"><i data-lucide="play-circle"></i></div>
-                        <div class="kpi-info">
-                            <h3>Avance. Exécution</h3>
-                            <p class="kpi-value" id="kpiAdvE">0%</p>
-                            <div class="kpi-progress"><div class="kpi-progress-bar" id="kpiAdvEBar" style="width: 0%"></div></div>
-                        </div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon"><i data-lucide="pie-chart"></i></div>
-                        <div class="kpi-info">
-                            <h3>Avancement Total</h3>
-                            <p class="kpi-value" id="kpiAdvTotal">0%</p>
-                            <div class="kpi-progress"><div class="kpi-progress-bar" id="kpiAdvTotalBar" style="width: 0%"></div></div>
-                        </div>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th class="sticky-left-1" style="width: 85px;">ACTIONS</th>
+                                    <th class="sticky-left-2" data-col="feature"
+                                        onclick="toggleSort('tickets', 'feature')" style="cursor:pointer">
+                                        Fonctionnalité<span id="sort-tickets-feature"></span>
+                                    </th>
+                                    <th data-col="type" onclick="toggleSort('tickets', 'type')" style="cursor:pointer">
+                                        Type<span id="sort-tickets-type"></span></th>
+                                    <th data-col="number" onclick="toggleSort('tickets', 'number')"
+                                        style="cursor:pointer">N°<span id="sort-tickets-number"></span></th>
+                                    <th data-col="priority" onclick="toggleSort('tickets', 'priority')"
+                                        style="cursor:pointer">Priorité<span id="sort-tickets-priority"></span></th>
+                                    <th data-col="assignDesignId" onclick="toggleSort('tickets', 'assignDesignId')"
+                                        style="cursor:pointer">Assigné (C)<span id="sort-tickets-assignDesignId"></span>
+                                    </th>
+                                    <th data-col="assignExecutionId"
+                                        onclick="toggleSort('tickets', 'assignExecutionId')" style="cursor:pointer">
+                                        Assigné (E)<span id="sort-tickets-assignExecutionId"></span></th>
+                                    <th data-col="nbTestCases" onclick="toggleSort('tickets', 'nbTestCases')"
+                                        style="cursor:pointer">Nb Tests<span id="sort-tickets-nbTestCases"></span></th>
+                                    <th data-col="ticketState" onclick="toggleSort('tickets', 'ticketState')"
+                                        style="cursor:pointer">État<span id="sort-tickets-ticketState"></span></th>
+                                    <th data-col="jConception">J/H (C)</th>
+                                    <th data-col="jExecution">J/H (E)</th>
+                                    <th data-col="consumed" onclick="toggleSort('tickets', 'consumed')"
+                                        style="cursor:pointer">Consommé<span id="sort-tickets-consumed"></span></th>
+                                    <th data-col="raf">RAF</th>
+                                    <th data-col="statusDesign" onclick="toggleSort('tickets', 'statusDesign')"
+                                        style="cursor:pointer">Statut (C)<span id="sort-tickets-statusDesign"></span>
+                                    </th>
+                                    <th data-col="statusExecution" onclick="toggleSort('tickets', 'statusExecution')"
+                                        style="cursor:pointer">Statut (E)<span id="sort-tickets-statusExecution"></span>
+                                    </th>
+                                    <th data-col="comment">Commentaire</th>
+                                </tr>
+                                <tr class="filter-row">
+                                    <th class="sticky-left-1"></th>
+                                    <th class="sticky-left-2" data-col="feature"><select class="filter-input" data-filter-table="tickets"
+                                            data-filter-col="feature"
+                                            onchange="onFilterChange('tickets', 'feature', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
+                                    <th data-col="type"><select class="filter-input" data-filter-table="tickets"
+                                            data-filter-col="type"
+                                            onchange="onFilterChange('tickets', 'type', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
+                                    <th data-col="number"><select class="filter-input" data-filter-table="tickets"
+                                            data-filter-col="number"
+                                            onchange="onFilterChange('tickets', 'number', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
+                                    <th data-col="priority"><select class="filter-input" data-filter-table="tickets"
+                                            data-filter-col="priority"
+                                            onchange="onFilterChange('tickets', 'priority', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
+                                    <th data-col="assignDesignId"><select class="filter-input"
+                                            data-filter-table="tickets" data-filter-col="assignDesignId"
+                                            onchange="onFilterChange('tickets', 'assignDesignId', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
+                                    <th data-col="assignExecutionId"><select class="filter-input"
+                                            data-filter-table="tickets" data-filter-col="assignExecutionId"
+                                            onchange="onFilterChange('tickets', 'assignExecutionId', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
+                                    <th data-col="nbTestCases"><select class="filter-input" data-filter-table="tickets"
+                                            data-filter-col="nbTestCases"
+                                            onchange="onFilterChange('tickets', 'nbTestCases', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
+                                    <th data-col="ticketState"><select class="filter-input" data-filter-table="tickets"
+                                            data-filter-col="ticketState"
+                                            onchange="onFilterChange('tickets', 'ticketState', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
+                                    <th data-col="jConception"><select class="filter-input" data-filter-table="tickets"
+                                            data-filter-col="jConception"
+                                            onchange="onFilterChange('tickets', 'jConception', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
+                                    <th data-col="jExecution"><select class="filter-input" data-filter-table="tickets"
+                                            data-filter-col="jExecution"
+                                            onchange="onFilterChange('tickets', 'jExecution', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
+                                    <th data-col="consumed"><select class="filter-input" data-filter-table="tickets"
+                                            data-filter-col="consumed"
+                                            onchange="onFilterChange('tickets', 'consumed', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
+                                    <th data-col="raf"><select class="filter-input" data-filter-table="tickets"
+                                            data-filter-col="raf"
+                                            onchange="onFilterChange('tickets', 'raf', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
+                                    <th data-col="statusDesign"><select class="filter-input" data-filter-table="tickets"
+                                            data-filter-col="statusDesign"
+                                            onchange="onFilterChange('tickets', 'statusDesign', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
+                                    <th data-col="statusExecution"><select class="filter-input"
+                                            data-filter-table="tickets" data-filter-col="statusExecution"
+                                            onchange="onFilterChange('tickets', 'statusExecution', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
+                                    <th data-col="comment"><select class="filter-input" data-filter-table="tickets"
+                                            data-filter-col="comment"
+                                            onchange="onFilterChange('tickets', 'comment', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
+                                </tr>
+                            </thead>
+                            <tbody id="ticketsTbody">
+                                <!-- Injected by JS -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <!-- Charts Area -->
-                <div class="charts-grid">
-                    <div class="chart-card glass-panel">
-                        <h3>Statut d'exécution par Type</h3>
-                        <div class="chart-container">
-                            <canvas id="chartType"></canvas>
+                <!-- Tab Content: Dashboard -->
+                <div id="tab-dashboard" class="tab-content">
+                    <div class="dashboard-header-info"
+                        style="display:flex; justify-content:space-between; align-items:flex-end; padding: 1.25rem 1.25rem 0 1.25rem;">
+                        <div class="dashboard-title-group">
+                            <h2 id="dashProjectName"
+                                style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.25rem;">
+                                -</h2>
+                            <p id="dashVersionName"
+                                style="font-size: 0.875rem; color: var(--text-muted); font-weight: 500;">-</p>
+                        </div>
+                        <div class="toolbar" style="border-bottom:none; display:flex; padding:0;"
+                            data-html2canvas-ignore>
+                            <button class="btn btn-primary" id="btnCopyDashboard"
+                                style="background: var(--accent-secondary);">
+                                <i data-lucide="copy"></i>
+                                Copier l'image
+                            </button>
                         </div>
                     </div>
-                    <div class="chart-card glass-panel">
-                        <h3>Statut d'exécution par Fonctionnalité</h3>
-                        <div class="chart-container">
-                            <canvas id="chartFeature"></canvas>
+                    <!-- Global KPI -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-icon"><i data-lucide="target"></i></div>
+                            <div class="kpi-info">
+                                <h3>RAF Global (J/h)</h3>
+                                <p class="kpi-value" id="kpiTotalRaf">0.00</p>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon"><i data-lucide="ticket"></i></div>
+                            <div class="kpi-info">
+                                <h3>Total Tickets</h3>
+                                <p class="kpi-value" id="kpiTotalTickets">0</p>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon"><i data-lucide="pen-tool"></i></div>
+                            <div class="kpi-info">
+                                <h3>Avance. Conception</h3>
+                                <p class="kpi-value" id="kpiAdvC">0%</p>
+                                <div class="kpi-progress">
+                                    <div class="kpi-progress-bar" id="kpiAdvCBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon"><i data-lucide="play-circle"></i></div>
+                            <div class="kpi-info">
+                                <h3>Avance. Exécution</h3>
+                                <p class="kpi-value" id="kpiAdvE">0%</p>
+                                <div class="kpi-progress">
+                                    <div class="kpi-progress-bar" id="kpiAdvEBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon"><i data-lucide="pie-chart"></i></div>
+                            <div class="kpi-info">
+                                <h3>Avancement Total</h3>
+                                <p class="kpi-value" id="kpiAdvTotal">0%</p>
+                                <div class="kpi-progress">
+                                    <div class="kpi-progress-bar" id="kpiAdvTotalBar" style="width: 0%"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="chart-card glass-panel">
-                        <h3>Avancement Conception vs Exécution</h3>
-                        <div class="chart-container">
-                            <canvas id="chartProgress"></canvas>
+
+                    <!-- Charts Area -->
+                    <div class="charts-grid">
+                        <div class="chart-card glass-panel">
+                            <h3>Statut d'exécution par Type</h3>
+                            <div class="chart-container">
+                                <canvas id="chartType"></canvas>
+                            </div>
                         </div>
-                    </div>
-                    <div class="chart-card glass-panel">
-                        <h3>Répartition globale des Statuts</h3>
-                        <div class="chart-container">
-                            <canvas id="chartStatus"></canvas>
+                        <div class="chart-card glass-panel">
+                            <h3>Statut d'exécution par Fonctionnalité</h3>
+                            <div class="chart-container">
+                                <canvas id="chartFeature"></canvas>
+                            </div>
                         </div>
-                    </div>
-                    <div class="chart-card glass-panel">
-                        <h3>Charge (RAF) par Utilisateur</h3>
-                        <div class="chart-container">
-                            <canvas id="chartWorkload"></canvas>
+                        <div class="chart-card glass-panel">
+                            <h3>Avancement Conception vs Exécution</h3>
+                            <div class="chart-container">
+                                <canvas id="chartProgress"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card glass-panel">
+                            <h3>Répartition globale des Statuts</h3>
+                            <div class="chart-container">
+                                <canvas id="chartStatus"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card glass-panel">
+                            <h3>Charge (RAF) par Utilisateur</h3>
+                            <div class="chart-container">
+                                <canvas id="chartWorkload"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
             </div><!-- /view-tracker -->
 
             <!-- View: Projects -->
@@ -240,17 +331,38 @@
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th data-col="id" onclick="toggleSort('projects', 'id')" style="cursor:pointer">ID<span id="sort-projects-id"></span></th>
-                                <th data-col="name" onclick="toggleSort('projects', 'name')" style="cursor:pointer">Nom du Projet<span id="sort-projects-name"></span></th>
-                                <th data-col="ratioC" onclick="toggleSort('projects', 'designRatio')" style="cursor:pointer">Ratio Conception<span id="sort-projects-designRatio"></span></th>
-                                <th data-col="ratioE" onclick="toggleSort('projects', 'executionRatio')" style="cursor:pointer">Ratio Exécution<span id="sort-projects-executionRatio"></span></th>
+                                <th data-col="id" onclick="toggleSort('projects', 'id')" style="cursor:pointer">ID<span
+                                        id="sort-projects-id"></span></th>
+                                <th data-col="name" onclick="toggleSort('projects', 'name')" style="cursor:pointer">Nom
+                                    du Projet<span id="sort-projects-name"></span></th>
+                                <th data-col="ratioC" onclick="toggleSort('projects', 'designRatio')"
+                                    style="cursor:pointer">Ratio Conception<span id="sort-projects-designRatio"></span>
+                                </th>
+                                <th data-col="ratioE" onclick="toggleSort('projects', 'executionRatio')"
+                                    style="cursor:pointer">Ratio Exécution<span
+                                        id="sort-projects-executionRatio"></span></th>
                                 <th>Actions</th>
                             </tr>
                             <tr class="filter-row">
-                                <th data-col="id"><select class="filter-input" data-filter-table="projects" data-filter-col="id" onchange="onFilterChange('projects', 'id', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="name"><select class="filter-input" data-filter-table="projects" data-filter-col="name" onchange="onFilterChange('projects', 'name', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="designRatio"><select class="filter-input" data-filter-table="projects" data-filter-col="designRatio" onchange="onFilterChange('projects', 'designRatio', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="executionRatio"><select class="filter-input" data-filter-table="projects" data-filter-col="executionRatio" onchange="onFilterChange('projects', 'executionRatio', this.value)"><option value="">Tout</option></select></th>
+                                <th data-col="id"><select class="filter-input" data-filter-table="projects"
+                                        data-filter-col="id" onchange="onFilterChange('projects', 'id', this.value)">
+                                        <option value="">Tout</option>
+                                    </select></th>
+                                <th data-col="name"><select class="filter-input" data-filter-table="projects"
+                                        data-filter-col="name"
+                                        onchange="onFilterChange('projects', 'name', this.value)">
+                                        <option value="">Tout</option>
+                                    </select></th>
+                                <th data-col="designRatio"><select class="filter-input" data-filter-table="projects"
+                                        data-filter-col="designRatio"
+                                        onchange="onFilterChange('projects', 'designRatio', this.value)">
+                                        <option value="">Tout</option>
+                                    </select></th>
+                                <th data-col="executionRatio"><select class="filter-input" data-filter-table="projects"
+                                        data-filter-col="executionRatio"
+                                        onchange="onFilterChange('projects', 'executionRatio', this.value)">
+                                        <option value="">Tout</option>
+                                    </select></th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -301,17 +413,37 @@
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th data-col="id" onclick="toggleSort('versions', 'id')" style="cursor:pointer">ID<span id="sort-versions-id"></span></th>
-                                <th data-col="name" onclick="toggleSort('versions', 'name')" style="cursor:pointer">Nom de la Version<span id="sort-versions-name"></span></th>
-                                <th data-col="project" onclick="toggleSort('versions', 'project')" style="cursor:pointer">Projet<span id="sort-versions-project"></span></th>
-                                <th data-col="date" onclick="toggleSort('versions', 'deliveryDate')" style="cursor:pointer">Date Livraison Prévue<span id="sort-versions-deliveryDate"></span></th>
+                                <th data-col="id" onclick="toggleSort('versions', 'id')" style="cursor:pointer">ID<span
+                                        id="sort-versions-id"></span></th>
+                                <th data-col="name" onclick="toggleSort('versions', 'name')" style="cursor:pointer">Nom
+                                    de la Version<span id="sort-versions-name"></span></th>
+                                <th data-col="project" onclick="toggleSort('versions', 'project')"
+                                    style="cursor:pointer">Projet<span id="sort-versions-project"></span></th>
+                                <th data-col="date" onclick="toggleSort('versions', 'deliveryDate')"
+                                    style="cursor:pointer">Date Livraison Prévue<span
+                                        id="sort-versions-deliveryDate"></span></th>
                                 <th>Actions</th>
                             </tr>
                             <tr class="filter-row">
-                                <th data-col="id"><select class="filter-input" data-filter-table="versions" data-filter-col="id" onchange="onFilterChange('versions', 'id', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="name"><select class="filter-input" data-filter-table="versions" data-filter-col="name" onchange="onFilterChange('versions', 'name', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="project"><select class="filter-input" data-filter-table="versions" data-filter-col="project" onchange="onFilterChange('versions', 'project', this.value)"><option value="">Tout</option></select></th>
-                                <th data-col="deliveryDate"><select class="filter-input" data-filter-table="versions" data-filter-col="deliveryDate" onchange="onFilterChange('versions', 'deliveryDate', this.value)"><option value="">Tout</option></select></th>
+                                <th data-col="id"><select class="filter-input" data-filter-table="versions"
+                                        data-filter-col="id" onchange="onFilterChange('versions', 'id', this.value)">
+                                        <option value="">Tout</option>
+                                    </select></th>
+                                <th data-col="name"><select class="filter-input" data-filter-table="versions"
+                                        data-filter-col="name"
+                                        onchange="onFilterChange('versions', 'name', this.value)">
+                                        <option value="">Tout</option>
+                                    </select></th>
+                                <th data-col="project"><select class="filter-input" data-filter-table="versions"
+                                        data-filter-col="project"
+                                        onchange="onFilterChange('versions', 'project', this.value)">
+                                        <option value="">Tout</option>
+                                    </select></th>
+                                <th data-col="deliveryDate"><select class="filter-input" data-filter-table="versions"
+                                        data-filter-col="deliveryDate"
+                                        onchange="onFilterChange('versions', 'deliveryDate', this.value)">
+                                        <option value="">Tout</option>
+                                    </select></th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -381,7 +513,8 @@
                             </button>
                         </div>
                         <div class="member-add-row">
-                            <input type="text" id="pNewUserName" class="text-input member-select" placeholder="Nom complet du nouveau membre">
+                            <input type="text" id="pNewUserName" class="text-input member-select"
+                                placeholder="Nom complet du nouveau membre">
                             <button type="button" class="btn btn-success btn-compact" id="btnCreateAndAddUser">
                                 <i data-lucide="plus-circle" class="btn-icon-sm"></i>
                                 Créer
@@ -430,7 +563,7 @@
             <div class="modal-body">
                 <form id="ticketForm" class="project-form">
                     <input type="hidden" id="tId">
-                    
+
                     <!-- Section: Détails du Ticket -->
                     <div class="form-section">
                         <div class="form-section-title">
@@ -440,7 +573,9 @@
                         <div class="form-row">
                             <div class="form-group form-group-flex">
                                 <label>Fonctionnalité</label>
-                                <input type="text" id="fFeat" required class="text-input" placeholder="Ex: Boutique, Panier...">
+                                <input type="text" id="fFeat" required class="text-input"
+                                    placeholder="Ex: Boutique, Panier..." list="feature-list">
+                                <datalist id="feature-list"></datalist>
                             </div>
                         </div>
                         <div class="form-row form-row-2col">
@@ -506,7 +641,8 @@
                         <div class="form-row">
                             <div class="form-group form-group-flex">
                                 <label>Nombre de cas de test</label>
-                                <input type="number" id="fTests" class="text-input" min="0" placeholder="Estimation de l'effort">
+                                <input type="number" id="fTests" class="text-input" min="0"
+                                    placeholder="Estimation de l'effort">
                             </div>
                         </div>
                     </div>
@@ -530,7 +666,7 @@
             <div class="modal-body">
                 <form id="versionForm" class="project-form">
                     <input type="hidden" id="vId">
-                    
+
                     <div class="form-section">
                         <div class="form-section-title">
                             <i data-lucide="layers" class="form-section-icon"></i>
@@ -545,7 +681,8 @@
                         <div class="form-row">
                             <div class="form-group form-group-flex">
                                 <label>Nom de la Version (ex: v1.0.0)</label>
-                                <input type="text" id="vName" required class="text-input" placeholder="Ex: v1.0.0, MVP...">
+                                <input type="text" id="vName" required class="text-input"
+                                    placeholder="Ex: v1.0.0, MVP...">
                             </div>
                         </div>
                         <div class="form-row">
@@ -564,7 +701,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Modal for New/Edit User -->
     <div class="modal" id="userModal">
         <div class="modal-content glass-panel modal-user">
@@ -575,7 +712,7 @@
             <div class="modal-body">
                 <form id="userForm" class="project-form">
                     <input type="hidden" id="uId">
-                    
+
                     <div class="form-section">
                         <div class="form-section-title">
                             <i data-lucide="user" class="form-section-icon"></i>
@@ -590,7 +727,8 @@
                         <div class="form-row">
                             <div class="form-group form-group-flex">
                                 <label>Email</label>
-                                <input type="email" id="uiEmail" required class="text-input" placeholder="jean.dupont@test.com">
+                                <input type="email" id="uiEmail" required class="text-input"
+                                    placeholder="jean.dupont@test.com">
                             </div>
                         </div>
                         <div class="form-row">
@@ -618,4 +756,5 @@
     <script src="appwrite_config.js"></script>
     <script src="app.js"></script>
 </body>
+
 </html>

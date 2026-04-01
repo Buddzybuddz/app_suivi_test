@@ -31,7 +31,7 @@ async function loadStore() {
         Store.projects = projects.documents.map(d => ({ id: d.$id, ...d }));
         Store.versions = versions.documents.map(d => ({ id: d.$id, ...d }));
         Store.tickets = tickets.documents.map(d => ({ id: d.$id, ...d }));
-        
+
         console.log("Store loaded from Appwrite:", Store);
     } catch (error) {
         console.error("Error loading Store from Appwrite:", error);
@@ -52,6 +52,15 @@ function round015Up(val) {
     return Math.ceil(val / 0.15) * 0.15;
 }
 
+// Calcule la largeur minimale requise (Version Sécurité Maximale)
+function getRequiredWidth(options) {
+    if (!options || options.length === 0) return 100;
+    const longest = options.reduce((a, b) => (a || "").toString().length > (b || "").toString().length ? a : b, "");
+    // Version "Équilibrée" : 10px par caractère + 90px d'offset (Chevron + Marges)
+    const w = (longest.toString().length * 9) + 80;
+    return Math.ceil(w);
+}
+
 window.toggleSort = (table, key) => {
     const opt = Store.sortOptions[table];
     if (opt.key === key) {
@@ -68,21 +77,21 @@ function updateFilterOptions(tableKey, data) {
     selects.forEach(select => {
         const col = select.dataset.filterCol;
         if (!col) return;
-        
+
         const currentVal = Store.filters[tableKey][col] || '';
         const uniqueValues = new Set();
-        
+
         data.forEach(item => {
             let val = '';
             if (tableKey === 'tickets') {
                 if (col === 'assignDesignId' || col === 'assignExecutionId') {
                     val = getUserName(item[col]);
                 } else if (col === 'jConception') {
-                    val = (item.nbTestCases / (Store.projects.find(p=>p.id===currentProjectId)?.designRatio || 1)).toFixed(2);
+                    val = (item.nbTestCases / (Store.projects.find(p => p.id === currentProjectId)?.designRatio || 1)).toFixed(2);
                 } else if (col === 'jExecution') {
-                    val = (item.nbTestCases / (Store.projects.find(p=>p.id===currentProjectId)?.executionRatio || 1)).toFixed(2);
+                    val = (item.nbTestCases / (Store.projects.find(p => p.id === currentProjectId)?.executionRatio || 1)).toFixed(2);
                 } else if (col === 'raf') {
-                    const p = Store.projects.find(pr=>pr.id===currentProjectId);
+                    const p = Store.projects.find(pr => pr.id === currentProjectId);
                     const c = getCalculations(item, p);
                     val = c.raf;
                 } else {
@@ -96,10 +105,10 @@ function updateFilterOptions(tableKey, data) {
             if (val !== undefined && val !== null) uniqueValues.add(val.toString());
         });
 
-        const sortedValues = Array.from(uniqueValues).sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
-        
+        const sortedValues = Array.from(uniqueValues).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
         // Preserve "Tout" and reconstruction
-        select.innerHTML = '<option value="">Tout</option>' + 
+        select.innerHTML = '<option value="">Tout</option>' +
             sortedValues.map(v => `<option value="${v}" ${v.toLowerCase() === currentVal ? 'selected' : ''}>${v}</option>`).join('');
     });
 }
@@ -117,7 +126,7 @@ function filterData(data, tableKey) {
     return data.filter(item => {
         return Object.entries(filters).every(([col, searchVal]) => {
             if (!searchVal) return true;
-            
+
             let targetVal = '';
             // Handle special mappings or nested data
             if (tableKey === 'tickets') {
@@ -126,11 +135,11 @@ function filterData(data, tableKey) {
                 } else if (col === 'jConception') {
                     // This is calculated, we might need the project to recalculate or just skip
                     // For now, let's just use string conversion of the item properties
-                    targetVal = (item.nbTestCases / (Store.projects.find(p=>p.id===currentProjectId)?.designRatio || 1)).toString();
+                    targetVal = (item.nbTestCases / (Store.projects.find(p => p.id === currentProjectId)?.designRatio || 1)).toString();
                 } else if (col === 'jExecution') {
-                    targetVal = (item.nbTestCases / (Store.projects.find(p=>p.id===currentProjectId)?.executionRatio || 1)).toString();
+                    targetVal = (item.nbTestCases / (Store.projects.find(p => p.id === currentProjectId)?.executionRatio || 1)).toString();
                 } else if (col === 'raf') {
-                    const p = Store.projects.find(pr=>pr.id===currentProjectId);
+                    const p = Store.projects.find(pr => pr.id === currentProjectId);
                     const c = getCalculations(item, p);
                     targetVal = c.raf.toString();
                 } else {
@@ -141,7 +150,7 @@ function filterData(data, tableKey) {
             } else {
                 targetVal = (item[col] || '').toString();
             }
-            
+
             return targetVal.toLowerCase().includes(searchVal);
         });
     });
@@ -157,11 +166,11 @@ function getSortIndicator(table, key) {
 function sortData(data, table) {
     const { key, dir } = Store.sortOptions[table];
     if (!key) return data;
-    
+
     return [...data].sort((a, b) => {
         let valA = a[key] ?? '';
         let valB = b[key] ?? '';
-        
+
         // Handle nested or special fields
         if (key === 'project') { // For versions table
             valA = Store.projects.find(p => p.id === a.projectId)?.name || '';
@@ -169,7 +178,7 @@ function sortData(data, table) {
         }
 
         if (typeof valA === 'string') {
-            const cmp = valA.localeCompare(valB, undefined, {numeric: true, sensitivity: 'base'});
+            const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
             return dir === 'asc' ? cmp : -cmp;
         }
         return dir === 'asc' ? (valA - valB) : (valB - valA);
@@ -210,7 +219,7 @@ function enableColumnResizing(tableElement, tableKey) {
             const resizer = document.createElement('div');
             resizer.className = 'resizer';
             th.appendChild(resizer);
-            
+
             // Initial total width sync
             let initialTotal = 0;
             firstRowHeaders.forEach(h => {
@@ -231,7 +240,7 @@ function enableColumnResizing(tableElement, tableKey) {
                     masterTh.style.width = newWidth + 'px';
                     masterTh.style.minWidth = newWidth + 'px'; // CRITICAL: Force min-width
                     Store.columnWidths[tableKey][colId] = newWidth;
-                    
+
                     // Force table to be wide enough to contain all fixed columns
                     let totalWidth = 0;
                     firstRowHeaders.forEach(h => {
@@ -253,9 +262,9 @@ function enableColumnResizing(tableElement, tableKey) {
             resizer.addEventListener('dblclick', (e) => {
                 e.stopPropagation();
                 const oldLayout = tableElement.style.tableLayout;
-                tableElement.style.tableLayout = 'auto'; 
+                tableElement.style.tableLayout = 'auto';
                 masterTh.style.width = 'auto';
-                
+
                 requestAnimationFrame(() => {
                     const autoWidth = masterTh.offsetWidth;
                     masterTh.style.width = autoWidth + 'px';
@@ -285,7 +294,7 @@ const DOM = {
     // Nav & Views
     navItems: document.querySelectorAll('.nav-item'),
     viewSections: document.querySelectorAll('.view-section'),
-    
+
     // Project View
     projectsTbody: document.getElementById('projectsTbody'),
     btnNewProject: document.getElementById('btnNewProject'),
@@ -320,7 +329,7 @@ const DOM = {
 
     // Version UI
     btnNewVersion: document.getElementById('btnNewVersion'),
-    btnNewVersionPage: document.getElementById('btnNewVersionPage'), 
+    btnNewVersionPage: document.getElementById('btnNewVersionPage'),
     versionsTbody: document.getElementById('versionsTbody'),
     versionModal: document.getElementById('versionModal'),
     versionModalTitle: document.getElementById('versionModalTitle'),
@@ -342,7 +351,7 @@ const DOM = {
     modal: document.getElementById('ticketModal'),
     btnCloseModal: document.getElementById('btnCloseModal'),
     ticketForm: document.getElementById('ticketForm'),
-    
+
     // KPI
     kpiTotalRaf: document.getElementById('kpiTotalRaf'),
     kpiTotalTickets: document.getElementById('kpiTotalTickets'),
@@ -351,9 +360,10 @@ const DOM = {
     kpiAdvTotal: document.getElementById('kpiAdvTotal'),
     dashProjectName: document.getElementById('dashProjectName'),
     dashVersionName: document.getElementById('dashVersionName'),
-    
+
     // Form Inputs
-    fFeat: document.getElementById('fFeat'), fType: document.getElementById('fType'),
+    fFeat: document.getElementById('fFeat'), fFeatList: document.getElementById('feature-list'),
+    fType: document.getElementById('fType'),
     fNum: document.getElementById('fNum'), fPrio: document.getElementById('fPrio'),
     fAssC: document.getElementById('fAssC'), fAssE: document.getElementById('fAssE'),
     fTests: document.getElementById('fTests'), fState: document.getElementById('fState'),
@@ -385,17 +395,17 @@ function populateHeaderSelects() {
     DOM.projectSelect.innerHTML = Store.projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
     DOM.projectSelect.value = currentProjectId;
 
-    if(DOM.vProject) {
+    if (DOM.vProject) {
         DOM.vProject.innerHTML = Store.projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
     }
-    
+
     updateVersionSelect();
 }
 
 function updateVersionSelect() {
     const versions = Store.versions.filter(v => v.projectId === currentProjectId);
     DOM.versionSelect.innerHTML = versions.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
-    if(versions.length > 0) currentVersionId = versions[0].id;
+    if (versions.length > 0) currentVersionId = versions[0].id;
     DOM.versionSelect.value = currentVersionId;
 }
 
@@ -407,15 +417,15 @@ let currentProjectUsers = [];
 let currentProjectStates = [];
 
 function populatePUserSelectToAdd() {
-    if(!DOM.pUserSelectToAdd) return;
+    if (!DOM.pUserSelectToAdd) return;
     const available = Store.users.filter(u => !currentProjectUsers.includes(u.id));
-    DOM.pUserSelectToAdd.innerHTML = `<option value="">-- Sélectionner un utilisateur --</option>` + 
+    DOM.pUserSelectToAdd.innerHTML = `<option value="">-- Sélectionner un utilisateur --</option>` +
         available.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('');
 }
 
 function renderProjectMembersBadge() {
-    if(!DOM.projectMembersContainer) return;
-    if(currentProjectUsers.length === 0) {
+    if (!DOM.projectMembersContainer) return;
+    if (currentProjectUsers.length === 0) {
         DOM.projectMembersContainer.innerHTML = `<span class="members-placeholder">Aucun membre sélectionné.</span>`;
         return;
     }
@@ -464,11 +474,11 @@ function updateFormUsers() {
     if (project && project.userIds && project.userIds.length > 0) {
         allowedUsers = Store.users.filter(u => project.userIds.includes(u.id));
     }
-    
+
     const usersOptions = `<option value="">-- Aucun --</option>` + allowedUsers.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('');
     DOM.fAssC.innerHTML = usersOptions;
     DOM.fAssE.innerHTML = usersOptions;
-    
+
     DOM.filterUser.innerHTML = `<option value="">Tous les utilisateurs</option>` + allowedUsers.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
 }
 
@@ -496,7 +506,7 @@ const openProjectModal = (p = null) => {
 
 function updateFormStates() {
     const project = Store.projects.find(p => p.id === currentProjectId);
-    if(project) {
+    if (project) {
         DOM.fState.innerHTML = project.ticketStates.map(s => `<option value="${s}">${s}</option>`).join('');
     }
 }
@@ -505,6 +515,18 @@ function updateFormVersions() {
     const versions = Store.versions.filter(v => v.projectId === currentProjectId);
     DOM.fVersion.innerHTML = versions.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
     DOM.fVersion.value = currentVersionId;
+}
+
+function updateFeatureDatalist() {
+    if (!DOM.fFeatList) return;
+    const features = new Set();
+    Store.tickets.forEach(t => {
+        const v = Store.versions.find(ver => ver.id === t.versionId);
+        if (v && v.projectId === currentProjectId && t.feature) {
+            features.add(t.feature);
+        }
+    });
+    DOM.fFeatList.innerHTML = Array.from(features).sort().map(f => `<option value="${f}">`).join('');
 }
 
 // --- Event Listeners ---
@@ -518,18 +540,18 @@ function setupEventListeners() {
 
             DOM.navItems.forEach(n => n.classList.remove('active'));
             item.classList.add('active');
-            
+
             DOM.viewSections.forEach(v => {
-                if(v.id === 'view-' + targetView) {
+                if (v.id === 'view-' + targetView) {
                     v.classList.add('active');
                 } else {
                     v.classList.remove('active');
                 }
             });
-            
-            if(targetView === 'projects') renderProjectsTable();
-            if(targetView === 'versions') renderVersionsTable();
-            if(targetView === 'users') renderUsersTable();
+
+            if (targetView === 'projects') renderProjectsTable();
+            if (targetView === 'versions') renderVersionsTable();
+            if (targetView === 'users') renderUsersTable();
         });
     });
 
@@ -551,15 +573,15 @@ function setupEventListeners() {
     if (DOM.btnAddExistingUser) {
         DOM.btnAddExistingUser.addEventListener('click', () => {
             const uid = DOM.pUserSelectToAdd.value;
-            if(uid && !currentProjectUsers.includes(uid)) {
+            if (uid && !currentProjectUsers.includes(uid)) {
                 currentProjectUsers.push(uid);
                 renderProjectMembersBadge();
             }
         });
-        
+
         DOM.btnCreateAndAddUser.addEventListener('click', async () => {
             const name = DOM.pNewUserName.value.trim();
-            if(name) {
+            if (name) {
                 const data = {
                     name: name,
                     role: 'Testeur'
@@ -584,7 +606,7 @@ function setupEventListeners() {
         DOM.btnNewProject.addEventListener('click', () => {
             openProjectModal(null);
         });
-        
+
         DOM.btnCloseProjectModal.addEventListener('click', () => {
             DOM.projectModal.classList.remove('show');
         });
@@ -594,7 +616,7 @@ function setupEventListeners() {
             const pId = DOM.pId.value;
             const selectedUsers = [...currentProjectUsers];
             const selectedStates = [...currentProjectStates];
-            
+
             const data = {
                 name: DOM.pName.value,
                 ticketStates: selectedStates.length > 0 ? selectedStates : ['Nouveau'],
@@ -610,7 +632,7 @@ function setupEventListeners() {
                     const res = await databases.createDocument(DATABASE_ID, COLLECTIONS.PROJECTS, ID.unique(), data);
                     currentProjectId = res.$id;
                 }
-                
+
                 await loadStore(); // Refresh local store
                 DOM.projectModal.classList.remove('show');
                 renderProjectsTable();
@@ -639,7 +661,7 @@ function setupEventListeners() {
             DOM.versionModalTitle.textContent = "Nouvelle Version";
             DOM.vId.value = '';
             DOM.vProject.disabled = fromHeader;
-            if(fromHeader && currentProjectId) {
+            if (fromHeader && currentProjectId) {
                 DOM.vProject.value = currentProjectId;
             } else if (!fromHeader && Store.projects.length > 0) {
                 DOM.vProject.value = Store.projects[0].id;
@@ -650,14 +672,14 @@ function setupEventListeners() {
 
     if (DOM.btnNewVersion) {
         DOM.btnNewVersion.addEventListener('click', () => {
-            if(!currentProjectId) return alert("Veuillez d'abord sélectionner un projet.");
+            if (!currentProjectId) return alert("Veuillez d'abord sélectionner un projet.");
             openVersionModal(null, true);
         });
     }
 
     if (DOM.btnNewVersionPage) {
         DOM.btnNewVersionPage.addEventListener('click', () => {
-            if(Store.projects.length === 0) return alert("Veuillez d'abord créer un projet.");
+            if (Store.projects.length === 0) return alert("Veuillez d'abord créer un projet.");
             openVersionModal(null, false);
         });
     }
@@ -683,16 +705,16 @@ function setupEventListeners() {
                     const res = await databases.createDocument(DATABASE_ID, COLLECTIONS.VERSIONS, ID.unique(), data);
                     currentVersionId = res.$id;
                 }
-                
+
                 await loadStore();
                 DOM.versionModal.classList.remove('show');
                 updateVersionSelect();
-                if(DOM.versionSelect.querySelector(`option[value="${currentVersionId}"]`)) {
+                if (DOM.versionSelect.querySelector(`option[value="${currentVersionId}"]`)) {
                     DOM.versionSelect.value = currentVersionId;
                 }
                 updateUI();
-                if(activeTab === 'versions') renderVersionsTable();
-                renderVersionsTable(); 
+                if (activeTab === 'versions') renderVersionsTable();
+                renderVersionsTable();
             } catch (error) {
                 console.error("Error saving version:", error);
                 alert("Erreur lors de l'enregistrement de la version.");
@@ -740,13 +762,13 @@ function setupEventListeners() {
                 } else {
                     await databases.createDocument(DATABASE_ID, COLLECTIONS.USERS, ID.unique(), data);
                 }
-                
+
                 await loadStore();
                 DOM.userModal.classList.remove('show');
                 renderUsersTable();
-                populateFormSelects(); 
-                updateFormUsers(); 
-                renderTicketsTable(); 
+                populateFormSelects();
+                updateFormUsers();
+                renderTicketsTable();
                 updateUI();
             } catch (error) {
                 console.error("Error saving user:", error);
@@ -763,7 +785,7 @@ function setupEventListeners() {
 
             try {
                 const dashboard = document.getElementById('tab-dashboard');
-                
+
                 // Temporarily disable restricted height/overflow to capture full content
                 const originalHeight = dashboard.style.height;
                 const originalOverflow = dashboard.style.overflow;
@@ -786,11 +808,11 @@ function setupEventListeners() {
                     if (!blob) throw new Error("Erreur lors de la création de l'image.");
                     const item = new ClipboardItem({ "image/png": blob });
                     await navigator.clipboard.write([item]);
-                    
+
                     DOM.btnCopyDashboard.innerHTML = '<i data-lucide="check"></i> Copié !';
                     DOM.btnCopyDashboard.style.background = 'var(--success)';
                     lucide.createIcons();
-                    
+
                     setTimeout(() => {
                         DOM.btnCopyDashboard.innerHTML = originalText;
                         DOM.btnCopyDashboard.style.background = 'var(--accent-secondary)';
@@ -812,7 +834,7 @@ function setupEventListeners() {
         updateFormUsers();
         updateUI();
     });
-    
+
     DOM.versionSelect.addEventListener('change', (e) => {
         currentVersionId = e.target.value;
         updateUI();
@@ -827,11 +849,11 @@ function setupEventListeners() {
         tab.addEventListener('click', (e) => {
             DOM.tabs.forEach(t => t.classList.remove('active'));
             DOM.tabContents.forEach(c => c.classList.remove('active'));
-            
+
             e.target.classList.add('active');
             activeTab = e.target.dataset.tab;
             document.getElementById(`tab-${activeTab}`).classList.add('active');
-            
+
             if (activeTab === 'dashboard') {
                 renderDashboard();
             }
@@ -840,14 +862,15 @@ function setupEventListeners() {
 
     // Modal
     DOM.btnNewTicket.addEventListener('click', () => {
-        if(!currentVersionId) return alert("Veuillez sélectionner une version d'abord.");
+        if (!currentVersionId) return alert("Veuillez sélectionner une version d'abord.");
         updateFormStates();
         updateFormVersions();
+        updateFeatureDatalist();
         DOM.ticketForm.reset();
-        if(DOM.tId) DOM.tId.value = '';
+        if (DOM.tId) DOM.tId.value = '';
         DOM.fVersion.value = currentVersionId;
         const mTitle = document.getElementById('modalTitle');
-        if(mTitle) mTitle.textContent = "Nouveau Ticket";
+        if (mTitle) mTitle.textContent = "Nouveau Ticket";
         DOM.modal.classList.add('show');
     });
 
@@ -859,7 +882,7 @@ function setupEventListeners() {
         e.preventDefault();
         const tIdValue = DOM.tId ? DOM.tId.value : null;
         const nbTests = parseFloat(DOM.fTests.value) || 0;
-        
+
         const data = {
             versionId: DOM.fVersion.value || currentVersionId,
             feature: DOM.fFeat.value,
@@ -870,10 +893,10 @@ function setupEventListeners() {
             assignExecutionId: DOM.fAssE.value || null,
             nbTestCases: nbTests,
             ticketState: DOM.fState.value,
-            consumed: tIdValue ? (Store.tickets.find(t=>t.id===tIdValue)?.consumed || 0) : 0,
-            statusDesign: tIdValue ? (Store.tickets.find(t=>t.id===tIdValue)?.statusDesign || 'À faire') : 'À faire',
-            statusExecution: tIdValue ? (Store.tickets.find(t=>t.id===tIdValue)?.statusExecution || 'En attente livraison') : 'En attente livraison',
-            comment: tIdValue ? (Store.tickets.find(t=>t.id===tIdValue)?.comment || '') : ''
+            consumed: tIdValue ? (Store.tickets.find(t => t.id === tIdValue)?.consumed || 0) : 0,
+            statusDesign: tIdValue ? (Store.tickets.find(t => t.id === tIdValue)?.statusDesign || 'À faire') : 'À faire',
+            statusExecution: tIdValue ? (Store.tickets.find(t => t.id === tIdValue)?.statusExecution || 'En attente livraison') : 'En attente livraison',
+            comment: tIdValue ? (Store.tickets.find(t => t.id === tIdValue)?.comment || '') : ''
         };
 
         try {
@@ -882,7 +905,7 @@ function setupEventListeners() {
             } else {
                 await databases.createDocument(DATABASE_ID, COLLECTIONS.TICKETS, ID.unique(), data);
             }
-            
+
             await loadStore();
             DOM.modal.classList.remove('show');
             updateUI();
@@ -902,7 +925,7 @@ async function updateTicket(id, field, value) {
         await databases.updateDocument(DATABASE_ID, COLLECTIONS.TICKETS, id, { [field]: value });
         const ticket = Store.tickets.find(t => t.id === id);
         if (ticket) ticket[field] = value;
-        updateUI(); 
+        updateUI();
     } catch (error) {
         console.error("Error updating ticket field:", error);
     }
@@ -943,20 +966,20 @@ function renderProjectsTable() {
 
 window.editProject = (id) => {
     const p = Store.projects.find(proj => proj.id === id);
-    if(p) {
+    if (p) {
         openProjectModal(p);
     }
 };
 
 window.deleteProject = async (id) => {
-    if(!confirm("Supprimer ce projet et TOUTES ses données ?")) return;
+    if (!confirm("Supprimer ce projet et TOUTES ses données ?")) return;
     try {
         await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PROJECTS, id);
         await loadStore();
         renderProjectsTable();
         populateHeaderSelects();
-        
-        if(currentProjectId === id) {
+
+        if (currentProjectId === id) {
             currentProjectId = Store.projects[0]?.id || '';
             updateVersionSelect();
             updateUI();
@@ -999,12 +1022,12 @@ function renderVersionsTable() {
 
 window.editVersion = (id) => {
     const v = Store.versions.find(ver => ver.id === id);
-    if(v) {
+    if (v) {
         DOM.versionForm.reset();
         DOM.versionModalTitle.textContent = "Modifier la Version";
         DOM.vId.value = v.id;
         DOM.vProject.value = v.projectId;
-        DOM.vProject.disabled = true; 
+        DOM.vProject.disabled = true;
         DOM.vName.value = v.name;
         DOM.vDate.value = v.deliveryDate || '';
         DOM.versionModal.classList.add('show');
@@ -1012,7 +1035,7 @@ window.editVersion = (id) => {
 };
 
 window.deleteVersion = async (id) => {
-    if(!confirm("Supprimer cette version ?")) return;
+    if (!confirm("Supprimer cette version ?")) return;
     try {
         await databases.deleteDocument(DATABASE_ID, COLLECTIONS.VERSIONS, id);
         await loadStore();
@@ -1053,7 +1076,7 @@ function renderUsersTable() {
 
 window.editUser = (id) => {
     const u = Store.users.find(usr => usr.id === id);
-    if(u) {
+    if (u) {
         DOM.userForm.reset();
         DOM.userModalTitle.textContent = "Modifier l'Utilisateur";
         DOM.uId.value = u.id;
@@ -1065,7 +1088,7 @@ window.editUser = (id) => {
 };
 
 window.deleteUser = async (id) => {
-    if(!confirm("Supprimer cet utilisateur ?")) return;
+    if (!confirm("Supprimer cet utilisateur ?")) return;
     try {
         await databases.deleteDocument(DATABASE_ID, COLLECTIONS.USERS, id);
         await loadStore();
@@ -1086,31 +1109,46 @@ function renderTicketsTable() {
         return;
     }
     let viewTickets = Store.tickets.filter(t => t.versionId === currentVersionId);
-    
+
     if (filterUserId) {
         viewTickets = viewTickets.filter(t => t.assignDesignId === filterUserId || t.assignExecutionId === filterUserId);
     }
-    
+
     const filtered = filterData(viewTickets, 'tickets');
     updateFilterOptions('tickets', viewTickets); // Populate based on current version's tickets
     const sorted = sortData(filtered, 'tickets');
 
+    // Calcul dynamique des largeurs basées sur le contenu possible
+    const designOptions = ['À faire', 'En cours', 'Terminée'];
+    const execOptions = ['À exécuter', 'En attente livraison', 'Bloquée', 'En cours d\'exécution', 'Terminée OK', 'Terminée KO'];
+    const wState = getRequiredWidth(project.ticketStates || []);
+    const wDesign = getRequiredWidth(designOptions);
+    const wExec = getRequiredWidth(execOptions);
+
+    // Application dynamique sur les en-têtes (On force la largeur pour éviter le squeeze)
+    const thState = document.querySelector('th[data-col="ticketState"]');
+    if (thState) { thState.style.width = `${wState}px`; thState.style.minWidth = `${wState}px`; }
+    const thDesign = document.querySelector('th[data-col="statusDesign"]');
+    if (thDesign) { thDesign.style.width = `${wDesign}px`; thDesign.style.minWidth = `${wDesign}px`; }
+    const thExec = document.querySelector('th[data-col="statusExecution"]');
+    if (thExec) { thExec.style.width = `${wExec}px`; thExec.style.minWidth = `${wExec}px`; }
+
     DOM.ticketsTbody.innerHTML = sorted.map(t => {
         const calcs = getCalculations(t, project);
-        
+
         const execOptions = ['En attente livraison', 'Bloquée', 'À exécuter', 'En cours d\'exécution', 'Terminée OK', 'Terminée KO'];
         const designOptions = ['À faire', 'En cours', 'Terminée'];
 
         const getStatusClass = (status) => {
-            if(status.includes('OK') || status === 'Terminée') return 'done-ok';
-            if(status.includes('KO')) return 'done-ko';
-            if(status === 'Bloquée') return 'blocked';
+            if (status.includes('OK') || status === 'Terminée') return 'done-ok';
+            if (status.includes('KO')) return 'done-ko';
+            if (status === 'Bloquée') return 'blocked';
             return '';
         };
 
         return `
             <tr>
-                <td>
+                <td class="sticky-left-1">
                     <div style="display: flex; gap: 0.2rem;">
                         <button class="btn" style="padding: 0.2rem; background: var(--accent-primary);" onclick="editTicket('${t.id}')" title="Modifier">
                             <i data-lucide="edit-2" style="width: 14px; height: 14px;"></i>
@@ -1120,16 +1158,16 @@ function renderTicketsTable() {
                         </button>
                     </div>
                 </td>
-                <td>${t.feature}</td>
+                <td class="sticky-left-2">${t.feature}</td>
                 <td><span style="padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.1); font-size:11px">${t.type}</span></td>
                 <td>#${t.number}</td>
                 <td>${t.priority}</td>
                 <td>${getUserName(t.assignDesignId)}</td>
                 <td>${getUserName(t.assignExecutionId)}</td>
                 <td>${t.nbTestCases}</td>
-                <td>
-                    <select class="status-select" style="border-color: transparent;" onchange="onTicketStateChange('${t.id}', this.value)">
-                        ${(project.ticketStates || []).map(o => `<option value="${o}" ${t.ticketState===o?'selected':''}>${o}</option>`).join('')}
+                <td style="min-width: ${wState}px">
+                    <select class="status-select ${getStatusClass(t.ticketState)}" onchange="onTicketStateChange('${t.id}', this.value)">
+                        ${(project.ticketStates || []).map(o => `<option value="${o}" ${t.ticketState === o ? 'selected' : ''}>${o}</option>`).join('')}
                     </select>
                 </td>
                 <td style="color:var(--accent-primary); font-weight:600">${calcs.jConception}</td>
@@ -1138,14 +1176,14 @@ function renderTicketsTable() {
                     <input type="number" step="0.5" class="editable-field" value="${t.consumed}" onchange="onConsommeChange('${t.id}', this.value)">
                 </td>
                 <td style="font-weight:700">${calcs.raf}</td>
-                <td>
+                <td style="width: ${wDesign}px; min-width: ${wDesign}px">
                     <select class="status-select ${getStatusClass(t.statusDesign)}" onchange="onDesignChange('${t.id}', this.value)">
-                        ${designOptions.map(o => `<option value="${o}" ${t.statusDesign===o?'selected':''}>${o}</option>`).join('')}
+                        ${designOptions.map(o => `<option value="${o}" ${t.statusDesign === o ? 'selected' : ''}>${o}</option>`).join('')}
                     </select>
                 </td>
-                <td>
+                <td style="width: ${wExec}px; min-width: ${wExec}px">
                     <select class="status-select ${getStatusClass(t.statusExecution)}" onchange="onExecChange('${t.id}', this.value)">
-                        ${execOptions.map(o => `<option value="${o}" ${t.statusExecution===o?'selected':''}>${o}</option>`).join('')}
+                        ${execOptions.map(o => `<option value="${o}" ${t.statusExecution === o ? 'selected' : ''}>${o}</option>`).join('')}
                     </select>
                 </td>
                 <td>
@@ -1154,7 +1192,7 @@ function renderTicketsTable() {
             </tr>
         `;
     }).join('');
-    
+
     lucide.createIcons();
     updateSortIndicators('tickets');
     enableColumnResizing(DOM.ticketsTbody.parentElement, 'tickets');
@@ -1162,12 +1200,12 @@ function renderTicketsTable() {
 
 window.editTicket = (id) => {
     const t = Store.tickets.find(tick => tick.id === id);
-    if(t) {
+    if (t) {
         updateFormStates();
         DOM.ticketForm.reset();
         const mTitle = document.getElementById('modalTitle');
-        if(mTitle) mTitle.textContent = "Modifier le Ticket";
-        
+        if (mTitle) mTitle.textContent = "Modifier le Ticket";
+
         DOM.tId.value = t.id;
         DOM.fFeat.value = t.feature;
         DOM.fType.value = t.type;
@@ -1177,16 +1215,18 @@ window.editTicket = (id) => {
         DOM.fAssE.value = t.assignExecutionId || '';
         DOM.fTests.value = t.nbTestCases;
         DOM.fState.value = t.ticketState;
-        
+
         updateFormVersions();
         DOM.fVersion.value = t.versionId || currentVersionId;
-        
+
+        updateFeatureDatalist();
+
         DOM.modal.classList.add('show');
     }
 };
 
 window.deleteTicket = async (id) => {
-    if(confirm("Voulez-vous vraiment supprimer ce ticket ?")) {
+    if (confirm("Voulez-vous vraiment supprimer ce ticket ?")) {
         try {
             await databases.deleteDocument(DATABASE_ID, COLLECTIONS.TICKETS, id);
             await loadStore();
@@ -1201,19 +1241,23 @@ window.deleteTicket = async (id) => {
 function renderDashboard() {
     const project = Store.projects.find(p => p.id === currentProjectId);
     if (!project) return;
-    
+
     // Update dashboard header info
     if (DOM.dashProjectName) DOM.dashProjectName.textContent = project.name;
     const currentVersion = Store.versions.find(v => v.id === currentVersionId);
     if (DOM.dashVersionName) DOM.dashVersionName.textContent = currentVersion ? `Version : ${currentVersion.name}` : '-';
 
     const viewTickets = Store.tickets.filter(t => t.versionId === currentVersionId);
-    
+
     let totalRaf = 0;
     let totalJConception = 0;
     let doneJConception = 0;
     let totalJExecution = 0;
     let doneJExecution = 0;
+    let totalWeightC = 0;
+    let doneWeightC = 0;
+    let totalWeightE = 0;
+    let doneWeightE = 0;
 
     const typeCount = {};
     const featureCount = {};
@@ -1227,47 +1271,66 @@ function renderDashboard() {
 
         const jC = parseFloat(calcs.jConception);
         const jE = parseFloat(calcs.jExecution);
-        
+
         totalJConception += jC;
         totalJExecution += jE;
-        
+
+        // Poids effectif pour le calcul des pourcentages KPI (minimum 0.15j)
+        const wC = Math.max(0.15, jC);
+        const wE = Math.max(0.15, jE);
+
+        totalWeightC += wC;
+        totalWeightE += wE;
+
+        const consumedC = (t.consumed * (jC / (jC + jE + 0.001)));
+        const consumedE = (t.consumed * (jE / (jC + jE + 0.001)));
+        const rafC = Math.max(0, jC - consumedC);
+        const rafE = Math.max(0, jE - consumedE);
+
         if (t.statusDesign === 'Terminée') {
             doneJConception += jC;
-        }
-        if (t.statusExecution === 'Terminée OK' || t.statusExecution === 'Terminée KO') {
-            doneJExecution += jE;
+            doneWeightC += wC;
+        } else if (t.statusDesign === 'En cours') {
+            doneJConception += jC * 0.5;
+            doneWeightC += wC * 0.5;
+        } else {
+            doneJConception += 0;
+            doneWeightC += 0;
         }
 
-        if(!typeCount[t.type]) typeCount[t.type] = { success: 0, fail: 0, pending: 0 };
-        if(t.statusExecution === 'Terminée OK') typeCount[t.type].success++;
-        else if(t.statusExecution === 'Terminée KO') typeCount[t.type].fail++;
+        if (t.statusExecution === 'Terminée OK' || t.statusExecution === 'Terminée KO') {
+            doneJExecution += jE;
+            doneWeightE += wE;
+        } else {
+            doneJExecution += 0;
+            doneWeightE += 0;
+        }
+
+        if (!typeCount[t.type]) typeCount[t.type] = { success: 0, fail: 0, pending: 0 };
+        if (t.statusExecution === 'Terminée OK') typeCount[t.type].success++;
+        else if (t.statusExecution === 'Terminée KO') typeCount[t.type].fail++;
         else typeCount[t.type].pending++;
 
         statusCount[t.statusExecution] = (statusCount[t.statusExecution] || 0) + 1;
 
-        if(!featureCount[t.feature]) featureCount[t.feature] = { success: 0, fail: 0, pending: 0 };
-        if(t.statusExecution === 'Terminée OK') featureCount[t.feature].success++;
-        else if(t.statusExecution === 'Terminée KO') featureCount[t.feature].fail++;
+        if (!featureCount[t.feature]) featureCount[t.feature] = { success: 0, fail: 0, pending: 0 };
+        if (t.statusExecution === 'Terminée OK') featureCount[t.feature].success++;
+        else if (t.statusExecution === 'Terminée KO') featureCount[t.feature].fail++;
         else featureCount[t.feature].pending++;
 
-        const consumedC = (t.consumed * (jC/(jC+jE+0.001)));
-        const consumedE = (t.consumed * (jE/(jC+jE+0.001)));
-        const rafC = Math.max(0, jC - consumedC);
-        const rafE = Math.max(0, jE - consumedE);
-
-        if(t.assignDesignId) {
-            if(!userRaf[t.assignDesignId]) userRaf[t.assignDesignId] = 0;
+        if (t.assignDesignId) {
+            if (!userRaf[t.assignDesignId]) userRaf[t.assignDesignId] = 0;
             userRaf[t.assignDesignId] += rafC;
         }
-        if(t.assignExecutionId) {
-            if(!userRaf[t.assignExecutionId]) userRaf[t.assignExecutionId] = 0;
+        if (t.assignExecutionId) {
+            if (!userRaf[t.assignExecutionId]) userRaf[t.assignExecutionId] = 0;
             userRaf[t.assignExecutionId] += rafE;
         }
     });
 
-    const advC = totalJConception > 0 ? (doneJConception / totalJConception * 100) : 0;
-    const advE = totalJExecution > 0 ? (doneJExecution / totalJExecution * 100) : 0;
-    const advTotal = (totalJConception + totalJExecution) > 0 ? ((doneJConception + doneJExecution) / (totalJConception + totalJExecution) * 100) : 0;
+    const advC = totalWeightC > 0 ? (doneWeightC / totalWeightC * 100) : 0;
+    const advE = totalWeightE > 0 ? (doneWeightE / totalWeightE * 100) : 0;
+    const advTotal = (totalWeightC + totalWeightE) > 0 ? ((doneWeightC + doneWeightE) / (totalWeightC + totalWeightE) * 100) : 0;
 
     // Update KPI values
     DOM.kpiTotalRaf.textContent = totalRaf.toFixed(2);
@@ -1286,7 +1349,7 @@ function renderDashboard() {
 
     // Workload data for chart
     const workloadPairs = Object.entries(userRaf).map(([uId, raf]) => ({ name: getUserName(uId), raf: round015Up(raf) }));
-    workloadPairs.sort((a,b) => b.raf - a.raf);
+    workloadPairs.sort((a, b) => b.raf - a.raf);
 
     renderCharts(typeCount, featureCount, statusCount, workloadPairs, { advC, advE, totalJConception, totalJExecution, doneJConception, doneJExecution }, viewTickets.length);
 }
@@ -1296,7 +1359,7 @@ function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progr
     const createGradient = (ctx, colorStart, colorEnd, horizontal = false) => {
         const chart = ctx.chart;
         const { top, bottom, left, right } = chart.chartArea || { top: 0, bottom: 400, left: 0, right: 400 };
-        const gradient = horizontal 
+        const gradient = horizontal
             ? ctx.chart.ctx.createLinearGradient(left, 0, right, 0)
             : ctx.chart.ctx.createLinearGradient(0, bottom, 0, top);
         gradient.addColorStop(0, colorStart);
@@ -1323,20 +1386,20 @@ function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progr
     };
 
     const modernScales = (stacked = false) => ({
-        x: { 
-            stacked, 
+        x: {
+            stacked,
             grid: { color: gridCol, drawBorder: false, borderDash: [3, 3] },
             ticks: { font: { family: 'Inter', size: 11, weight: '500' }, color: '#64748b' }
         },
-        y: { 
-            stacked, 
+        y: {
+            stacked,
             grid: { color: gridCol, drawBorder: false, borderDash: [3, 3] },
             ticks: { stepSize: 1, precision: 0, font: { family: 'Inter', size: 11, weight: '500' }, color: '#64748b' }
         }
     });
 
     const applyChartConf = (id, type, data, options) => {
-        if(chartInstances[id]) { chartInstances[id].destroy(); }
+        if (chartInstances[id]) { chartInstances[id].destroy(); }
         const canvasEl = document.getElementById(id);
         if (!canvasEl) return;
         const ctx = canvasEl.getContext('2d');
@@ -1350,38 +1413,38 @@ function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progr
     applyChartConf('chartType', 'bar', {
         labels: typeLabels,
         datasets: [
-            { 
-                label: 'En attente / En cours', 
-                data: typeLabels.map(l => typeCount[l].pending), 
+            {
+                label: 'En attente / En cours',
+                data: typeLabels.map(l => typeCount[l].pending),
                 backgroundColor: (ctx) => {
-                    try { return createGradient(ctx, '#fbbf24', '#f59e0b'); } catch(e) { return '#f59e0b'; }
+                    try { return createGradient(ctx, '#fbbf24', '#f59e0b'); } catch (e) { return '#f59e0b'; }
                 },
                 borderRadius: 8,
                 borderSkipped: false
             },
-            { 
-                label: 'Succès', 
-                data: typeLabels.map(l => typeCount[l].success), 
+            {
+                label: 'Succès',
+                data: typeLabels.map(l => typeCount[l].success),
                 backgroundColor: (ctx) => {
-                    try { return createGradient(ctx, '#34d399', '#10b981'); } catch(e) { return '#10b981'; }
+                    try { return createGradient(ctx, '#34d399', '#10b981'); } catch (e) { return '#10b981'; }
                 },
                 borderRadius: 8,
                 borderSkipped: false
             },
-            { 
-                label: 'Échec', 
-                data: typeLabels.map(l => typeCount[l].fail), 
+            {
+                label: 'Échec',
+                data: typeLabels.map(l => typeCount[l].fail),
                 backgroundColor: (ctx) => {
-                    try { return createGradient(ctx, '#f87171', '#ef4444'); } catch(e) { return '#ef4444'; }
+                    try { return createGradient(ctx, '#f87171', '#ef4444'); } catch (e) { return '#ef4444'; }
                 },
                 borderRadius: 8,
                 borderSkipped: false
             }
         ]
-    }, { 
-        responsive: true, 
+    }, {
+        responsive: true,
         maintainAspectRatio: false,
-        plugins: { 
+        plugins: {
             tooltip: modernTooltip,
             legend: { labels: { font: { family: 'Inter', size: 11 }, usePointStyle: true, pointStyle: 'rectRounded', padding: 16 } }
         },
@@ -1393,38 +1456,38 @@ function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progr
     applyChartConf('chartFeature', 'bar', {
         labels: featLabels,
         datasets: [
-            { 
-                label: 'En attente / En cours', 
-                data: featLabels.map(l => featureCount[l].pending), 
+            {
+                label: 'En attente / En cours',
+                data: featLabels.map(l => featureCount[l].pending),
                 backgroundColor: (ctx) => {
-                    try { return createGradient(ctx, '#818cf8', '#6366f1'); } catch(e) { return '#6366f1'; }
+                    try { return createGradient(ctx, '#818cf8', '#6366f1'); } catch (e) { return '#6366f1'; }
                 },
                 borderRadius: 8,
                 borderSkipped: false
             },
-            { 
-                label: 'Succès', 
-                data: featLabels.map(l => featureCount[l].success), 
+            {
+                label: 'Succès',
+                data: featLabels.map(l => featureCount[l].success),
                 backgroundColor: (ctx) => {
-                    try { return createGradient(ctx, '#34d399', '#10b981'); } catch(e) { return '#10b981'; }
+                    try { return createGradient(ctx, '#34d399', '#10b981'); } catch (e) { return '#10b981'; }
                 },
                 borderRadius: 8,
                 borderSkipped: false
             },
-            { 
-                label: 'Échec', 
-                data: featLabels.map(l => featureCount[l].fail), 
+            {
+                label: 'Échec',
+                data: featLabels.map(l => featureCount[l].fail),
                 backgroundColor: (ctx) => {
-                    try { return createGradient(ctx, '#f87171', '#ef4444'); } catch(e) { return '#ef4444'; }
+                    try { return createGradient(ctx, '#f87171', '#ef4444'); } catch (e) { return '#ef4444'; }
                 },
                 borderRadius: 8,
                 borderSkipped: false
             }
         ]
-    }, { 
-        responsive: true, 
+    }, {
+        responsive: true,
         maintainAspectRatio: false,
-        plugins: { 
+        plugins: {
             tooltip: modernTooltip,
             legend: { labels: { font: { family: 'Inter', size: 11 }, usePointStyle: true, pointStyle: 'rectRounded', padding: 16 } }
         },
@@ -1439,7 +1502,7 @@ function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progr
                 label: 'Réalisé (J/h)',
                 data: [progressData.doneJConception, progressData.doneJExecution],
                 backgroundColor: (ctx) => {
-                    try { return createGradient(ctx, '#34d399', '#10b981'); } catch(e) { return '#10b981'; }
+                    try { return createGradient(ctx, '#34d399', '#10b981'); } catch (e) { return '#10b981'; }
                 },
                 borderRadius: 8,
                 borderSkipped: false
@@ -1451,16 +1514,16 @@ function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progr
                     Math.max(0, progressData.totalJExecution - progressData.doneJExecution)
                 ],
                 backgroundColor: (ctx) => {
-                    try { return createGradient(ctx, '#cbd5e1', '#94a3b8'); } catch(e) { return '#94a3b8'; }
+                    try { return createGradient(ctx, '#cbd5e1', '#94a3b8'); } catch (e) { return '#94a3b8'; }
                 },
                 borderRadius: 8,
                 borderSkipped: false
             }
         ]
-    }, { 
-        responsive: true, 
+    }, {
+        responsive: true,
         maintainAspectRatio: false,
-        plugins: { 
+        plugins: {
             tooltip: modernTooltip,
             legend: { labels: { font: { family: 'Inter', size: 11 }, usePointStyle: true, pointStyle: 'rectRounded', padding: 16 } }
         },
@@ -1483,13 +1546,13 @@ function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progr
             ctx.save();
             const centerX = width / 2 + chart.chartArea.left;
             const centerY = height / 2 + top;
-            
+
             ctx.font = '800 1.75rem Inter';
             ctx.fillStyle = '#1e293b';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(totalTickets, centerX, centerY - 8);
-            
+
             ctx.font = '500 0.7rem Inter';
             ctx.fillStyle = '#64748b';
             ctx.fillText('tickets', centerX, centerY + 14);
@@ -1505,20 +1568,20 @@ function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progr
             borderWidth: 0,
             hoverOffset: 8
         }]
-    }, { 
-        responsive: true, 
-        maintainAspectRatio: false, 
+    }, {
+        responsive: true,
+        maintainAspectRatio: false,
         cutout: '75%',
-        plugins: { 
+        plugins: {
             tooltip: modernTooltip,
-            legend: { 
+            legend: {
                 position: 'bottom',
-                labels: { 
-                    font: { family: 'Inter', size: 11 }, 
-                    usePointStyle: true, 
-                    pointStyle: 'circle', 
-                    padding: 16 
-                } 
+                labels: {
+                    font: { family: 'Inter', size: 11 },
+                    usePointStyle: true,
+                    pointStyle: 'circle',
+                    padding: 16
+                }
             }
         }
     });
@@ -1540,20 +1603,20 @@ function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progr
                         hoverOffset: 8
                     }]
                 },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
                     cutout: '75%',
-                    plugins: { 
+                    plugins: {
                         tooltip: modernTooltip,
-                        legend: { 
+                        legend: {
                             position: 'bottom',
-                            labels: { 
-                                font: { family: 'Inter', size: 11 }, 
-                                usePointStyle: true, 
-                                pointStyle: 'circle', 
-                                padding: 16 
-                            } 
+                            labels: {
+                                font: { family: 'Inter', size: 11 },
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                padding: 16
+                            }
                         }
                     }
                 },
@@ -1572,26 +1635,26 @@ function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progr
             label: 'RAF (J/h)',
             data: workloadData,
             backgroundColor: (ctx) => {
-                try { return createGradient(ctx, '#6366f1', '#0ea5e9', true); } catch(e) { return '#6366f1'; }
+                try { return createGradient(ctx, '#6366f1', '#0ea5e9', true); } catch (e) { return '#6366f1'; }
             },
             borderRadius: 8,
             borderSkipped: false,
             barThickness: 28
         }]
-    }, { 
+    }, {
         indexAxis: 'y',
-        responsive: true, 
+        responsive: true,
         maintainAspectRatio: false,
-        plugins: { 
+        plugins: {
             tooltip: modernTooltip,
             legend: { display: false }
         },
         scales: {
-            x: { 
+            x: {
                 grid: { color: gridCol, drawBorder: false, borderDash: [3, 3] },
                 ticks: { font: { family: 'Inter', size: 11, weight: '500' }, color: '#64748b' }
             },
-            y: { 
+            y: {
                 grid: { display: false },
                 ticks: { font: { family: 'Inter', size: 12, weight: '600' }, color: '#1e293b' }
             }
@@ -1601,7 +1664,7 @@ function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progr
 
 function updateUI() {
     renderTicketsTable();
-    if(activeTab === 'dashboard') {
+    if (activeTab === 'dashboard') {
         renderDashboard();
     }
 }
