@@ -21,7 +21,7 @@
 <body>
     <div class="app-container">
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar" data-html2canvas-ignore>
             <div class="logo">
                 <i data-lucide="check-circle-2" class="icon-accent"></i>
                 <h2>TestTracker</h2>
@@ -50,6 +50,10 @@
                 <header class="top-header">
                     <div class="header-left">
                         <div class="dropdown-group">
+                            <label>Client</label>
+                            <select id="clientSelect" class="select-input"></select>
+                        </div>
+                        <div class="dropdown-group">
                             <label>Projet</label>
                             <select id="projectSelect" class="select-input"></select>
                         </div>
@@ -58,24 +62,24 @@
                                 <label>Version</label>
                                 <select id="versionSelect" class="select-input"></select>
                             </div>
-                            <button class="btn btn-icon-only" id="btnNewVersion" title="Nouvelle Version">
+                            <button class="btn btn-icon-only" id="btnNewVersion" title="Nouvelle Version" data-html2canvas-ignore>
                                 <i data-lucide="plus"></i>
                             </button>
                         </div>
                     </div>
                     <div class="header-right">
-                        <button class="btn btn-primary" id="btnNewTicket">
+                        <button class="btn btn-primary" id="btnNewTicket" data-html2canvas-ignore>
                             <i data-lucide="plus"></i>
                             Nouveau Ticket
                         </button>
-                        <div class="user-profile">
+                        <div class="user-profile" data-html2canvas-ignore>
                             <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" class="avatar">
                         </div>
                     </div>
                 </header>
 
                 <!-- Tabs Navigation -->
-                <div class="tabs-container">
+                <div class="tabs-container" data-html2canvas-ignore>
                     <button class="tab-btn active" data-tab="details">Détails des Tickets</button>
                     <button class="tab-btn" data-tab="dashboard">Tableau de Bord</button>
                 </div>
@@ -218,82 +222,188 @@
                 <div id="tab-dashboard" class="tab-content">
                     <div class="dashboard-header-info"
                         style="display:flex; justify-content:space-between; align-items:flex-end; padding: 1.25rem 1.25rem 0 1.25rem;">
-                        <div class="dashboard-title-group">
-                            <h2 id="dashProjectName"
-                                style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.25rem;">
-                                -</h2>
-                            <p id="dashVersionName"
-                                style="font-size: 0.875rem; color: var(--text-muted); font-weight: 500;">-</p>
+                        <div class="dashboard-title-group" data-html2canvas-ignore>
+                            <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <span id="dashProjectName">-</span>
+                                <span style="color: var(--text-muted); font-weight: 400;">—</span>
+                                <span id="dashVersionName" style="color: var(--text-muted); font-weight: 600;">-</span>
+                            </h2>
                         </div>
-                        <div class="toolbar" style="border-bottom:none; display:flex; padding:0;"
-                            data-html2canvas-ignore>
+                        <div class="toolbar" style="border-bottom:none; display:flex; padding:0; gap: 0.5rem;" data-html2canvas-ignore>
                             <button class="btn btn-primary" id="btnCopyDashboard"
                                 style="background: var(--accent-secondary);">
-                                <i data-lucide="copy"></i>
-                                Copier l'image
+                                <i data-lucide="file-text"></i>
+                                Reporting
+                            </button>
+                            <button class="btn btn-primary" id="btnCopyCharts"
+                                style="background: #8b5cf6;">
+                                <i data-lucide="pie-chart"></i>
+                                Graphiques
                             </button>
                         </div>
                     </div>
                     <!-- Global KPI -->
-                    <div class="kpi-grid">
-                        <div class="kpi-card">
-                            <div class="kpi-icon"><i data-lucide="target"></i></div>
-                            <div class="kpi-info">
-                                <h3>RAF Global (J/h)</h3>
-                                <p class="kpi-value" id="kpiTotalRaf">0.00</p>
+                    <!-- Global KPI Detailed Rows -->
+                    <div class="dashboard-summary" style="padding: 0 1.25rem 1.25rem 1.25rem; display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem;">
+                        
+                        <!-- Risk Analysis Row -->
+                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: -0.5rem; display: flex; align-items: center; gap: 0.8rem;">
+                            <span style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
+                                <i data-lucide="shield-alert" style="width: 14px; height: 14px;"></i> Analyse des Risques de Livraison
+                            </span>
+                            <span style="flex: 1; height: 1px; background: rgba(0,0,0,0.08); margin-top: 1px;"></span>
+                        </h4>
+                        <div id="dashRiskContainer" class="kpi-card" style="width: 100%; max-width: none; display: flex; align-items: center; gap: 1.5rem; padding: 1.25rem; border: 1px solid rgba(0,0,0,0.05);">
+                            <div id="dashRiskIcon" class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 48px; height: 48px;">
+                                <i data-lucide="check-circle"></i>
+                            </div>
+                            <div class="kpi-info" style="flex: 1;">
+                                <h3 style="font-size: 0.9rem; margin-bottom: 0.25rem; color: var(--text-main);">État de la livraison</h3>
+                                <p id="dashRiskText" class="kpi-value" style="font-size: 1.1rem; color: #10b981;">Analyse en cours...</p>
                             </div>
                         </div>
-                        <div class="kpi-card">
-                            <div class="kpi-icon"><i data-lucide="ticket"></i></div>
-                            <div class="kpi-info">
-                                <h3>Total Tickets</h3>
-                                <p class="kpi-value" id="kpiTotalTickets">0</p>
+
+                        <!-- Line 1: Tickets -->
+                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: -0.5rem; display: flex; align-items: center; gap: 0.8rem;">
+                            <span style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
+                                <i data-lucide="layers-2" style="width: 14px; height: 14px;"></i> Périmètre
+                            </span>
+                            <span style="flex: 1; height: 1px; background: rgba(0,0,0,0.08); margin-top: 1px;"></span>
+                        </h4>
+                        <div class="stat-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div class="kpi-card">
+                                <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;"><i data-lucide="file-text"></i></div>
+                                <div class="kpi-info"><h3>Nb US</h3><p class="kpi-value" id="kpiNbUS">0</p></div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;"><i data-lucide="bug"></i></div>
+                                <div class="kpi-info"><h3>Nb Bugs</h3><p class="kpi-value" id="kpiNbBugs">0</p></div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i data-lucide="check-square"></i></div>
+                                <div class="kpi-info"><h3>Nb Tâches</h3><p class="kpi-value" id="kpiNbTasks">0</p></div>
+                            </div>
+                            <div class="kpi-card" style="border: 1px solid rgba(99, 102, 241, 0.2);">
+                                <div class="kpi-icon" style="background: #6366f1; color: white;"><i data-lucide="ticket"></i></div>
+                                <div class="kpi-info"><h3>Total Tickets</h3><p class="kpi-value" id="kpiTotalTickets">0</p></div>
                             </div>
                         </div>
-                        <div class="kpi-card">
-                            <div class="kpi-icon"><i data-lucide="pen-tool"></i></div>
-                            <div class="kpi-info">
-                                <h3>Avance. Conception</h3>
-                                <p class="kpi-value" id="kpiAdvC">0%</p>
-                                <div class="kpi-progress">
-                                    <div class="kpi-progress-bar" id="kpiAdvCBar" style="width: 0%"></div>
+                        <!-- New: Detailed Feature Breakdown -->
+                        <div id="dashFeatureBreakdown" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+                            <!-- Injected by JS -->
+                        </div>
+
+                        <!-- Line 2: J/H Totaux -->
+                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: -0.5rem; display: flex; align-items: center; gap: 0.8rem;">
+                            <span style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
+                                <i data-lucide="calendar" style="width: 14px; height: 14px;"></i> Volume d'Effort Total (J/h)
+                            </span>
+                            <span style="flex: 1; height: 1px; background: rgba(0,0,0,0.08); margin-top: 1px;"></span>
+                        </h4>
+                        <div class="stat-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div class="kpi-card">
+                                <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i data-lucide="pen-tool"></i></div>
+                                <div class="kpi-info"><h3>J/H Conception</h3><p class="kpi-value" id="kpiJH_C">0.00</p></div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-icon" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;"><i data-lucide="play-circle"></i></div>
+                                <div class="kpi-info"><h3>J/H Exécution</h3><p class="kpi-value" id="kpiJH_E">0.00</p></div>
+                            </div>
+                            <div class="kpi-card" style="border: 1px solid rgba(139, 92, 246, 0.2);">
+                                <div class="kpi-icon" style="background: #8b5cf6; color: white;"><i data-lucide="layers"></i></div>
+                                <div class="kpi-info"><h3>Total J/H</h3><p class="kpi-value" id="kpiJH_Total">0.00</p></div>
+                            </div>
+                        </div>
+
+                        <!-- Line 3: RAF Detailed -->
+                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: -0.5rem; display: flex; align-items: center; gap: 0.8rem;">
+                            <span style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
+                                <i data-lucide="hourglass" style="width: 14px; height: 14px;"></i> Reste à Faire (RAF)
+                            </span>
+                            <span style="flex: 1; height: 1px; background: rgba(0,0,0,0.08); margin-top: 1px;"></span>
+                        </h4>
+                        <div class="stat-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div class="kpi-card">
+                                <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i data-lucide="target"></i></div>
+                                <div class="kpi-info"><h3>RAF Conception</h3><p class="kpi-value" id="kpiRaf_C">0.00</p></div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-icon" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;"><i data-lucide="navigation"></i></div>
+                                <div class="kpi-info"><h3>RAF Exécution</h3><p class="kpi-value" id="kpiRaf_E">0.00</p></div>
+                            </div>
+                            <div class="kpi-card" style="border: 1px solid rgba(249, 115, 22, 0.2);">
+                                <div class="kpi-icon" style="background: #f97316; color: white;"><i data-lucide="clock"></i></div>
+                                <div class="kpi-info"><h3>RAF Global</h3><p class="kpi-value" id="kpiTotalRaf">0.00</p></div>
+                            </div>
+                        </div>
+
+                        <!-- Line 4: Progress -->
+                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: -0.5rem; display: flex; align-items: center; gap: 0.8rem;">
+                            <span style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
+                                <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i> Progression Réelle (%)
+                            </span>
+                            <span style="flex: 1; height: 1px; background: rgba(0,0,0,0.08); margin-top: 1px;"></span>
+                        </h4>
+                        <div class="stat-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div class="kpi-card">
+                                <div class="kpi-icon"><i data-lucide="percent"></i></div>
+                                <div class="kpi-info">
+                                    <h3>Avance. Conception</h3>
+                                    <p class="kpi-value" id="kpiAdvC">0%</p>
+                                    <div class="kpi-progress"><div class="kpi-progress-bar" id="kpiAdvCBar" style="width: 0%"></div></div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="kpi-card">
-                            <div class="kpi-icon"><i data-lucide="play-circle"></i></div>
-                            <div class="kpi-info">
-                                <h3>Avance. Exécution</h3>
-                                <p class="kpi-value" id="kpiAdvE">0%</p>
-                                <div class="kpi-progress">
-                                    <div class="kpi-progress-bar" id="kpiAdvEBar" style="width: 0%"></div>
+                            <div class="kpi-card">
+                                <div class="kpi-icon"><i data-lucide="activity"></i></div>
+                                <div class="kpi-info">
+                                    <h3>Avance. Exécution</h3>
+                                    <p class="kpi-value" id="kpiAdvE">0%</p>
+                                    <div class="kpi-progress"><div class="kpi-progress-bar" id="kpiAdvEBar" style="width: 0%"></div></div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="kpi-card">
-                            <div class="kpi-icon"><i data-lucide="pie-chart"></i></div>
-                            <div class="kpi-info">
-                                <h3>Avancement Total</h3>
-                                <p class="kpi-value" id="kpiAdvTotal">0%</p>
-                                <div class="kpi-progress">
-                                    <div class="kpi-progress-bar" id="kpiAdvTotalBar" style="width: 0%"></div>
+                            <div class="kpi-card" style="border: 1px solid rgba(236, 72, 153, 0.2);">
+                                <div class="kpi-icon" style="background: #ec4899; color: white;"><i data-lucide="pie-chart"></i></div>
+                                <div class="kpi-info">
+                                    <h3>Avancement Total</h3>
+                                    <p class="kpi-value" id="kpiAdvTotal">0%</p>
+                                    <div class="kpi-progress"><div class="kpi-progress-bar" id="kpiAdvTotalBar" style="width: 0%"></div></div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Charts Area -->
+                    <div id="chartsRegion" style="padding: 0 1.25rem 0.5rem 1.25rem; margin-top: 2rem;">
+                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem;">
+                            <span style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
+                                <i data-lucide="bar-chart-3" style="width: 14px; height: 14px;"></i> Analyses Graphiques Détaillées
+                            </span>
+                        </h4>
                     <div class="charts-grid">
+                        <!-- Conception Status -->
                         <div class="chart-card glass-panel">
-                            <h3>Statut d'exécution par Type</h3>
+                            <h3>Statut de Conception par Type</h3>
                             <div class="chart-container">
-                                <canvas id="chartType"></canvas>
+                                <canvas id="chartTypeDesign"></canvas>
                             </div>
                         </div>
                         <div class="chart-card glass-panel">
-                            <h3>Statut d'exécution par Fonctionnalité</h3>
+                            <h3>Statut de Conception par Fonctionnalité</h3>
                             <div class="chart-container">
-                                <canvas id="chartFeature"></canvas>
+                                <canvas id="chartFeatureDesign"></canvas>
+                            </div>
+                        </div>
+                        <!-- Execution Status -->
+                        <div class="chart-card glass-panel">
+                            <h3>Statut d'Exécution par Type</h3>
+                            <div class="chart-container">
+                                <canvas id="chartTypeExec"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card glass-panel">
+                            <h3>Statut d'Exécution par Fonctionnalité</h3>
+                            <div class="chart-container">
+                                <canvas id="chartFeatureExec"></canvas>
                             </div>
                         </div>
                         <div class="chart-card glass-panel">
@@ -333,6 +443,7 @@
                             <tr>
                                 <th data-col="id" onclick="toggleSort('projects', 'id')" style="cursor:pointer">ID<span
                                         id="sort-projects-id"></span></th>
+                                <th data-col="client" onclick="toggleSort('projects', 'client')" style="cursor:pointer">Client<span id="sort-projects-client"></span></th>
                                 <th data-col="name" onclick="toggleSort('projects', 'name')" style="cursor:pointer">Nom
                                     du Projet<span id="sort-projects-name"></span></th>
                                 <th data-col="ratioC" onclick="toggleSort('projects', 'designRatio')"
@@ -346,6 +457,11 @@
                             <tr class="filter-row">
                                 <th data-col="id"><select class="filter-input" data-filter-table="projects"
                                         data-filter-col="id" onchange="onFilterChange('projects', 'id', this.value)">
+                                        <option value="">Tout</option>
+                                    </select></th>
+                                <th data-col="client"><select class="filter-input" data-filter-table="projects"
+                                        data-filter-col="client"
+                                        onchange="onFilterChange('projects', 'client', this.value)">
                                         <option value="">Tout</option>
                                     </select></th>
                                 <th data-col="name"><select class="filter-input" data-filter-table="projects"
@@ -419,8 +535,10 @@
                                     de la Version<span id="sort-versions-name"></span></th>
                                 <th data-col="project" onclick="toggleSort('versions', 'project')"
                                     style="cursor:pointer">Projet<span id="sort-versions-project"></span></th>
-                                <th data-col="date" onclick="toggleSort('versions', 'deliveryDate')"
-                                    style="cursor:pointer">Date Livraison Prévue<span
+                                <th data-col="deliveryDateRecette" onclick="toggleSort('versions', 'deliveryDateRecette')"
+                                    style="cursor:pointer">Date Recette<span id="sort-versions-deliveryDateRecette"></span></th>
+                                <th data-col="deliveryDate" onclick="toggleSort('versions', 'deliveryDate')"
+                                    style="cursor:pointer">Date Livraison Client<span
                                         id="sort-versions-deliveryDate"></span></th>
                                 <th>Actions</th>
                             </tr>
@@ -437,6 +555,11 @@
                                 <th data-col="project"><select class="filter-input" data-filter-table="versions"
                                         data-filter-col="project"
                                         onchange="onFilterChange('versions', 'project', this.value)">
+                                        <option value="">Tout</option>
+                                    </select></th>
+                                <th data-col="deliveryDateRecette"><select class="filter-input" data-filter-table="versions"
+                                        data-filter-col="deliveryDateRecette"
+                                        onchange="onFilterChange('versions', 'deliveryDateRecette', this.value)">
                                         <option value="">Tout</option>
                                     </select></th>
                                 <th data-col="deliveryDate"><select class="filter-input" data-filter-table="versions"
@@ -474,10 +597,14 @@
                             <i data-lucide="info" class="form-section-icon"></i>
                             <span>Informations du projet</span>
                         </div>
-                        <div class="form-row">
+                        <div class="form-row form-row-2col">
+                            <div class="form-group form-group-flex">
+                                <label>Client</label>
+                                <input type="text" id="pClient" required class="text-input" placeholder="Ex: Client X">
+                            </div>
                             <div class="form-group form-group-flex">
                                 <label>Nom du Projet</label>
-                                <input type="text" id="pName" required class="text-input">
+                                <input type="text" id="pName" required class="text-input" placeholder="Ex: Boutique v2">
                             </div>
                         </div>
                         <div class="form-row">
@@ -674,6 +801,12 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group form-group-flex">
+                                <label>Client</label>
+                                <select id="vClient" required class="select-input"></select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group form-group-flex">
                                 <label>Projet</label>
                                 <select id="vProject" required class="select-input"></select>
                             </div>
@@ -687,8 +820,22 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group form-group-flex">
-                                <label>Date de Livraison Prévue</label>
-                                <input type="date" id="vDate" class="text-input">
+                                <label>Date de Livraison en Recette</label>
+                                <div class="date-select-group">
+                                    <select id="vDateRecette_D" class="select-input"></select>
+                                    <select id="vDateRecette_M" class="select-input"></select>
+                                    <select id="vDateRecette_Y" class="select-input date-select-year"></select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group form-group-flex">
+                                <label>Date de Livraison Client</label>
+                                <div class="date-select-group">
+                                    <select id="vDate_D" class="select-input"></select>
+                                    <select id="vDate_M" class="select-input"></select>
+                                    <select id="vDate_Y" class="select-input date-select-year"></select>
+                                </div>
                             </div>
                         </div>
                     </div>

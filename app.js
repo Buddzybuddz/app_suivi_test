@@ -39,6 +39,7 @@ async function loadStore() {
 }
 
 // State Management
+let currentClientName = '';
 let currentProjectId = '';
 let currentVersionId = '';
 let activeTab = 'details';
@@ -50,6 +51,11 @@ let chartInstances = {};
 // Arrondi au multiple de 0.15 supérieur
 function round015Up(val) {
     return Math.ceil(val / 0.15) * 0.15;
+}
+
+// Arrondi au multiple de 0.5 supérieur
+function round05Up(val) {
+    return Math.ceil(val / 0.5) * 0.5;
 }
 
 // Calcule la largeur minimale requise (Version Sécurité Maximale)
@@ -280,12 +286,18 @@ function getCalculations(ticket, project) {
     if (!project) return { jConception: '0.00', jExecution: '0.00', raf: '0.00' };
     const jConception = round015Up(ticket.nbTestCases / project.designRatio);
     const jExecution = round015Up(ticket.nbTestCases / project.executionRatio);
-    const rawRaf = Math.max(0, (jConception + jExecution) - (parseFloat(ticket.consumed) || 0));
-    const raf = round015Up(rawRaf);
+    
+    // Nouvelle règle : Charge entière si pas terminé, 0 sinon
+    const rafC = ticket.statusDesign !== 'Terminée' ? jConception : 0;
+    const rafE = (ticket.statusExecution !== 'Terminée OK' && ticket.statusExecution !== 'Terminée KO') ? jExecution : 0;
+    
+    const raf = round015Up(rafC + rafE);
     return {
         jConception: jConception.toFixed(2),
         jExecution: jExecution.toFixed(2),
-        raf: raf.toFixed(2)
+        raf: raf.toFixed(2),
+        rafC: rafC,
+        rafE: rafE
     };
 }
 
@@ -303,6 +315,7 @@ const DOM = {
     btnCloseProjectModal: document.getElementById('btnCloseProjectModal'),
     projectForm: document.getElementById('projectForm'),
     pId: document.getElementById('pId'),
+    pClient: document.getElementById('pClient'),
     pName: document.getElementById('pName'),
     pStateInput: document.getElementById('pStateInput'),
     btnAddState: document.getElementById('btnAddState'),
@@ -336,10 +349,17 @@ const DOM = {
     btnCloseVersionModal: document.getElementById('btnCloseVersionModal'),
     versionForm: document.getElementById('versionForm'),
     vId: document.getElementById('vId'),
+    vClient: document.getElementById('vClient'),
     vProject: document.getElementById('vProject'),
     vName: document.getElementById('vName'),
-    vDate: document.getElementById('vDate'),
+    vDateRecette_D: document.getElementById('vDateRecette_D'),
+    vDateRecette_M: document.getElementById('vDateRecette_M'),
+    vDateRecette_Y: document.getElementById('vDateRecette_Y'),
+    vDate_D: document.getElementById('vDate_D'),
+    vDate_M: document.getElementById('vDate_M'),
+    vDate_Y: document.getElementById('vDate_Y'),
 
+    clientSelect: document.getElementById('clientSelect'),
     projectSelect: document.getElementById('projectSelect'),
     versionSelect: document.getElementById('versionSelect'),
     tabs: document.querySelectorAll('.tab-btn'),
@@ -348,6 +368,7 @@ const DOM = {
     filterUser: document.getElementById('filterUser'),
     btnNewTicket: document.getElementById('btnNewTicket'),
     btnCopyDashboard: document.getElementById('btnCopyDashboard'),
+    btnCopyCharts: document.getElementById('btnCopyCharts'),
     modal: document.getElementById('ticketModal'),
     btnCloseModal: document.getElementById('btnCloseModal'),
     ticketForm: document.getElementById('ticketForm'),
@@ -376,10 +397,13 @@ async function init() {
     await loadStore();
 
     if (Store.projects.length > 0) {
+        // Initialiser avec le client du premier projet
         currentProjectId = Store.projects[0].id;
+        currentClientName = Store.projects[0].client || '';
         const versions = Store.versions.filter(v => v.projectId === currentProjectId);
         if (versions.length > 0) currentVersionId = versions[0].id;
     } else {
+        currentClientName = '';
         currentProjectId = '';
         currentVersionId = '';
     }
@@ -392,11 +416,27 @@ async function init() {
 }
 
 function populateHeaderSelects() {
-    DOM.projectSelect.innerHTML = Store.projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    // 1. Peupler les clients
+    const clients = Array.from(new Set(Store.projects.map(p => p.client || ''))).sort();
+    DOM.clientSelect.innerHTML = clients.map(c => `<option value="${c}">${c || 'Sans Client'}</option>`).join('');
+    DOM.clientSelect.value = currentClientName;
+
+    // 2. Peupler les projets filtrés par client
+    const filteredProjects = Store.projects.filter(p => (p.client || '') === currentClientName);
+    DOM.projectSelect.innerHTML = filteredProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    
+    // S'assurer que le projet sélectionné existe pour ce client
+    if (!filteredProjects.find(p => p.id === currentProjectId)) {
+        currentProjectId = filteredProjects[0]?.id || '';
+    }
     DOM.projectSelect.value = currentProjectId;
 
     if (DOM.vProject) {
-        DOM.vProject.innerHTML = Store.projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        // Pour les autres menus, on peut garder le format Client - Projet
+        DOM.vProject.innerHTML = Store.projects.map(p => {
+            const displayName = p.client ? `${p.client} - ${p.name}` : p.name;
+            return `<option value="${p.id}">${displayName}</option>`;
+        }).join('');
     }
 
     updateVersionSelect();
@@ -488,6 +528,7 @@ const openProjectModal = (p = null) => {
     if (p) {
         DOM.projectModalTitle.textContent = "Modifier le Projet";
         DOM.pId.value = p.id;
+        DOM.pClient.value = p.client || '';
         DOM.pName.value = p.name;
         currentProjectStates = p.ticketStates ? [...p.ticketStates] : ['Nouveau'];
         DOM.pRatioC.value = p.designRatio;
@@ -496,12 +537,158 @@ const openProjectModal = (p = null) => {
     } else {
         DOM.projectModalTitle.textContent = "Nouveau Projet";
         DOM.pId.value = '';
+        DOM.pClient.value = '';
         currentProjectStates = ['Nouveau', 'Validé', 'Rejeté', 'Fermé'];
         currentProjectUsers = [];
     }
     renderProjectMembersBadge();
     renderProjectStatesBadge();
     DOM.projectModal.classList.add('show');
+};
+
+const MONTH_NAMES = [
+    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+];
+
+function getDaysInMonth(month, year) {
+    return new Date(year, month, 0).getDate();
+}
+
+function populate31Days(dEl) {
+    let daysHtml = '<option value="">Jour</option>';
+    for (let d = 1; d <= 31; d++) {
+        daysHtml += `<option value="${d}">${d < 10 ? '0' + d : d}</option>`;
+    }
+    dEl.innerHTML = daysHtml;
+}
+
+function updateDaysList(dEl, mEl, yEl) {
+    const year = parseInt(yEl.value) || new Date().getFullYear();
+    const month = parseInt(mEl.value) || 1;
+    const currentDay = dEl.value;
+    const daysCount = getDaysInMonth(month, year);
+    
+    let daysHtml = '<option value="">Jour</option>';
+    for (let d = 1; d <= daysCount; d++) {
+        daysHtml += `<option value="${d}">${d < 10 ? '0' + d : d}</option>`;
+    }
+    dEl.innerHTML = daysHtml;
+    if (currentDay && parseInt(currentDay) <= daysCount) {
+        dEl.value = currentDay;
+    }
+}
+
+function setupDateSelectorGroup(dEl, mEl, yEl) {
+    // Populate Years
+    const currentYear = new Date().getFullYear();
+    let yearsHtml = '<option value="">Année</option>';
+    for (let y = currentYear - 1; y <= currentYear + 10; y++) {
+        yearsHtml += `<option value="${y}">${y}</option>`;
+    }
+    yEl.innerHTML = yearsHtml;
+
+    // Populate Months
+    let monthsHtml = '<option value="">Mois</option>';
+    MONTH_NAMES.forEach((m, i) => {
+        monthsHtml += `<option value="${i + 1}">${m}</option>`;
+    });
+    mEl.innerHTML = monthsHtml;
+
+    // Populate Days
+    populate31Days(dEl);
+
+    // Listeners
+    mEl.addEventListener('change', () => updateDaysList(dEl, mEl, yEl));
+    yEl.addEventListener('change', () => updateDaysList(dEl, mEl, yEl));
+}
+
+function setDateValues(dEl, mEl, yEl, dateStr) {
+    if (dateStr) {
+        const d = new Date(dateStr);
+        if (!isNaN(d.getTime())) {
+            yEl.value = d.getFullYear();
+            mEl.value = d.getMonth() + 1;
+            updateDaysList(dEl, mEl, yEl);
+            dEl.value = d.getDate();
+            return;
+        }
+    }
+    yEl.value = "";
+    mEl.value = "";
+    populate31Days(dEl);
+}
+
+function getDateStringFromSelectors(dEl, mEl, yEl) {
+    const y = yEl.value;
+    const m = mEl.value;
+    const d = dEl.value;
+    if (!y || !m || !d) return null;
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+}
+
+// Version Modal Logic
+const openVersionModal = (v = null, fromHeader = false) => {
+    DOM.versionForm.reset();
+    
+    // 1. Peupler les clients dans la modale
+    const clients = Array.from(new Set(Store.projects.map(p => p.client || ''))).sort();
+    DOM.vClient.innerHTML = clients.map(c => `<option value="${c}">${c || 'Sans Client'}</option>`).join('');
+    
+    const updateVProjectList = (clientName) => {
+        const filtered = Store.projects.filter(p => (p.client || '') === clientName);
+        DOM.vProject.innerHTML = filtered.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    };
+
+    if (v) {
+        const p = Store.projects.find(proj => proj.id === v.projectId);
+        const cName = p ? (p.client || '') : '';
+        
+        DOM.versionModalTitle.textContent = "Modifier la Version";
+        DOM.vId.value = v.id;
+        DOM.vClient.value = cName;
+        updateVProjectList(cName);
+        DOM.vProject.value = v.projectId;
+        DOM.vClient.disabled = true;
+        DOM.vProject.disabled = true;
+        DOM.vName.value = v.name;
+        setDateValues(DOM.vDateRecette_D, DOM.vDateRecette_M, DOM.vDateRecette_Y, v.deliveryDateRecette);
+        setDateValues(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y, v.deliveryDate);
+    } else {
+        DOM.versionModalTitle.textContent = "Nouvelle Version";
+        DOM.vId.value = '';
+        setDateValues(DOM.vDateRecette_D, DOM.vDateRecette_M, DOM.vDateRecette_Y, null);
+        setDateValues(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y, null);
+        DOM.vClient.disabled = false;
+        DOM.vProject.disabled = false;
+        
+        // Initialisation basée sur la sélection actuelle du header si possible
+        const initClient = fromHeader ? currentClientName : (clients[0] || '');
+        DOM.vClient.value = initClient;
+        updateVProjectList(initClient);
+        
+        if (fromHeader && currentProjectId) {
+            DOM.vProject.value = currentProjectId;
+        }
+    }
+    DOM.versionModal.classList.add('show');
+};
+
+// User Modal Logic
+const openUserModal = (u = null) => {
+    DOM.userForm.reset();
+    if (u) {
+        DOM.userModalTitle.textContent = "Modifier l'Utilisateur";
+        DOM.uId.value = u.id;
+        DOM.uiName.value = u.name;
+        DOM.uiEmail.value = u.email;
+        DOM.uRole.value = u.role;
+    } else {
+        DOM.userModalTitle.textContent = "Nouvel Utilisateur";
+        DOM.uId.value = '';
+        DOM.uRole.value = 'Testeur';
+    }
+    DOM.userModal.classList.add('show');
 };
 
 function updateFormStates() {
@@ -618,6 +805,7 @@ function setupEventListeners() {
             const selectedStates = [...currentProjectStates];
 
             const data = {
+                client: DOM.pClient.value,
                 name: DOM.pName.value,
                 ticketStates: selectedStates.length > 0 ? selectedStates : ['Nouveau'],
                 userIds: selectedUsers,
@@ -647,28 +835,16 @@ function setupEventListeners() {
         });
     }
 
-    // Version Modal Logic
-    const openVersionModal = (v = null, fromHeader = false) => {
-        DOM.versionForm.reset();
-        if (v) {
-            DOM.versionModalTitle.textContent = "Modifier la Version";
-            DOM.vId.value = v.id;
-            DOM.vProject.value = v.projectId;
-            DOM.vProject.disabled = true;
-            DOM.vName.value = v.name;
-            DOM.vDate.value = v.deliveryDate || '';
-        } else {
-            DOM.versionModalTitle.textContent = "Nouvelle Version";
-            DOM.vId.value = '';
-            DOM.vProject.disabled = fromHeader;
-            if (fromHeader && currentProjectId) {
-                DOM.vProject.value = currentProjectId;
-            } else if (!fromHeader && Store.projects.length > 0) {
-                DOM.vProject.value = Store.projects[0].id;
-            }
-        }
-        DOM.versionModal.classList.add('show');
-    };
+
+
+    // Listener pour le changement de client dans la modale version
+    if (DOM.vClient) {
+        DOM.vClient.addEventListener('change', (e) => {
+            const clientName = e.target.value;
+            const filtered = Store.projects.filter(p => (p.client || '') === clientName);
+            DOM.vProject.innerHTML = filtered.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        });
+    }
 
     if (DOM.btnNewVersion) {
         DOM.btnNewVersion.addEventListener('click', () => {
@@ -695,7 +871,8 @@ function setupEventListeners() {
             const data = {
                 projectId: DOM.vProject.value,
                 name: DOM.vName.value,
-                deliveryDate: DOM.vDate.value || null
+                deliveryDateRecette: getDateStringFromSelectors(DOM.vDateRecette_D, DOM.vDateRecette_M, DOM.vDateRecette_Y),
+                deliveryDate: getDateStringFromSelectors(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y)
             };
 
             try {
@@ -722,22 +899,6 @@ function setupEventListeners() {
         });
     }
 
-    // User Modal Logic
-    const openUserModal = (u = null) => {
-        DOM.userForm.reset();
-        if (u) {
-            DOM.userModalTitle.textContent = "Modifier l'Utilisateur";
-            DOM.uId.value = u.id;
-            DOM.uiName.value = u.name;
-            DOM.uiEmail.value = u.email;
-            DOM.uRole.value = u.role;
-        } else {
-            DOM.userModalTitle.textContent = "Nouvel Utilisateur";
-            DOM.uId.value = '';
-            DOM.uRole.value = 'Testeur';
-        }
-        DOM.userModal.classList.add('show');
-    };
 
     if (DOM.btnNewUser) {
         DOM.btnNewUser.addEventListener('click', () => {
@@ -780,29 +941,64 @@ function setupEventListeners() {
     if (DOM.btnCopyDashboard) {
         DOM.btnCopyDashboard.addEventListener('click', async () => {
             const originalText = DOM.btnCopyDashboard.innerHTML;
-            DOM.btnCopyDashboard.innerHTML = '<i data-lucide="loader"></i> Capture...';
-            lucide.createIcons();
+            DOM.btnCopyDashboard.innerHTML = '<i data-lucide="loader"></i> ...';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
 
             try {
-                const dashboard = document.getElementById('tab-dashboard');
+                const viewTracker = document.getElementById('view-tracker');
+                
+                // 1. CLONE - Deep clone to avoid messing with live DOM
+                const clone = viewTracker.cloneNode(true);
+                
+                // 2. PREPARE THE CLONE STYLE - Off-screen and absolute height
+                const originalWidth = viewTracker.offsetWidth;
+                clone.style.position = 'absolute';
+                clone.style.left = '-9999px';
+                clone.style.top = '0';
+                clone.style.width = originalWidth + 'px';
+                clone.style.height = 'auto'; // CRITICAL: Force auto height
+                clone.style.overflow = 'visible'; // CRITICAL: Show everything
+                clone.style.backgroundColor = '#f1f5f9';
+                
+                document.body.appendChild(clone);
+                
+                // 3. CLEANUP THE CLONE (Remove charts, tabs, ignored elements)
+                const chartsClone = clone.querySelector('#chartsRegion');
+                if (chartsClone) chartsClone.remove();
+                
+                const tabsClone = clone.querySelector('.tabs-container');
+                if (tabsClone) tabsClone.remove();
+                
+                // Remove elements marked with data-html2canvas-ignore
+                clone.querySelectorAll('[data-html2canvas-ignore]').forEach(el => el.remove());
+                
+                // 4. REPLACE SELECTS WITH STATIC TEXT IN CLONE
+                clone.querySelectorAll('select').forEach(sel => {
+                    const originalSel = document.getElementById(sel.id);
+                    const val = originalSel ? originalSel.options[originalSel.selectedIndex]?.text : '-';
+                    
+                    const span = document.createElement('span');
+                    span.textContent = val;
+                    span.style.cssText = 'font-weight: 700; font-size: 1.1rem; color: var(--text-main); margin-top: 0.2rem; display: block;';
+                    
+                    sel.replaceWith(span);
+                });
 
-                // Temporarily disable restricted height/overflow to capture full content
-                const originalHeight = dashboard.style.height;
-                const originalOverflow = dashboard.style.overflow;
-                dashboard.style.height = 'auto';
-                dashboard.style.overflow = 'visible';
-
-                const canvas = await html2canvas(dashboard, {
+                // 5. CAPTURE THE CLONE
+                const canvas = await html2canvas(clone, {
                     backgroundColor: '#f1f5f9',
                     scale: 2,
                     logging: false,
                     useCORS: true,
-                    scrollY: -window.scrollY
+                    scrollX: 0,
+                    scrollY: 0,
+                    width: originalWidth,
+                    windowWidth: originalWidth,
+                    windowHeight: clone.scrollHeight
                 });
 
-                // Restore
-                dashboard.style.height = originalHeight;
-                dashboard.style.overflow = originalOverflow;
+                // 6. REMOVE CLONE
+                document.body.removeChild(clone);
 
                 canvas.toBlob(async (blob) => {
                     if (!blob) throw new Error("Erreur lors de la création de l'image.");
@@ -811,25 +1007,101 @@ function setupEventListeners() {
 
                     DOM.btnCopyDashboard.innerHTML = '<i data-lucide="check"></i> Copié !';
                     DOM.btnCopyDashboard.style.background = 'var(--success)';
-                    lucide.createIcons();
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
 
                     setTimeout(() => {
                         DOM.btnCopyDashboard.innerHTML = originalText;
                         DOM.btnCopyDashboard.style.background = 'var(--accent-secondary)';
-                        lucide.createIcons();
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
                     }, 2000);
                 });
             } catch (err) {
                 console.error(err);
-                alert("Impossible de copier l'image. Assurez-vous d'être sur un navigateur moderne et sécurisé (HTTPS).");
+                alert("Erreur de capture du rapport.");
                 DOM.btnCopyDashboard.innerHTML = originalText;
-                lucide.createIcons();
             }
+        });
+    }
+
+    if (DOM.btnCopyCharts) {
+        DOM.btnCopyCharts.addEventListener('click', async () => {
+            const originalText = DOM.btnCopyCharts.innerHTML;
+            DOM.btnCopyCharts.innerHTML = '<i data-lucide="loader"></i> ...';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            try {
+                const chartsRegion = document.getElementById('chartsRegion');
+                if (!chartsRegion) return;
+
+                const clone = chartsRegion.cloneNode(true);
+                const originalWidth = chartsRegion.offsetWidth;
+                
+                clone.style.position = 'absolute';
+                clone.style.left = '-9999px';
+                clone.style.top = '0';
+                clone.style.width = originalWidth + 'px';
+                clone.style.height = 'auto';
+                clone.style.overflow = 'visible';
+                clone.style.backgroundColor = '#f1f5f9';
+                
+                document.body.appendChild(clone);
+
+                const canvas = await html2canvas(clone, {
+                    backgroundColor: '#f1f5f9',
+                    scale: 2,
+                    logging: false,
+                    useCORS: true,
+                    windowHeight: clone.scrollHeight
+                });
+
+                document.body.removeChild(clone);
+
+                canvas.toBlob(async (blob) => {
+                    if (!blob) throw new Error("Erreur lors de la création de l'image.");
+                    const item = new ClipboardItem({ "image/png": blob });
+                    await navigator.clipboard.write([item]);
+
+                    DOM.btnCopyCharts.innerHTML = '<i data-lucide="check"></i> Copié !';
+                    DOM.btnCopyCharts.style.background = 'var(--success)';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+                    setTimeout(() => {
+                        DOM.btnCopyCharts.innerHTML = originalText;
+                        DOM.btnCopyCharts.style.background = '#8b5cf6';
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    }, 2000);
+                });
+            } catch (err) {
+                console.error(err);
+                alert("Erreur de capture des graphiques.");
+                DOM.btnCopyCharts.innerHTML = originalText;
+            }
+        });
+    }
+
+    // Initialize custom date selectors once
+    setupDateSelectorGroup(DOM.vDateRecette_D, DOM.vDateRecette_M, DOM.vDateRecette_Y);
+    setupDateSelectorGroup(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y);
+
+    if (DOM.clientSelect) {
+        DOM.clientSelect.addEventListener('change', (e) => {
+            currentClientName = e.target.value;
+            // On recrée la liste des projets pour ce client
+            const filteredProjs = Store.projects.filter(p => (p.client || '') === currentClientName);
+            currentProjectId = filteredProjs[0]?.id || '';
+            
+            populateHeaderSelects(); // Mettra à jour DOM.projectSelect
+            updateVersionSelect();
+            updateFormUsers();
+            updateUI();
         });
     }
 
     DOM.projectSelect.addEventListener('change', (e) => {
         currentProjectId = e.target.value;
+        const p = Store.projects.find(proj => proj.id === currentProjectId);
+        if (p) currentClientName = p.client || '';
+        
         updateVersionSelect();
         updateFormUsers();
         updateUI();
@@ -946,6 +1218,7 @@ function renderProjectsTable() {
     DOM.projectsTbody.innerHTML = sorted.map(p => `
         <tr>
             <td>${p.id}</td>
+            <td>${p.client || '-'}</td>
             <td><strong>${p.name}</strong></td>
             <td>${p.designRatio}</td>
             <td>${p.executionRatio}</td>
@@ -1003,6 +1276,7 @@ function renderVersionsTable() {
                 <td>${v.id}</td>
                 <td><strong>${v.name}</strong></td>
                 <td>${pName}</td>
+                <td>${v.deliveryDateRecette ? new Date(v.deliveryDateRecette).toLocaleDateString('fr-FR') : '-'}</td>
                 <td>${v.deliveryDate ? new Date(v.deliveryDate).toLocaleDateString('fr-FR') : '-'}</td>
                 <td>
                     <button class="btn" style="padding: 0.4rem; background: var(--accent-primary);" onclick="editVersion('${v.id}')" title="Modifier">
@@ -1023,14 +1297,7 @@ function renderVersionsTable() {
 window.editVersion = (id) => {
     const v = Store.versions.find(ver => ver.id === id);
     if (v) {
-        DOM.versionForm.reset();
-        DOM.versionModalTitle.textContent = "Modifier la Version";
-        DOM.vId.value = v.id;
-        DOM.vProject.value = v.projectId;
-        DOM.vProject.disabled = true;
-        DOM.vName.value = v.name;
-        DOM.vDate.value = v.deliveryDate || '';
-        DOM.versionModal.classList.add('show');
+        openVersionModal(v);
     }
 };
 
@@ -1243,68 +1510,265 @@ function renderDashboard() {
     if (!project) return;
 
     // Update dashboard header info
-    if (DOM.dashProjectName) DOM.dashProjectName.textContent = project.name;
+    if (DOM.dashProjectName) {
+        const clientPrefix = project.client ? `${project.client} - ` : '';
+        DOM.dashProjectName.textContent = `${clientPrefix}${project.name}`;
+    }
     const currentVersion = Store.versions.find(v => v.id === currentVersionId);
-    if (DOM.dashVersionName) DOM.dashVersionName.textContent = currentVersion ? `Version : ${currentVersion.name}` : '-';
+    if (DOM.dashVersionName) DOM.dashVersionName.textContent = currentVersion ? currentVersion.name : '-';
 
     const viewTickets = Store.tickets.filter(t => t.versionId === currentVersionId);
 
     let totalRaf = 0;
+    let rafC_total = 0;
+    let rafE_total = 0;
     let totalJConception = 0;
     let doneJConception = 0;
     let totalJExecution = 0;
     let doneJExecution = 0;
 
-    const typeCount = {};
-    const featureCount = {};
-    const statusCount = {};
-    const userRaf = {};
+    let nbUS = 0;
+    let nbBugs = 0;
+    let nbTasks = 0;
 
+    const execByType = {};
+    const designByType = {};
+    const execByFeat = {};
+    const designByFeat = {};
+    
+    const activeExecStatuses = new Set();
+    const activeDesignStatuses = new Set();
+    const featureStats = {}; // Détails par périmètre (us, bug, task)
+    
+    // Initialisation des variables de calcul (essentielles)
+    const userRaf = {};
+    const statusCount = {}; // Pour le graphique global Doughnut
     let totalPointsC = 0;
     let totalPointsE = 0;
 
     viewTickets.forEach(t => {
         const calcs = getCalculations(t, project);
         totalRaf += parseFloat(calcs.raf);
+        rafC_total += calcs.rafC;
+        rafE_total += calcs.rafE;
 
-        // Conception logic: 100% si Terminée, sinon 0%
-        if (t.statusDesign === 'Terminée') totalPointsC += 100;
-        else totalPointsC += 0;
+        // Stats by Type and Feature
+        if (!execByType[t.type]) execByType[t.type] = {};
+        if (!designByType[t.type]) designByType[t.type] = {};
+        if (!execByFeat[t.feature]) execByFeat[t.feature] = {};
+        if (!designByFeat[t.feature]) designByFeat[t.feature] = {};
 
-        // Execution logic: 100% if "Terminée OK/KO", 0% else
-        if (t.statusExecution && t.statusExecution.startsWith('Terminée')) totalPointsE += 100;
-        else totalPointsE += 0;
+        const sE = t.statusExecution || 'À exécuter';
+        const sD = t.statusDesign || 'À faire';
 
-        // Statistics
-        if (!typeCount[t.type]) typeCount[t.type] = { success: 0, fail: 0, pending: 0 };
-        if (t.statusExecution === 'Terminée OK') typeCount[t.type].success++;
-        else if (t.statusExecution === 'Terminée KO') typeCount[t.type].fail++;
-        else typeCount[t.type].pending++;
+        execByType[t.type][sE] = (execByType[t.type][sE] || 0) + 1;
+        designByType[t.type][sD] = (designByType[t.type][sD] || 0) + 1;
+        execByFeat[t.feature][sE] = (execByFeat[t.feature][sE] || 0) + 1;
+        designByFeat[t.feature][sD] = (designByFeat[t.feature][sD] || 0) + 1;
 
-        statusCount[t.statusExecution] = (statusCount[t.statusExecution] || 0) + 1;
+        activeExecStatuses.add(sE);
+        activeDesignStatuses.add(sD);
+        
+        // Comptage global pour le Doughnut
+        statusCount[sE] = (statusCount[sE] || 0) + 1;
 
-        if (!featureCount[t.feature]) featureCount[t.feature] = { success: 0, fail: 0, pending: 0 };
-        if (t.statusExecution === 'Terminée OK') featureCount[t.feature].success++;
-        else if (t.statusExecution === 'Terminée KO') featureCount[t.feature].fail++;
-        else featureCount[t.feature].pending++;
+        // Type counting
+        const typeNormalized = (t.type || "").toUpperCase();
+        if (typeNormalized.includes("US")) nbUS++;
+        else if (typeNormalized.includes("BUG")) nbBugs++;
+        else if (typeNormalized.includes("TÂCHE") || typeNormalized.includes("TACHE")) nbTasks++;
 
-        // Workload (still uses RAF for visualization)
-        if (t.assignDesignId) {
-            if (!userRaf[t.assignDesignId]) userRaf[t.assignDesignId] = 0;
-            userRaf[t.assignDesignId] += parseFloat(t.nbTestCases * 0.1); // Fallback logic for workload? Or keep RAF?
+        // Project overall progress
+        if (t.statusDesign === 'Terminée') {
+            totalPointsC += 100;
+            doneJConception += parseFloat(calcs.jConception);
         }
+        totalJConception += parseFloat(calcs.jConception);
+
+        if (t.statusExecution && t.statusExecution.startsWith('Terminée')) {
+            totalPointsE += 100;
+            doneJExecution += parseFloat(calcs.jExecution);
+        }
+        totalJExecution += parseFloat(calcs.jExecution);
+
+        // Workload Attribution
+        if (t.assignDesignId) {
+            if (!userRaf[t.assignDesignId]) userRaf[t.assignDesignId] = { c: 0, e: 0 };
+            userRaf[t.assignDesignId].c += calcs.rafC;
+        }
+        if (t.assignExecutionId) {
+            if (!userRaf[t.assignExecutionId]) userRaf[t.assignExecutionId] = { c: 0, e: 0 };
+            userRaf[t.assignExecutionId].e += calcs.rafE;
+        }
+
+        // Feature stats
+        const f = t.feature || 'Sans périmètre';
+        if (!featureStats[f]) featureStats[f] = { us: 0, bug: 0, task: 0, total: 0 };
+        featureStats[f].total++;
+        if (typeNormalized.includes("US")) featureStats[f].us++;
+        else if (typeNormalized.includes("BUG")) featureStats[f].bug++;
+        else featureStats[f].task++;
     });
+
+    const statusObj = {
+        execByType, designByType, execByFeat, designByFeat,
+        activeExecStatuses: Array.from(activeExecStatuses),
+        activeDesignStatuses: Array.from(activeDesignStatuses)
+    };
 
     const advC = viewTickets.length > 0 ? (totalPointsC / viewTickets.length) : 0;
     const advE = viewTickets.length > 0 ? (totalPointsE / viewTickets.length) : 0;
     const advTotal = (advC + advE) / 2;
 
     // Update KPI values
-    DOM.kpiTotalRaf.textContent = totalRaf.toFixed(2);
-    DOM.kpiTotalTickets.textContent = viewTickets.length;
-    DOM.kpiAdvC.textContent = advC.toFixed(0) + '%';
-    DOM.kpiAdvE.textContent = advE.toFixed(0) + '%';
-    DOM.kpiAdvTotal.textContent = advTotal.toFixed(0) + '%';
+    const safeSetText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    };
+
+    safeSetText('kpiNbUS', nbUS);
+    safeSetText('kpiNbBugs', nbBugs);
+    safeSetText('kpiNbTasks', nbTasks);
+    safeSetText('kpiTotalTickets', viewTickets.length);
+
+    safeSetText('kpiJH_C', totalJConception.toFixed(2));
+    safeSetText('kpiJH_E', totalJExecution.toFixed(2));
+    safeSetText('kpiJH_Total', (totalJConception + totalJExecution).toFixed(2));
+
+    safeSetText('kpiRaf_C', rafC_total.toFixed(2));
+    safeSetText('kpiRaf_E', rafE_total.toFixed(2));
+    safeSetText('kpiTotalRaf', totalRaf.toFixed(2));
+
+    safeSetText('kpiAdvC', advC.toFixed(0) + '%');
+    safeSetText('kpiAdvE', advE.toFixed(0) + '%');
+    safeSetText('kpiAdvTotal', advTotal.toFixed(0) + '%');
+
+    // --- Render Feature Breakdown Cards ---
+    const breakdownEl = document.getElementById('dashFeatureBreakdown');
+    if (breakdownEl) {
+        const featEntries = Object.entries(featureStats).sort((a,b) => b[1].total - a[1].total);
+        breakdownEl.innerHTML = featEntries.map(([name, s]) => `
+            <div class="kpi-card" style="padding: 1rem; flex-direction: column; align-items: flex-start; gap: 0.75rem; border: 1px solid rgba(0,0,0,0.03); background: rgba(255,255,255,0.4);">
+                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; gap: 0.5rem;">
+                    <h3 style="margin: 0; font-size: 0.85rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;" title="${name}">
+                        ${name}
+                    </h3>
+                    <span style="background: var(--accent-primary); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; white-space: nowrap;">
+                        ${s.total}
+                    </span>
+                </div>
+                <div style="display: flex; gap: 0.8rem; color: var(--text-muted); font-size: 0.75rem; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 0.35rem; flex: 1;" title="User Stories">
+                        <i data-lucide="file-text" style="width: 14px; height: 14px; color: #6366f1;"></i>
+                        <span style="font-weight: 600; color: var(--text-main);">${s.us}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.35rem; flex: 1;" title="Bugs">
+                        <i data-lucide="bug" style="width: 14px; height: 14px; color: #ef4444;"></i>
+                        <span style="font-weight: 600; color: var(--text-main);">${s.bug}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.35rem; flex: 1;" title="Tâches">
+                        <i data-lucide="check-square" style="width: 14px; height: 14px; color: #f59e0b;"></i>
+                        <span style="font-weight: 600; color: var(--text-main);">${s.task}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    // --- Delivery Risk Logic ---
+    const riskIcon = document.getElementById('dashRiskIcon');
+    const riskText = document.getElementById('dashRiskText');
+    
+    if (riskIcon && riskText && currentVersion) {
+        const now = new Date();
+        
+        const parseDate = (dStr) => {
+            if (!dStr) return null;
+            const d = new Date(dStr);
+            // On fixe l'échéance à 17h00 du jour j
+            d.setHours(17, 0, 0, 0);
+            return isNaN(d.getTime()) ? null : d;
+        };
+
+        const dRecette = parseDate(currentVersion.deliveryDateRecette);
+        const dClient = parseDate(currentVersion.deliveryDate);
+        const nbMembers = project.userIds ? Math.max(1, project.userIds.length) : 1;
+
+        let status = 'OK';
+        let msg = 'Dans les temps';
+        const totalPointsC = rafC_total;
+        const totalPointsE = rafE_total;
+
+        // Debug log for PM
+        console.log(`[Risk Check] Version: ${currentVersion.name} | RAF Total: ${totalRaf} | Members: ${nbMembers}`);
+
+        if (dClient) {
+            if (dRecette) {
+                if (now > dRecette) {
+                    // Scenario 1: On a dépassé la date de recette
+                    const daysRemaining = (dClient - now) / (1000 * 3600 * 24);
+                    const daysNeeded = totalRaf / nbMembers;
+                    console.log(`[Risk Check] Mode: Post-Recette | DaysRem: ${daysRemaining.toFixed(2)} | DaysReq: ${daysNeeded.toFixed(2)}`);
+                    if (daysNeeded > daysRemaining) {
+                        status = 'KO';
+                        msg = `Retard estimé à ${round05Up(daysNeeded - daysRemaining).toFixed(2)} jours`;
+                    }
+                } else {
+                    // Scenario 2: Avant la recette
+                    const daysToRecette = (dRecette - now) / (1000 * 3600 * 24);
+                    const daysNeededForRecette = totalPointsC / nbMembers;
+                    
+                    const daysToClient = (dClient - dRecette) / (1000 * 3600 * 24);
+                    const daysNeededForClient = totalPointsE / nbMembers;
+
+                    console.log(`[Risk Check] Mode: Avant-Recette | ToRecette: ${daysToRecette.toFixed(2)} (Req: ${daysNeededForRecette.toFixed(2)}) | ToClientFromRecette: ${daysToClient.toFixed(2)} (Req: ${daysNeededForClient.toFixed(2)})`);
+
+                    if (daysNeededForRecette > daysToRecette) {
+                        status = 'KO';
+                        msg = `Retard Recette estimé à ${round05Up(daysNeededForRecette - daysToRecette).toFixed(2)} jours`;
+                    } else if (daysNeededForClient > daysToClient) {
+                        status = 'KO';
+                        msg = `Retard Client estimé à ${round05Up(daysNeededForClient - daysToClient).toFixed(2)} jours`;
+                    }
+                }
+            } else {
+                // Scenario 3: Pas de date de recette
+                const daysRemaining = (dClient - now) / (1000 * 3600 * 24);
+                const daysNeeded = totalRaf / nbMembers;
+                console.log(`[Risk Check] Mode: Global | DaysRem: ${daysRemaining.toFixed(2)} | DaysReq: ${daysNeeded.toFixed(2)}`);
+                if (daysNeeded > daysRemaining) {
+                    status = 'KO';
+                    msg = `Retard estimé à ${round05Up(daysNeeded - daysRemaining).toFixed(2)} jours`;
+                }
+            }
+        } else {
+            msg = "Date de livraison non définie";
+            status = 'PENDING';
+        }
+
+        // Update UI
+        if (status === 'OK') {
+            riskIcon.style.background = 'rgba(16, 185, 129, 0.1)';
+            riskIcon.style.color = '#10b981';
+            riskIcon.innerHTML = '<i data-lucide="check-circle"></i>';
+            riskText.style.color = '#10b981';
+            riskText.textContent = msg;
+        } else if (status === 'KO') {
+            riskIcon.style.background = 'rgba(239, 68, 68, 0.1)';
+            riskIcon.style.color = '#ef4444';
+            riskIcon.innerHTML = '<i data-lucide="alert-triangle"></i>';
+            riskText.style.color = '#ef4444';
+            riskText.textContent = msg;
+        } else {
+            riskIcon.style.background = 'rgba(99, 102, 241, 0.1)';
+            riskIcon.style.color = '#6366f1';
+            riskIcon.innerHTML = '<i data-lucide="help-circle"></i>';
+            riskText.style.color = '#6366f1';
+            riskText.textContent = msg;
+        }
+        lucide.createIcons();
+    }
 
     // Update progress bars
     const barC = document.getElementById('kpiAdvCBar');
@@ -1314,14 +1778,40 @@ function renderDashboard() {
     if (barE) barE.style.width = advE.toFixed(0) + '%';
     if (barTotal) barTotal.style.width = advTotal.toFixed(0) + '%';
 
-    // Workload data for chart
-    const workloadPairs = Object.entries(userRaf).map(([uId, raf]) => ({ name: getUserName(uId), raf: round015Up(raf) }));
-    workloadPairs.sort((a, b) => b.raf - a.raf);
+    // Workload data for chart (Stacked Bar)
+    const workloadPairs = Object.entries(userRaf).map(([uId, obj]) => ({
+        name: getUserName(uId),
+        c: round015Up(obj.c),
+        e: round015Up(obj.e),
+        total: round015Up(obj.c + obj.e)
+    }));
+    workloadPairs.sort((a, b) => b.total - a.total);
 
-    renderCharts(typeCount, featureCount, statusCount, workloadPairs, { advC, advE, totalJConception, totalJExecution, doneJConception, doneJExecution }, viewTickets.length);
+    renderCharts(statusObj, workloadPairs, { advC, advE, totalJConception, totalJExecution, doneJConception, doneJExecution }, viewTickets.length, statusCount);
 }
 
-function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progressData, totalTickets) {
+function renderCharts(statusObj, workloadPairs, progressData, totalTickets, statusCount) {
+    const STATUS_COLORS = {
+        'Terminée': ['#10b981', '#059669'],
+        'Terminée OK': ['#10b981', '#059669'],
+        'Terminée KO': ['#ef4444', '#dc2626'],
+        'En cours': ['#3b82f6', '#2563eb'],
+        'En cours d\'exécution': ['#3b82f6', '#2563eb'],
+        'Bloquée': ['#f43f5e', '#e11d48'],
+        'À faire': ['#94a3b8', '#64748b'],
+        'À exécuter': ['#94a3b8', '#64748b'],
+        'En attente livraison': ['#f59e0b', '#d97706'],
+        'Rejeté': ['#1e293b', '#0f172a']
+    };
+
+    const getStatusColor = (status, isStart = true) => {
+        if (STATUS_COLORS[status]) return isStart ? STATUS_COLORS[status][0] : STATUS_COLORS[status][1];
+        // Generate a deterministic color if unknown
+        let hash = 0;
+        for (let i = 0; i < status.length; i++) hash = status.charCodeAt(i) + ((hash << 5) - hash);
+        const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+        return "#" + "00000".substring(0, 6 - c.length) + c;
+    };
     // ---- Color palette with gradients ----
     const createGradient = (ctx, colorStart, colorEnd, horizontal = false) => {
         const chart = ctx.chart;
@@ -1375,91 +1865,44 @@ function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progr
         chartInstances[id] = new Chart(ctx, { type, data, options });
     };
 
-    // ==== Chart 1: Status by Type (stacked bar) ====
-    const typeLabels = Object.keys(typeCount);
-    applyChartConf('chartType', 'bar', {
-        labels: typeLabels,
-        datasets: [
-            {
-                label: 'En attente / En cours',
-                data: typeLabels.map(l => typeCount[l].pending),
+    // Helper for stacked bar charts
+    const applyStackedStatusChart = (id, labels, dataMap, activeStatuses) => {
+        const datasets = activeStatuses.map(status => {
+            return {
+                label: status,
+                data: labels.map(l => dataMap[l][status] || 0),
                 backgroundColor: (ctx) => {
-                    try { return createGradient(ctx, '#fbbf24', '#f59e0b'); } catch (e) { return '#f59e0b'; }
+                    try { return createGradient(ctx, getStatusColor(status), getStatusColor(status, false)); } catch (e) { return getStatusColor(status); }
                 },
                 borderRadius: 8,
                 borderSkipped: false
-            },
-            {
-                label: 'Succès',
-                data: typeLabels.map(l => typeCount[l].success),
-                backgroundColor: (ctx) => {
-                    try { return createGradient(ctx, '#34d399', '#10b981'); } catch (e) { return '#10b981'; }
-                },
-                borderRadius: 8,
-                borderSkipped: false
-            },
-            {
-                label: 'Échec',
-                data: typeLabels.map(l => typeCount[l].fail),
-                backgroundColor: (ctx) => {
-                    try { return createGradient(ctx, '#f87171', '#ef4444'); } catch (e) { return '#ef4444'; }
-                },
-                borderRadius: 8,
-                borderSkipped: false
-            }
-        ]
-    }, {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            tooltip: modernTooltip,
-            legend: { labels: { font: { family: 'Inter', size: 11 }, usePointStyle: true, pointStyle: 'rectRounded', padding: 16 } }
-        },
-        scales: modernScales(true)
-    });
+            };
+        }).filter(ds => ds.data.some(v => v > 0)); // Only show if at least one bar has this status
 
-    // ==== Chart 2: Status by Feature (stacked bar) ====
-    const featLabels = Object.keys(featureCount);
-    applyChartConf('chartFeature', 'bar', {
-        labels: featLabels,
-        datasets: [
-            {
-                label: 'En attente / En cours',
-                data: featLabels.map(l => featureCount[l].pending),
-                backgroundColor: (ctx) => {
-                    try { return createGradient(ctx, '#818cf8', '#6366f1'); } catch (e) { return '#6366f1'; }
-                },
-                borderRadius: 8,
-                borderSkipped: false
+        applyChartConf(id, 'bar', { labels, datasets }, {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: modernTooltip,
+                legend: { labels: { font: { family: 'Inter', size: 10 }, usePointStyle: true, pointStyle: 'rectRounded', padding: 12 } }
             },
-            {
-                label: 'Succès',
-                data: featLabels.map(l => featureCount[l].success),
-                backgroundColor: (ctx) => {
-                    try { return createGradient(ctx, '#34d399', '#10b981'); } catch (e) { return '#10b981'; }
-                },
-                borderRadius: 8,
-                borderSkipped: false
-            },
-            {
-                label: 'Échec',
-                data: featLabels.map(l => featureCount[l].fail),
-                backgroundColor: (ctx) => {
-                    try { return createGradient(ctx, '#f87171', '#ef4444'); } catch (e) { return '#ef4444'; }
-                },
-                borderRadius: 8,
-                borderSkipped: false
-            }
-        ]
-    }, {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            tooltip: modernTooltip,
-            legend: { labels: { font: { family: 'Inter', size: 11 }, usePointStyle: true, pointStyle: 'rectRounded', padding: 16 } }
-        },
-        scales: modernScales(true)
-    });
+            scales: modernScales(true)
+        });
+    };
+
+    // Design Charts
+    const typeLabels = Object.keys(statusObj.designByType);
+    const featLabels = Object.keys(statusObj.designByFeat);
+    
+    applyStackedStatusChart('chartTypeDesign', typeLabels, statusObj.designByType, statusObj.activeDesignStatuses);
+    applyStackedStatusChart('chartFeatureDesign', featLabels, statusObj.designByFeat, statusObj.activeDesignStatuses);
+
+    // Execution Charts
+    const typeLabelsExec = Object.keys(statusObj.execByType);
+    const featLabelsExec = Object.keys(statusObj.execByFeat);
+
+    applyStackedStatusChart('chartTypeExec', typeLabelsExec, statusObj.execByType, statusObj.activeExecStatuses);
+    applyStackedStatusChart('chartFeatureExec', featLabelsExec, statusObj.execByFeat, statusObj.activeExecStatuses);
 
     // ==== Chart 3: Progress Conception vs Exécution (grouped bar) ====
     applyChartConf('chartProgress', 'bar', {
@@ -1592,36 +2035,60 @@ function renderCharts(typeCount, featureCount, statusCount, workloadPairs, progr
         }
     }
 
-    // ==== Chart 5: Workload horizontal bar ====
+    // ==== Chart 5: Workload horizontal stacked bar ====
     const workloadLabels = workloadPairs.map(w => w.name);
-    const workloadData = workloadPairs.map(w => w.raf);
-
+    
     applyChartConf('chartWorkload', 'bar', {
         labels: workloadLabels,
-        datasets: [{
-            label: 'RAF (J/h)',
-            data: workloadData,
-            backgroundColor: (ctx) => {
-                try { return createGradient(ctx, '#6366f1', '#0ea5e9', true); } catch (e) { return '#6366f1'; }
+        datasets: [
+            {
+                label: 'Conception',
+                data: workloadPairs.map(w => w.c),
+                backgroundColor: (ctx) => {
+                    try { return createGradient(ctx, '#34d399', '#10b981', true); } catch (e) { return '#10b981'; }
+                },
+                borderRadius: 4,
+                borderSkipped: false,
+                barThickness: 28
             },
-            borderRadius: 8,
-            borderSkipped: false,
-            barThickness: 28
-        }]
+            {
+                label: 'Exécution',
+                data: workloadPairs.map(w => w.e),
+                backgroundColor: (ctx) => {
+                    try { return createGradient(ctx, '#38bdf8', '#0ea5e9', true); } catch (e) { return '#0ea5e9'; }
+                },
+                borderRadius: 4,
+                borderSkipped: false,
+                barThickness: 28
+            }
+        ]
     }, {
         indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            tooltip: modernTooltip,
-            legend: { display: false }
+            tooltip: {
+                ...modernTooltip,
+                callbacks: {
+                    label: (context) => {
+                        return `${context.dataset.label}: ${context.parsed.x} J/h`;
+                    }
+                }
+            },
+            legend: { 
+                display: true, 
+                position: 'bottom',
+                labels: { font: { family: 'Inter', size: 11 }, usePointStyle: true, pointStyle: 'rectRounded' }
+            }
         },
         scales: {
             x: {
+                stacked: true,
                 grid: { color: gridCol, drawBorder: false, borderDash: [3, 3] },
                 ticks: { font: { family: 'Inter', size: 11, weight: '500' }, color: '#64748b' }
             },
             y: {
+                stacked: true,
                 grid: { display: false },
                 ticks: { font: { family: 'Inter', size: 12, weight: '600' }, color: '#1e293b' }
             }

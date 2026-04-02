@@ -590,15 +590,9 @@ body {
 
 .charts-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.25rem;
   padding: 0 1.25rem 1.25rem 1.25rem;
-}
-
-@media (max-width: 1400px) {
-  .charts-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 @media (max-width: 900px) {
@@ -644,6 +638,20 @@ body {
 .chart-container {
   height: 280px;
   position: relative;
+}
+
+/* Date Select Group */
+.date-select-group {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+}
+.date-select-group select {
+    flex: 1;
+    min-width: 0;
+}
+.date-select-year {
+    flex: 1.5 !important;
 }
 
 /* Status Selects in Table */
