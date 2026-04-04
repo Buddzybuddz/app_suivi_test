@@ -19,12 +19,15 @@ const Store = {
 };
 
 async function loadStore() {
+    // Verrou de sécurité : Force la connexion au Cloud Appwrite et ignore toute simulation
+    if (typeof client !== 'undefined') window.databases = new Appwrite.Databases(client);
+
     try {
         const [users, projects, versions, tickets] = await Promise.all([
-            databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS),
-            databases.listDocuments(DATABASE_ID, COLLECTIONS.PROJECTS),
-            databases.listDocuments(DATABASE_ID, COLLECTIONS.VERSIONS),
-            databases.listDocuments(DATABASE_ID, COLLECTIONS.TICKETS)
+            databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS, [Query.limit(5000)]),
+            databases.listDocuments(DATABASE_ID, COLLECTIONS.PROJECTS, [Query.limit(5000)]),
+            databases.listDocuments(DATABASE_ID, COLLECTIONS.VERSIONS, [Query.limit(5000)]),
+            databases.listDocuments(DATABASE_ID, COLLECTIONS.TICKETS, [Query.limit(5000)])
         ]);
 
         Store.users = users.documents.map(d => ({ id: d.$id, ...d }));
@@ -301,138 +304,241 @@ function getCalculations(ticket, project) {
     };
 }
 
-// --- DOM Elements ---
-const DOM = {
-    // Nav & Views
-    navItems: document.querySelectorAll('.nav-item'),
-    viewSections: document.querySelectorAll('.view-section'),
+let DOM = {};
 
-    // Project View
-    projectsTbody: document.getElementById('projectsTbody'),
-    btnNewProject: document.getElementById('btnNewProject'),
-    projectModal: document.getElementById('projectModal'),
-    projectModalTitle: document.getElementById('projectModalTitle'),
-    btnCloseProjectModal: document.getElementById('btnCloseProjectModal'),
-    projectForm: document.getElementById('projectForm'),
-    pId: document.getElementById('pId'),
-    pClient: document.getElementById('pClient'),
-    pName: document.getElementById('pName'),
-    pStateInput: document.getElementById('pStateInput'),
-    btnAddState: document.getElementById('btnAddState'),
-    projectStatesContainer: document.getElementById('projectStatesContainer'),
-    pUserSelectToAdd: document.getElementById('pUserSelectToAdd'),
-    btnAddExistingUser: document.getElementById('btnAddExistingUser'),
-    pNewUserName: document.getElementById('pNewUserName'),
-    btnCreateAndAddUser: document.getElementById('btnCreateAndAddUser'),
-    projectMembersContainer: document.getElementById('projectMembersContainer'),
-    pRatioC: document.getElementById('pRatioC'),
-    pRatioE: document.getElementById('pRatioE'),
+function refreshDOM() {
+    DOM = {
+        // Nav & Views
+        navItems: document.querySelectorAll('.nav-item'),
+        viewSections: document.querySelectorAll('.view-section'),
 
-    // User UI
-    usersTbody: document.getElementById('usersTbody'),
-    btnNewUser: document.getElementById('btnNewUser'),
-    userModal: document.getElementById('userModal'),
-    userModalTitle: document.getElementById('userModalTitle'),
-    btnCloseUserModal: document.getElementById('btnCloseUserModal'),
-    userForm: document.getElementById('userForm'),
-    uId: document.getElementById('uId'),
-    uiName: document.getElementById('uiName'),
-    uiEmail: document.getElementById('uiEmail'),
-    uRole: document.getElementById('uRole'),
+        // Project View
+        projectsTbody: document.getElementById('projectsTbody'),
+        btnNewProject: document.getElementById('btnNewProject'),
+        projectModal: document.getElementById('projectModal'),
+        projectModalTitle: document.getElementById('projectModalTitle'),
+        btnCloseProjectModal: document.getElementById('btnCloseProjectModal'),
+        projectForm: document.getElementById('projectForm'),
+        pId: document.getElementById('pId'),
+        pClient: document.getElementById('pClient'),
+        pName: document.getElementById('pName'),
+        pStateInput: document.getElementById('pStateInput'),
+        btnAddState: document.getElementById('btnAddState'),
+        projectStatesContainer: document.getElementById('projectStatesContainer'),
+        pUserSelectToAdd: document.getElementById('pUserSelectToAdd'),
+        btnAddExistingUser: document.getElementById('btnAddExistingUser'),
+        pNewUserName: document.getElementById('pNewUserName'),
+        btnCreateAndAddUser: document.getElementById('btnCreateAndAddUser'),
+        projectMembersContainer: document.getElementById('projectMembersContainer'),
+        pRatioC: document.getElementById('pRatioC'),
+        pRatioE: document.getElementById('pRatioE'),
 
-    // Version UI
-    btnNewVersion: document.getElementById('btnNewVersion'),
-    btnNewVersionPage: document.getElementById('btnNewVersionPage'),
-    versionsTbody: document.getElementById('versionsTbody'),
-    versionModal: document.getElementById('versionModal'),
-    versionModalTitle: document.getElementById('versionModalTitle'),
-    btnCloseVersionModal: document.getElementById('btnCloseVersionModal'),
-    versionForm: document.getElementById('versionForm'),
-    vId: document.getElementById('vId'),
-    vClient: document.getElementById('vClient'),
-    vProject: document.getElementById('vProject'),
-    vName: document.getElementById('vName'),
-    vDateRecette_D: document.getElementById('vDateRecette_D'),
-    vDateRecette_M: document.getElementById('vDateRecette_M'),
-    vDateRecette_Y: document.getElementById('vDateRecette_Y'),
-    vDate_D: document.getElementById('vDate_D'),
-    vDate_M: document.getElementById('vDate_M'),
-    vDate_Y: document.getElementById('vDate_Y'),
+        // User UI
+        usersTbody: document.getElementById('usersTbody'),
+        btnNewUser: document.getElementById('btnNewUser'),
+        userModal: document.getElementById('userModal'),
+        userModalTitle: document.getElementById('userModalTitle'),
+        btnCloseUserModal: document.getElementById('btnCloseUserModal'),
+        userForm: document.getElementById('userForm'),
+        uId: document.getElementById('uId'),
+        uiName: document.getElementById('uiName'),
+        uRole: document.getElementById('uRole'),
 
-    clientSelect: document.getElementById('clientSelect'),
-    projectSelect: document.getElementById('projectSelect'),
-    versionSelect: document.getElementById('versionSelect'),
-    tabs: document.querySelectorAll('.tab-btn'),
-    tabContents: document.querySelectorAll('.tab-content'),
-    ticketsTbody: document.getElementById('ticketsTbody'),
-    filterUser: document.getElementById('filterUser'),
-    btnNewTicket: document.getElementById('btnNewTicket'),
-    btnCopyDashboard: document.getElementById('btnCopyDashboard'),
-    btnCopyCharts: document.getElementById('btnCopyCharts'),
-    modal: document.getElementById('ticketModal'),
-    btnCloseModal: document.getElementById('btnCloseModal'),
-    ticketForm: document.getElementById('ticketForm'),
+        // Version UI
+        btnNewVersion: document.getElementById('btnNewVersion'),
+        btnNewVersionPage: document.getElementById('btnNewVersionPage'),
+        versionsTbody: document.getElementById('versionsTbody'),
+        versionModal: document.getElementById('versionModal'),
+        versionModalTitle: document.getElementById('versionModalTitle'),
+        btnCloseVersionModal: document.getElementById('btnCloseVersionModal'),
+        versionForm: document.getElementById('versionForm'),
+        vId: document.getElementById('vId'),
+        vClient: document.getElementById('vClient'),
+        vProject: document.getElementById('vProject'),
+        vName: document.getElementById('vName'),
+        vDateRecette_D: document.getElementById('vDateRecette_D'),
+        vDateRecette_M: document.getElementById('vDateRecette_M'),
+        vDateRecette_Y: document.getElementById('vDateRecette_Y'),
+        vDate_D: document.getElementById('vDate_D'),
+        vDate_M: document.getElementById('vDate_M'),
+        vDate_Y: document.getElementById('vDate_Y'),
 
-    // KPI
-    kpiTotalRaf: document.getElementById('kpiTotalRaf'),
-    kpiTotalTickets: document.getElementById('kpiTotalTickets'),
-    kpiAdvC: document.getElementById('kpiAdvC'),
-    kpiAdvE: document.getElementById('kpiAdvE'),
-    kpiAdvTotal: document.getElementById('kpiAdvTotal'),
-    dashProjectName: document.getElementById('dashProjectName'),
-    dashVersionName: document.getElementById('dashVersionName'),
+        clientSelect: document.getElementById('clientSelect'),
+        projectSelect: document.getElementById('projectSelect'),
+        versionSelect: document.getElementById('versionSelect'),
+        tabs: document.querySelectorAll('.tab-btn'),
+        tabContents: document.querySelectorAll('.tab-content'),
+        ticketsTbody: document.getElementById('ticketsTbody'),
+        filterUser: document.getElementById('filterUser'),
+        btnNewTicket: document.getElementById('btnNewTicket'),
+        btnCopyDashboard: document.getElementById('btnCopyDashboard'),
+        btnCopyCharts: document.getElementById('btnCopyCharts'),
+        modal: document.getElementById('ticketModal'),
+        btnCloseModal: document.getElementById('btnCloseModal'),
+        ticketForm: document.getElementById('ticketForm'),
 
-    // Form Inputs
-    fFeat: document.getElementById('fFeat'), fFeatList: document.getElementById('feature-list'),
-    fType: document.getElementById('fType'),
-    fNum: document.getElementById('fNum'), fPrio: document.getElementById('fPrio'),
-    fAssC: document.getElementById('fAssC'), fAssE: document.getElementById('fAssE'),
-    fTests: document.getElementById('fTests'), fState: document.getElementById('fState'),
-    fVersion: document.getElementById('fVersion'), // VERSION SELECTION
-    tId: document.getElementById('tId')
-};
+        // KPI
+        kpiTotalRaf: document.getElementById('kpiTotalRaf'),
+        kpiTotalTickets: document.getElementById('kpiTotalTickets'),
+        kpiAdvC: document.getElementById('kpiAdvC'),
+        kpiAdvE: document.getElementById('kpiAdvE'),
+        kpiAdvTotal: document.getElementById('kpiAdvTotal'),
+        dashProjectName: document.getElementById('dashProjectName'),
+        dashVersionName: document.getElementById('dashVersionName'),
+
+        // Form Inputs
+        fFeat: document.getElementById('fFeat'), fFeatList: document.getElementById('feature-list'),
+        fType: document.getElementById('fType'),
+        fNum: document.getElementById('fNum'), fPrio: document.getElementById('fPrio'),
+        fAssC: document.getElementById('fAssC'), fAssE: document.getElementById('fAssE'),
+        fTests: document.getElementById('fTests'), fState: document.getElementById('fState'),
+        fVersion: document.getElementById('fVersion'),
+        tId: document.getElementById('tId'),
+        mainContent: document.querySelector('.main-content')
+    };
+
+    console.log("DOM elements refreshed. projectsTbody exists:", !!DOM.projectsTbody);
+}
 
 // --- Initialization ---
-async function init() {
-    await loadStore();
+function saveState() {
+    localStorage.setItem('TestTracker_Client', currentClientName || '');
+    localStorage.setItem('TestTracker_Project', currentProjectId || '');
+    localStorage.setItem('TestTracker_Version', currentVersionId || '');
+    console.log("STATE_SAVE: Selection saved.");
+}
 
-    if (Store.projects.length > 0) {
-        // Initialiser avec le client du premier projet
-        currentProjectId = Store.projects[0].id;
-        currentClientName = Store.projects[0].client || '';
-        const versions = Store.versions.filter(v => v.projectId === currentProjectId);
-        if (versions.length > 0) currentVersionId = versions[0].id;
-    } else {
-        currentClientName = '';
-        currentProjectId = '';
-        currentVersionId = '';
+function loadState() {
+    currentClientName = localStorage.getItem('TestTracker_Client') || '';
+    currentProjectId = localStorage.getItem('TestTracker_Project') || '';
+    currentVersionId = localStorage.getItem('TestTracker_Version') || '';
+    console.log("STATE_LOAD: Selection restored from memory.");
+}
+
+function validateAndSaveState() {
+    // 1. Validation du Client
+    const clients = Array.from(new Set(Store.projects.map(p => (p.client || '').trim()))).filter(c => c !== '').sort();
+    if (!currentClientName || !clients.includes(currentClientName)) {
+        currentClientName = clients[0] || '';
+        currentProjectId = ''; // Invalide le projet enfant
     }
 
-    populateHeaderSelects();
-    populateFormSelects();
-    updateFormUsers();
+    // 2. Validation du Projet
+    const filteredProjects = Store.projects.filter(p => (p.client || '').trim() === currentClientName);
+    if (!currentProjectId || !filteredProjects.find(p => p.id === currentProjectId)) {
+        currentProjectId = filteredProjects[0]?.id || '';
+        currentVersionId = ''; // Invalide la version enfant
+    }
+
+    // 3. Validation de la Version
+    const versions = Store.versions.filter(v => v.projectId === currentProjectId);
+    if (!currentVersionId || !versions.find(v => v.id === currentVersionId)) {
+        currentVersionId = versions[0]?.id || '';
+    }
+
+    // 4. Mettre à jour les labels
+    saveState();
+}
+
+async function init() {
+    console.log("APP_JS: Initiating sequence (v_RELOAD_2k26_05)...");
+    refreshDOM();
     setupEventListeners();
-    updateUI();
+    
+    // Par défaut, s'assurer que le tracker est la vue active au démarrage
+    switchView('tracker');
+
+    try {
+        await loadStore();
+        
+        // Charger l'état sauvegardé
+        loadState();
+
+        populateHeaderSelects();
+        populateFormSelects();
+        updateFormUsers();
+        
+        // CRITIQUE : Rafraîchir l'interface globale après la restauration de sélection
+        updateUI();
+        
+        console.log("APP_JS: init success (STATE restored and UI updated).");
+    } catch (e) {
+        console.error("APP_JS: Error during async init:", e);
+        updateUI();
+    }
+}
+
+/**
+ * Fonction centrale de basculement de vue
+ */
+function switchView(viewName) {
+    if (!viewName) return;
+    console.log("SWITCH_VIEW: target =", viewName);
+
+    // Refresh DOM pour être sûr d'avoir les éléments à jour
+    refreshDOM();
+
+    // 1. Sidebar highlight
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(n => {
+        if (n.getAttribute('data-view') === viewName) {
+            n.classList.add('active');
+        } else {
+            n.classList.remove('active');
+        }
+    });
+
+    // 2. Sections display
+    const sections = document.querySelectorAll('.view-section');
+    sections.forEach(s => {
+        const idSuffix = s.id.replace('view-', '');
+        if (idSuffix === viewName) {
+            s.classList.add('active');
+            s.style.setProperty('display', 'flex', 'important');
+            s.style.setProperty('visibility', 'visible', 'important');
+            s.style.setProperty('opacity', '1', 'important');
+            
+            // Log de diagnostic pour confirmer la présence à l'écran
+            const rect = s.getBoundingClientRect();
+            console.log(`SECTION_STATS [${s.id}]: Visible: true, Rect: w=${rect.width}, h=${rect.height}, top=${rect.top}`);
+        } else {
+            s.classList.remove('active');
+            s.style.setProperty('display', 'none', 'important');
+        }
+    });
+
+    // 3. Render specific data
+    if (viewName === 'projects') renderProjectsTable();
+    else if (viewName === 'versions') renderVersionsTable();
+    else if (viewName === 'users') renderUsersTable();
+    else if (viewName === 'tracker') {
+        activeTab = 'details';
+        updateUI();
+    }
 }
 
 function populateHeaderSelects() {
-    // 1. Peupler les clients
-    const clients = Array.from(new Set(Store.projects.map(p => p.client || ''))).sort();
-    DOM.clientSelect.innerHTML = clients.map(c => `<option value="${c}">${c || 'Sans Client'}</option>`).join('');
+    if (!DOM.clientSelect || !DOM.projectSelect) return;
+
+    validateAndSaveState();
+
+    const clients = Array.from(new Set(Store.projects.map(p => (p.client || '').trim()))).filter(c => c !== '').sort();
+    
+    console.log("POPULATE_HEADER: Available clients:", clients);
+    
+    DOM.clientSelect.innerHTML = (clients.length > 0) 
+        ? clients.map(c => `<option value="${c}">${c}</option>`).join('')
+        : '<option value="">Sans Client</option>';
     DOM.clientSelect.value = currentClientName;
 
-    // 2. Peupler les projets filtrés par client
-    const filteredProjects = Store.projects.filter(p => (p.client || '') === currentClientName);
-    DOM.projectSelect.innerHTML = filteredProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    const filteredProjects = Store.projects.filter(p => (p.client || '').trim() === currentClientName);
+    console.log(`POPULATE_HEADER: Projects for [${currentClientName}]:`, filteredProjects.length);
     
-    // S'assurer que le projet sélectionné existe pour ce client
-    if (!filteredProjects.find(p => p.id === currentProjectId)) {
-        currentProjectId = filteredProjects[0]?.id || '';
-    }
+    DOM.projectSelect.innerHTML = filteredProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
     DOM.projectSelect.value = currentProjectId;
 
+    // Mise à jour de la liste dans le modal version
     if (DOM.vProject) {
-        // Pour les autres menus, on peut garder le format Client - Projet
         DOM.vProject.innerHTML = Store.projects.map(p => {
             const displayName = p.client ? `${p.client} - ${p.name}` : p.name;
             return `<option value="${p.id}">${displayName}</option>`;
@@ -440,12 +546,20 @@ function populateHeaderSelects() {
     }
 
     updateVersionSelect();
+    
+    // Déclenchement automatique de la mise à jour UI pour peupler le tracker avec le premier projet s'il y en a un
+    updateUI();
 }
 
 function updateVersionSelect() {
+    if (!DOM.versionSelect) return;
+    
+    validateAndSaveState(); // Au cas où
+    
     const versions = Store.versions.filter(v => v.projectId === currentProjectId);
+    console.log(`UPDATE_VERSION: Versions for project [${currentProjectId}]:`, versions.length);
+    
     DOM.versionSelect.innerHTML = versions.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
-    if (versions.length > 0) currentVersionId = versions[0].id;
     DOM.versionSelect.value = currentVersionId;
 }
 
@@ -653,7 +767,7 @@ const openVersionModal = (v = null, fromHeader = false) => {
         DOM.vProject.disabled = true;
         DOM.vName.value = v.name;
         setDateValues(DOM.vDateRecette_D, DOM.vDateRecette_M, DOM.vDateRecette_Y, v.deliveryDateRecette);
-        setDateValues(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y, v.deliveryDate);
+        setDateValues(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y, v.deliveryDateClient);
     } else {
         DOM.versionModalTitle.textContent = "Nouvelle Version";
         DOM.vId.value = '';
@@ -719,26 +833,13 @@ function updateFeatureDatalist() {
 // --- Event Listeners ---
 function setupEventListeners() {
     // Sidebar Navigation
-    DOM.navItems.forEach(item => {
+    const navElements = document.querySelectorAll('.nav-item');
+    navElements.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
-            const targetView = item.dataset.view;
-            if (!targetView) return; // ignore items without data-view
-
-            DOM.navItems.forEach(n => n.classList.remove('active'));
-            item.classList.add('active');
-
-            DOM.viewSections.forEach(v => {
-                if (v.id === 'view-' + targetView) {
-                    v.classList.add('active');
-                } else {
-                    v.classList.remove('active');
-                }
-            });
-
-            if (targetView === 'projects') renderProjectsTable();
-            if (targetView === 'versions') renderVersionsTable();
-            if (targetView === 'users') renderUsersTable();
+            const targetEl = e.currentTarget;
+            const targetView = targetEl.getAttribute('data-view') || targetEl.dataset.view;
+            switchView(targetView);
         });
     });
 
@@ -760,32 +861,13 @@ function setupEventListeners() {
     if (DOM.btnAddExistingUser) {
         DOM.btnAddExistingUser.addEventListener('click', () => {
             const uid = DOM.pUserSelectToAdd.value;
-            if (uid && !currentProjectUsers.includes(uid)) {
-                currentProjectUsers.push(uid);
-                renderProjectMembersBadge();
+            if (!uid) return;
+            if (currentProjectUsers.includes(uid)) {
+                alert("Erreur : Cet utilisateur est déjà attribué à ce projet.");
+                return;
             }
-        });
-
-        DOM.btnCreateAndAddUser.addEventListener('click', async () => {
-            const name = DOM.pNewUserName.value.trim();
-            if (name) {
-                const data = {
-                    name: name,
-                    role: 'Testeur'
-                };
-                try {
-                    await databases.createDocument(DATABASE_ID, COLLECTIONS.USERS, ID.unique(), data);
-                    await loadStore();
-                    const newUser = Store.users.find(u => u.name === name);
-                    if (newUser) currentProjectUsers.push(newUser.id);
-                    DOM.pNewUserName.value = '';
-                    renderProjectMembersBadge();
-                    if (typeof renderUsersTable === 'function') renderUsersTable();
-                    updateFormUsers();
-                } catch (error) {
-                    console.error("Error creating user from project modal:", error);
-                }
-            }
+            currentProjectUsers.push(uid);
+            renderProjectMembersBadge();
         });
     }
 
@@ -872,7 +954,7 @@ function setupEventListeners() {
                 projectId: DOM.vProject.value,
                 name: DOM.vName.value,
                 deliveryDateRecette: getDateStringFromSelectors(DOM.vDateRecette_D, DOM.vDateRecette_M, DOM.vDateRecette_Y),
-                deliveryDate: getDateStringFromSelectors(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y)
+                deliveryDateClient: getDateStringFromSelectors(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y)
             };
 
             try {
@@ -912,8 +994,20 @@ function setupEventListeners() {
         DOM.userForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const uid = DOM.uId.value;
+            const newName = DOM.uiName.value.trim();
+            
+            // Vérification de l'unicité globale
+            const isDuplicate = Store.users.some(u => 
+                u.name.toLowerCase() === newName.toLowerCase() && u.id !== uid
+            );
+            
+            if (isDuplicate) {
+                alert("Action impossible : Cet utilisateur existe déjà dans l'Annuaire.");
+                return;
+            }
+
             const data = {
-                name: DOM.uiName.value,
+                name: newName,
                 role: DOM.uRole.value
             };
 
@@ -1086,12 +1180,9 @@ function setupEventListeners() {
     if (DOM.clientSelect) {
         DOM.clientSelect.addEventListener('change', (e) => {
             currentClientName = e.target.value;
-            // On recrée la liste des projets pour ce client
-            const filteredProjs = Store.projects.filter(p => (p.client || '') === currentClientName);
-            currentProjectId = filteredProjs[0]?.id || '';
-            
-            populateHeaderSelects(); // Mettra à jour DOM.projectSelect
-            updateVersionSelect();
+            currentProjectId = ''; // Invalider le projet courant pour forcer le 1er du client
+            validateAndSaveState();
+            populateHeaderSelects();
             updateFormUsers();
             updateUI();
         });
@@ -1102,13 +1193,16 @@ function setupEventListeners() {
         const p = Store.projects.find(proj => proj.id === currentProjectId);
         if (p) currentClientName = p.client || '';
         
-        updateVersionSelect();
+        currentVersionId = ''; // Invalider la version courante
+        validateAndSaveState();
+        populateHeaderSelects();
         updateFormUsers();
         updateUI();
     });
 
     DOM.versionSelect.addEventListener('change', (e) => {
         currentVersionId = e.target.value;
+        validateAndSaveState();
         updateUI();
     });
 
@@ -1155,11 +1249,30 @@ function setupEventListeners() {
         const tIdValue = DOM.tId ? DOM.tId.value : null;
         const nbTests = parseFloat(DOM.fTests.value) || 0;
 
+        const targetVersionId = DOM.fVersion.value || currentVersionId;
+        const targetVersion = Store.versions.find(v => v.id === targetVersionId);
+        const targetProjectId = targetVersion ? targetVersion.projectId : null;
+        const newNumber = parseInt(DOM.fNum.value) || 0;
+
+        // Validation d'unicité par projet
+        if (targetProjectId && newNumber > 0) {
+            const isDuplicate = Store.tickets.some(t => {
+                if (tIdValue && t.id === tIdValue) return false; // Ignorer le ticket web en cours d'édition
+                const v = Store.versions.find(ver => ver.id === t.versionId);
+                return v && v.projectId === targetProjectId && t.number === newNumber;
+            });
+
+            if (isDuplicate) {
+                alert(`Le numéro de ticket #${newNumber} est déjà utilisé dans ce projet. Veuillez en choisir un autre.`);
+                return;
+            }
+        }
+
         const data = {
-            versionId: DOM.fVersion.value || currentVersionId,
+            versionId: targetVersionId,
             feature: DOM.fFeat.value,
             type: DOM.fType.value,
-            number: parseInt(DOM.fNum.value) || 0,
+            number: newNumber,
             priority: DOM.fPrio.value,
             assignDesignId: DOM.fAssC.value || null,
             assignExecutionId: DOM.fAssE.value || null,
@@ -1250,13 +1363,13 @@ window.deleteProject = async (id) => {
         await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PROJECTS, id);
         await loadStore();
         renderProjectsTable();
-        populateHeaderSelects();
 
         if (currentProjectId === id) {
-            currentProjectId = Store.projects[0]?.id || '';
-            updateVersionSelect();
-            updateUI();
+            currentProjectId = ''; // Invalider le projet courant
         }
+        validateAndSaveState();
+        populateHeaderSelects();
+        updateUI();
     } catch (error) {
         console.error("Error deleting project:", error);
     }
@@ -1277,7 +1390,7 @@ function renderVersionsTable() {
                 <td><strong>${v.name}</strong></td>
                 <td>${pName}</td>
                 <td>${v.deliveryDateRecette ? new Date(v.deliveryDateRecette).toLocaleDateString('fr-FR') : '-'}</td>
-                <td>${v.deliveryDate ? new Date(v.deliveryDate).toLocaleDateString('fr-FR') : '-'}</td>
+                <td>${v.deliveryDateClient ? new Date(v.deliveryDateClient).toLocaleDateString('fr-FR') : '-'}</td>
                 <td>
                     <button class="btn" style="padding: 0.4rem; background: var(--accent-primary);" onclick="editVersion('${v.id}')" title="Modifier">
                         <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
@@ -1307,6 +1420,11 @@ window.deleteVersion = async (id) => {
         await databases.deleteDocument(DATABASE_ID, COLLECTIONS.VERSIONS, id);
         await loadStore();
         renderVersionsTable();
+
+        if (currentVersionId === id) {
+            currentVersionId = ''; // Invalider la version courante
+        }
+        validateAndSaveState();
         updateVersionSelect();
         updateUI();
     } catch (error) {
@@ -1324,7 +1442,6 @@ function renderUsersTable() {
         <tr>
             <td>${u.id}</td>
             <td><strong>${u.name}</strong></td>
-            <td>${u.email}</td>
             <td>${u.role}</td>
             <td>
                 <button class="btn" style="padding: 0.2rem; background: var(--accent-primary);" onclick="editUser('${u.id}')" title="Modifier">
@@ -1348,7 +1465,6 @@ window.editUser = (id) => {
         DOM.userModalTitle.textContent = "Modifier l'Utilisateur";
         DOM.uId.value = u.id;
         DOM.uiName.value = u.name;
-        DOM.uiEmail.value = u.email;
         DOM.uRole.value = u.role;
         DOM.userModal.classList.add('show');
     }
@@ -1372,10 +1488,22 @@ window.deleteUser = async (id) => {
 function renderTicketsTable() {
     const project = Store.projects.find(p => p.id === currentProjectId);
     if (!project) {
+        console.warn("RENDER_TICKETS: Missing project for ID", currentProjectId);
         DOM.ticketsTbody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding: 2rem; color: var(--text-muted);">Veuillez créer un projet pour commencer.</td></tr>';
         return;
     }
-    let viewTickets = Store.tickets.filter(t => t.versionId === currentVersionId);
+    
+    console.log(`RENDER_TICKETS: Filtering for version [${currentVersionId}]. Total tickets in Store: ${Store.tickets.length}`);
+    if (Store.tickets.length > 0) {
+        console.log("DEBUG_TICKET_SAMPLE:", Store.tickets[0]);
+    }
+    
+    let viewTickets = Store.tickets.filter(t => {
+        const match = String(t.versionId) === String(currentVersionId);
+        return match;
+    });
+    
+    console.log(`RENDER_TICKETS: Filtered tickets: ${viewTickets.length}`);
 
     if (filterUserId) {
         viewTickets = viewTickets.filter(t => t.assignDesignId === filterUserId || t.assignExecutionId === filterUserId);
@@ -1503,6 +1631,85 @@ window.deleteTicket = async (id) => {
         }
     }
 };
+
+// --- Calcule les jours fériés français pour une année donnée (incluant jours mobiles) ---
+function getFrenchHolidays(year) {
+    const holidays = [
+        new Date(year, 0, 1),   // Jour de l'an
+        new Date(year, 4, 1),   // Fête du Travail
+        new Date(year, 4, 8),   // Victoire 1945
+        new Date(year, 6, 14),  // Fête Nationale
+        new Date(year, 7, 15),  // Assomption
+        new Date(year, 10, 1),  // Toussaint
+        new Date(year, 10, 11), // Armistice 1918
+        new Date(year, 11, 25)  // Noël
+    ];
+
+    // Algorithme de Meeus/Jones/Butcher pour Pâques
+    const a = year % 19;
+    const b = Math.floor(year / 100);
+    const c = year % 100;
+    const d = Math.floor(b / 4);
+    const e = b % 4;
+    const f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4);
+    const k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const n = h + l - 7 * m + 114;
+    const month = Math.floor(n / 31) - 1;
+    const day = (n % 31) + 1;
+
+    const easter = new Date(year, month, day);
+    const easterMonday = new Date(easter);
+    easterMonday.setDate(easter.getDate() + 1);
+    
+    const ascension = new Date(easter);
+    ascension.setDate(easter.getDate() + 39);
+    
+    const pentecostMonday = new Date(easter);
+    pentecostMonday.setDate(easter.getDate() + 50);
+
+    holidays.push(easterMonday, ascension, pentecostMonday);
+    
+    return holidays.map(d => {
+        d.setHours(0, 0, 0, 0);
+        return d.getTime();
+    });
+}
+
+// --- Calcul précis des jours ouvrés (float) entre deux dates (hors weekends/fériés) ---
+function getWorkingDaysPrecise(startDate, endDate) {
+    if (startDate >= endDate) return 0;
+    
+    let days = 0;
+    let tempDate = new Date(startDate);
+    const cachedHolidays = {};
+    
+    while (tempDate < endDate) {
+        const nextDay = new Date(tempDate);
+        nextDay.setDate(tempDate.getDate() + 1);
+        nextDay.setHours(0, 0, 0, 0); 
+        
+        let chunkEnd = nextDay < endDate ? nextDay : endDate;
+        
+        const year = tempDate.getFullYear();
+        if (!cachedHolidays[year]) cachedHolidays[year] = getFrenchHolidays(year);
+        
+        const dayOfWeek = tempDate.getDay();
+        const timeAtMidnight = new Date(tempDate).setHours(0, 0, 0, 0);
+
+        // Ouvré si ni Dimanche(0), ni Samedi(6), ni férié
+        if (dayOfWeek !== 0 && dayOfWeek !== 6 && !cachedHolidays[year].includes(timeAtMidnight)) {
+            days += (chunkEnd - tempDate) / (1000 * 3600 * 24);
+        }
+        
+        tempDate = nextDay;
+    }
+    return days;
+}
 
 // --- Render Dashboard ---
 function renderDashboard() {
@@ -1692,7 +1899,7 @@ function renderDashboard() {
         };
 
         const dRecette = parseDate(currentVersion.deliveryDateRecette);
-        const dClient = parseDate(currentVersion.deliveryDate);
+        const dClient = parseDate(currentVersion.deliveryDateClient);
         const nbMembers = project.userIds ? Math.max(1, project.userIds.length) : 1;
 
         let status = 'OK';
@@ -1707,22 +1914,22 @@ function renderDashboard() {
             if (dRecette) {
                 if (now > dRecette) {
                     // Scenario 1: On a dépassé la date de recette
-                    const daysRemaining = (dClient - now) / (1000 * 3600 * 24);
+                    const daysRemaining = getWorkingDaysPrecise(now, dClient);
                     const daysNeeded = totalRaf / nbMembers;
-                    console.log(`[Risk Check] Mode: Post-Recette | DaysRem: ${daysRemaining.toFixed(2)} | DaysReq: ${daysNeeded.toFixed(2)}`);
+                    console.log(`[Risk Check] Mode: Post-Recette | DaysRem: ${daysRemaining.toFixed(2)} (ouvrés) | DaysReq: ${daysNeeded.toFixed(2)}`);
                     if (daysNeeded > daysRemaining) {
                         status = 'KO';
                         msg = `Retard estimé à ${round05Up(daysNeeded - daysRemaining).toFixed(2)} jours`;
                     }
                 } else {
                     // Scenario 2: Avant la recette
-                    const daysToRecette = (dRecette - now) / (1000 * 3600 * 24);
+                    const daysToRecette = getWorkingDaysPrecise(now, dRecette);
                     const daysNeededForRecette = totalPointsC / nbMembers;
                     
-                    const daysToClient = (dClient - dRecette) / (1000 * 3600 * 24);
+                    const daysToClient = getWorkingDaysPrecise(dRecette, dClient);
                     const daysNeededForClient = totalPointsE / nbMembers;
 
-                    console.log(`[Risk Check] Mode: Avant-Recette | ToRecette: ${daysToRecette.toFixed(2)} (Req: ${daysNeededForRecette.toFixed(2)}) | ToClientFromRecette: ${daysToClient.toFixed(2)} (Req: ${daysNeededForClient.toFixed(2)})`);
+                    console.log(`[Risk Check] Mode: Avant-Recette | ToRecette: ${daysToRecette.toFixed(2)} ouvrés (Req: ${daysNeededForRecette.toFixed(2)}) | ToClientFromRecette: ${daysToClient.toFixed(2)} ouvrés (Req: ${daysNeededForClient.toFixed(2)})`);
 
                     if (daysNeededForRecette > daysToRecette) {
                         status = 'KO';
@@ -1734,9 +1941,9 @@ function renderDashboard() {
                 }
             } else {
                 // Scenario 3: Pas de date de recette
-                const daysRemaining = (dClient - now) / (1000 * 3600 * 24);
+                const daysRemaining = getWorkingDaysPrecise(now, dClient);
                 const daysNeeded = totalRaf / nbMembers;
-                console.log(`[Risk Check] Mode: Global | DaysRem: ${daysRemaining.toFixed(2)} | DaysReq: ${daysNeeded.toFixed(2)}`);
+                console.log(`[Risk Check] Mode: Global | DaysRem: ${daysRemaining.toFixed(2)} (ouvrés) | DaysReq: ${daysNeeded.toFixed(2)}`);
                 if (daysNeeded > daysRemaining) {
                     status = 'KO';
                     msg = `Retard estimé à ${round05Up(daysNeeded - daysRemaining).toFixed(2)} jours`;

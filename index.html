@@ -39,6 +39,10 @@
                     <i data-lucide="layers"></i>
                     <span>Versions</span>
                 </a>
+                <a href="#" class="nav-item" data-view="users">
+                    <i data-lucide="users"></i>
+                    <span>Utilisateurs</span>
+                </a>
             </nav>
         </aside>
 
@@ -422,13 +426,14 @@
                             <h3>Charge (RAF) par Utilisateur</h3>
                             <div class="chart-container">
                                 <canvas id="chartWorkload"></canvas>
-                            </div>
                         </div>
                     </div>
                 </div>
-            </div><!-- /view-tracker -->
+            </div>
+        </div>
+    </div><!-- /view-tracker -->
 
-            <!-- View: Projects -->
+    <!-- View: Projects -->
             <div id="view-projects" class="view-section">
                 <div class="top-header glass-panel" style="justify-content: space-between;">
                     <h2>Gestion des Projets</h2>
@@ -504,7 +509,6 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Nom Complet</th>
-                                <th>Email</th>
                                 <th>Rôle</th>
                                 <th>Actions</th>
                             </tr>
@@ -537,9 +541,9 @@
                                     style="cursor:pointer">Projet<span id="sort-versions-project"></span></th>
                                 <th data-col="deliveryDateRecette" onclick="toggleSort('versions', 'deliveryDateRecette')"
                                     style="cursor:pointer">Date Recette<span id="sort-versions-deliveryDateRecette"></span></th>
-                                <th data-col="deliveryDate" onclick="toggleSort('versions', 'deliveryDate')"
+                                <th data-col="deliveryDateClient" onclick="toggleSort('versions', 'deliveryDateClient')"
                                     style="cursor:pointer">Date Livraison Client<span
-                                        id="sort-versions-deliveryDate"></span></th>
+                                        id="sort-versions-deliveryDateClient"></span></th>
                                 <th>Actions</th>
                             </tr>
                             <tr class="filter-row">
@@ -562,9 +566,9 @@
                                         onchange="onFilterChange('versions', 'deliveryDateRecette', this.value)">
                                         <option value="">Tout</option>
                                     </select></th>
-                                <th data-col="deliveryDate"><select class="filter-input" data-filter-table="versions"
-                                        data-filter-col="deliveryDate"
-                                        onchange="onFilterChange('versions', 'deliveryDate', this.value)">
+                                <th data-col="deliveryDateClient"><select class="filter-input" data-filter-table="versions"
+                                        data-filter-col="deliveryDateClient"
+                                        onchange="onFilterChange('versions', 'deliveryDateClient', this.value)">
                                         <option value="">Tout</option>
                                     </select></th>
                                 <th></th>
@@ -639,14 +643,7 @@
                                 Ajouter
                             </button>
                         </div>
-                        <div class="member-add-row">
-                            <input type="text" id="pNewUserName" class="text-input member-select"
-                                placeholder="Nom complet du nouveau membre">
-                            <button type="button" class="btn btn-success btn-compact" id="btnCreateAndAddUser">
-                                <i data-lucide="plus-circle" class="btn-icon-sm"></i>
-                                Créer
-                            </button>
-                        </div>
+                        <!-- Le composant de création intra-projet a été retiré de ce niveau.  -->
                         <div id="projectMembersContainer" class="members-container">
                             <span class="members-placeholder">Aucun membre sélectionné.</span>
                         </div>
@@ -871,13 +868,7 @@
                                 <input type="text" id="uiName" required class="text-input" placeholder="Jean Dupont">
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group form-group-flex">
-                                <label>Email</label>
-                                <input type="email" id="uiEmail" required class="text-input"
-                                    placeholder="jean.dupont@test.com">
-                            </div>
-                        </div>
+                        <!-- Champ Email retiré à la demande de l'utilisateur -->
                         <div class="form-row">
                             <div class="form-group form-group-flex">
                                 <label>Rôle</label>
@@ -899,9 +890,8 @@
         </div>
     </div>
 
-    <script src="mock_db.js"></script>
-    <script src="appwrite_config.js"></script>
-    <script src="app.js"></script>
+    <script src="appwrite_config.js?v=FORCE_2026_FINAL"></script>
+    <script src="app.js?v=FORCE_2026_FINAL"></script>
 </body>
 
 </html>
