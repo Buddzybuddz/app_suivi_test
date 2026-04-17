@@ -61,6 +61,11 @@ function round05Up(val) {
     return Math.ceil(val / 0.5) * 0.5;
 }
 
+function formatFrenchFloat(val) {
+    if (val === undefined || val === null || isNaN(val)) return '0,00';
+    return parseFloat(val).toFixed(2).replace('.', ',');
+}
+
 // Calcule la largeur minimale requise (Version Sécurité Maximale)
 function getRequiredWidth(options) {
     if (!options || options.length === 0) return 100;
@@ -118,13 +123,21 @@ function updateFilterOptions(tableKey, data) {
 
         // Preserve "Tout" and reconstruction
         select.innerHTML = '<option value="">Tout</option>' +
-            sortedValues.map(v => `<option value="${v}" ${v.toLowerCase() === currentVal ? 'selected' : ''}>${v}</option>`).join('');
+            sortedValues.map(v => `<option value="${v}" ${v.toLowerCase() === currentVal.toLowerCase() ? 'selected' : ''}>${v}</option>`).join('');
     });
 }
 
 function onFilterChange(table, col, val) {
     Store.filters[table][col] = val.toLowerCase();
-    updateUI();
+    if (table === 'projects') {
+        renderProjectsTable();
+    } else if (table === 'versions') {
+        renderVersionsTable();
+    } else if (table === 'users') {
+        renderUsersTable();
+    } else {
+        updateUI();
+    }
 }
 window.onFilterChange = onFilterChange;
 
@@ -160,7 +173,7 @@ function filterData(data, tableKey) {
                 targetVal = (item[col] || '').toString();
             }
 
-            return targetVal.toLowerCase().includes(searchVal);
+            return targetVal.toLowerCase() === searchVal.toLowerCase();
         });
     });
 }
@@ -296,11 +309,14 @@ function getCalculations(ticket, project) {
     
     const raf = round015Up(rafC + rafE);
     return {
-        jConception: jConception.toFixed(2),
-        jExecution: jExecution.toFixed(2),
-        raf: raf.toFixed(2),
+        jConception: formatFrenchFloat(jConception),
+        jExecution: formatFrenchFloat(jExecution),
+        raf: formatFrenchFloat(raf),
         rafC: rafC,
-        rafE: rafE
+        rafE: rafE,
+        rawJConception: jConception,
+        rawJExecution: jExecution,
+        rawRaf: raf
     };
 }
 
@@ -1305,20 +1321,103 @@ function getUserName(id) {
     return Store.users.find(u => u.id === id)?.name || '-';
 }
 
-async function updateTicket(id, field, value) {
+async function updateTicket(id, fieldOrUpdates, value) {
+    let updates = {};
+    if (typeof fieldOrUpdates === 'object') {
+        updates = fieldOrUpdates;
+    } else {
+        updates[fieldOrUpdates] = value;
+    }
+
     try {
-        await databases.updateDocument(DATABASE_ID, COLLECTIONS.TICKETS, id, { [field]: value });
+        await databases.updateDocument(DATABASE_ID, COLLECTIONS.TICKETS, id, updates);
         const ticket = Store.tickets.find(t => t.id === id);
-        if (ticket) ticket[field] = value;
+        if (ticket) Object.assign(ticket, updates);
         updateUI();
     } catch (error) {
-        console.error("Error updating ticket field:", error);
+        console.error("Error updating ticket:", error);
     }
 }
 
-window.onConsommeChange = (id, val) => updateTicket(id, 'consumed', parseFloat(val) || 0);
-window.onDesignChange = (id, val) => updateTicket(id, 'statusDesign', val);
-window.onExecChange = (id, val) => updateTicket(id, 'statusExecution', val);
+function getTicketThresholds(ticket) {
+    let projectId = ticket.projectId;
+    // Fallback si projectId n'est pas directement sur le ticket (lié via la version)
+    if (!projectId && ticket.versionId) {
+        const v = Store.versions.find(ver => ver.id === ticket.versionId);
+        if (v) projectId = v.projectId;
+    }
+    // Si toujours rien, on prend le projet sélectionné par défaut
+    const project = Store.projects.find(p => p.id === projectId) || Store.projects.find(p => p.id === Store.selectedProjectId);
+    
+    if (!project) return { jC: 0, jE: 0 };
+    const jC = round015Up(ticket.nbTestCases / project.designRatio);
+    const jE = round015Up(ticket.nbTestCases / project.executionRatio);
+    return { jC, jE };
+}
+
+window.onConsommeChange = (id, val) => {
+    const numVal = parseFloat(val.toString().replace(',', '.')) || 0;
+    const ticket = Store.tickets.find(t => t.id === id);
+    if (!ticket) return;
+
+    const { jC, jE } = getTicketThresholds(ticket);
+    const updates = { consumed: numVal };
+    const eps = 0.001;
+
+    if (numVal === 0) {
+        updates.statusDesign = "À faire";
+        updates.statusExecution = "À exécuter";
+    } else {
+        // Règles Conception
+        if (numVal < jC - eps) updates.statusDesign = "En cours";
+        else updates.statusDesign = "Terminée";
+
+        // Règles Exécution
+        if (numVal <= jC + eps) {
+            updates.statusExecution = "En attente livraison";
+        } else if (numVal >= (jC + jE) - eps) {
+            updates.statusExecution = "Terminée OK";
+        } else {
+            updates.statusExecution = "En cours d'exécution";
+        }
+    }
+
+    updateTicket(id, updates);
+};
+
+window.onDesignChange = (id, val) => {
+    const ticket = Store.tickets.find(t => t.id === id);
+    if (!ticket) return;
+
+    const updates = { statusDesign: val };
+    if (val === "Terminée") {
+        const { jC } = getTicketThresholds(ticket);
+        updates.consumed = jC;
+        updates.statusExecution = "En attente livraison";
+    } else if (val === "À faire") {
+        updates.consumed = 0;
+        updates.statusExecution = "À exécuter";
+    }
+    updateTicket(id, updates);
+};
+
+window.onExecChange = (id, val) => {
+    const ticket = Store.tickets.find(t => t.id === id);
+    if (!ticket) return;
+
+    const updates = { statusExecution: val };
+    if (val === "Terminée OK") {
+        const { jC, jE } = getTicketThresholds(ticket);
+        updates.consumed = jC + jE;
+        updates.statusDesign = "Terminée";
+    } else if (val === "À exécuter") {
+        const { jC } = getTicketThresholds(ticket);
+        updates.consumed = jC; 
+        updates.statusDesign = "Terminée";
+    }
+    updateTicket(id, updates);
+};
+
 window.onCommentChange = (id, val) => updateTicket(id, 'comment', val);
 window.onTicketStateChange = (id, val) => updateTicket(id, 'ticketState', val);
 
@@ -1384,6 +1483,7 @@ function renderVersionsTable() {
     DOM.versionsTbody.innerHTML = sorted.map(v => {
         const proj = Store.projects.find(p => p.id === v.projectId);
         const pName = proj ? proj.name : 'Inconnu';
+        
         return `
             <tr>
                 <td>${v.id}</td>
@@ -1442,13 +1542,13 @@ function renderUsersTable() {
         <tr>
             <td>${u.id}</td>
             <td><strong>${u.name}</strong></td>
-            <td>${u.role}</td>
+            <td><span class="badge ${u.role === 'Admin' ? 'badge-prio-haute' : 'badge-prio-basse'}">${u.role}</span></td>
             <td>
-                <button class="btn" style="padding: 0.2rem; background: var(--accent-primary);" onclick="editUser('${u.id}')" title="Modifier">
-                    <i data-lucide="edit-2" style="width: 14px; height: 14px;"></i>
+                <button class="btn" style="padding: 0.4rem; background: var(--accent-primary);" onclick="editUser('${u.id}')" title="Modifier">
+                    <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
                 </button>
-                <button class="btn" style="padding: 0.2rem; margin-left: 0.5rem; background: var(--danger);" onclick="deleteUser('${u.id}')" title="Supprimer">
-                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                <button class="btn" style="padding: 0.4rem; margin-left: 0.5rem; background: var(--danger);" onclick="deleteUser('${u.id}')" title="Supprimer">
+                    <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
                 </button>
             </td>
         </tr>
@@ -1519,6 +1619,9 @@ function renderTicketsTable() {
     const wState = getRequiredWidth(project.ticketStates || []);
     const wDesign = getRequiredWidth(designOptions);
     const wExec = getRequiredWidth(execOptions);
+    const wConso = getRequiredWidth(['Consommé']);
+    const wJH = getRequiredWidth(['J/H (E)']); // Identique pour C et E
+    const wRAF = getRequiredWidth(['RAF']);
 
     // Application dynamique sur les en-têtes (On force la largeur pour éviter le squeeze)
     const thState = document.querySelector('th[data-col="ticketState"]');
@@ -1527,6 +1630,14 @@ function renderTicketsTable() {
     if (thDesign) { thDesign.style.width = `${wDesign}px`; thDesign.style.minWidth = `${wDesign}px`; }
     const thExec = document.querySelector('th[data-col="statusExecution"]');
     if (thExec) { thExec.style.width = `${wExec}px`; thExec.style.minWidth = `${wExec}px`; }
+    const thConso = document.querySelector('th[data-col="consumed"]');
+    if (thConso) { thConso.style.width = `${wConso}px`; thConso.style.minWidth = `${wConso}px`; }
+    const thJHC = document.querySelector('th[data-col="jConception"]');
+    if (thJHC) { thJHC.style.width = `${wJH}px`; thJHC.style.minWidth = `${wJH}px`; }
+    const thJHE = document.querySelector('th[data-col="jExecution"]');
+    if (thJHE) { thJHE.style.width = `${wJH}px`; thJHE.style.minWidth = `${wJH}px`; }
+    const thRAF = document.querySelector('th[data-col="raf"]');
+    if (thRAF) { thRAF.style.width = `${wRAF}px`; thRAF.style.minWidth = `${wRAF}px`; }
 
     DOM.ticketsTbody.innerHTML = sorted.map(t => {
         const calcs = getCalculations(t, project);
@@ -1553,9 +1664,9 @@ function renderTicketsTable() {
                         </button>
                     </div>
                 </td>
+                <td class="sticky-left-2" style="font-weight:600; color:var(--text-muted);">#${t.number}</td>
                 <td>${t.feature}</td>
                 <td><span style="padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.1); font-size:11px">${t.type}</span></td>
-                <td>#${t.number}</td>
                 <td>${t.priority}</td>
                 <td>${getUserName(t.assignDesignId)}</td>
                 <td>${getUserName(t.assignExecutionId)}</td>
@@ -1568,7 +1679,7 @@ function renderTicketsTable() {
                 <td style="color:var(--accent-primary); font-weight:600">${calcs.jConception}</td>
                 <td style="color:var(--accent-secondary); font-weight:600">${calcs.jExecution}</td>
                 <td>
-                    <input type="number" step="0.5" class="editable-field" value="${t.consumed}" onchange="onConsommeChange('${t.id}', this.value)">
+                    <input type="text" class="editable-field" value="${formatFrenchFloat(t.consumed)}" onchange="onConsommeChange('${t.id}', this.value)">
                 </td>
                 <td style="font-weight:700">${calcs.raf}</td>
                 <td style="width: ${wDesign}px; min-width: ${wDesign}px">
@@ -1591,6 +1702,28 @@ function renderTicketsTable() {
     lucide.createIcons();
     updateSortIndicators('tickets');
     enableColumnResizing(DOM.ticketsTbody.parentElement, 'tickets');
+    updateStickyOffsets();
+}
+
+/**
+ * Recalcule dynamiquement le left de sticky-left-2
+ * pour chaque table indépendamment.
+ */
+function updateStickyOffsets() {
+    document.querySelectorAll('.data-table').forEach(table => {
+        const ref = table.querySelector('th.sticky-left-1');
+        if (!ref) return;
+        
+        // Utilisation de getBoundingClientRect pour une précision au sous-pixel
+        // On soustrait un infime montant (0.2px) pour garantir un recouvrement parfait
+        // et boucher toute fuite visuelle.
+        const rect = ref.getBoundingClientRect();
+        const w = (rect.width - 0.2).toFixed(2);
+        
+        table.querySelectorAll('.sticky-left-2').forEach(el => {
+            el.style.left = w + 'px';
+        });
+    });
 }
 
 window.editTicket = (id) => {
@@ -1680,6 +1813,33 @@ function getFrenchHolidays(year) {
     });
 }
 
+// --- Ajoute des jours ouvrés à une date (float) ---
+function addWorkingDays(startDate, daysToAdd) {
+    if (daysToAdd <= 0) return new Date(startDate);
+    
+    let result = new Date(startDate);
+    let remainingDays = daysToAdd;
+    const cachedHolidays = {};
+
+    // Sécurité : on arrondit à l'entier supérieur pour la date de livraison
+    const daysToIterate = Math.ceil(daysToAdd);
+
+    let added = 0;
+    while (added < daysToIterate) {
+        result.setDate(result.getDate() + 1);
+        const year = result.getFullYear();
+        if (!cachedHolidays[year]) cachedHolidays[year] = getFrenchHolidays(year);
+        
+        const dayOfWeek = result.getDay();
+        const timeAtMidnight = new Date(result).setHours(0, 0, 0, 0);
+        
+        if (dayOfWeek !== 0 && dayOfWeek !== 6 && !cachedHolidays[year].includes(timeAtMidnight)) {
+            added++;
+        }
+    }
+    return result;
+}
+
 // --- Calcul précis des jours ouvrés (float) entre deux dates (hors weekends/fériés) ---
 function getWorkingDaysPrecise(startDate, endDate) {
     if (startDate >= endDate) return 0;
@@ -1750,12 +1910,10 @@ function renderDashboard() {
     // Initialisation des variables de calcul (essentielles)
     const userRaf = {};
     const statusCount = {}; // Pour le graphique global Doughnut
-    let totalPointsC = 0;
-    let totalPointsE = 0;
 
     viewTickets.forEach(t => {
         const calcs = getCalculations(t, project);
-        totalRaf += parseFloat(calcs.raf);
+        totalRaf += calcs.rawRaf;
         rafC_total += calcs.rafC;
         rafE_total += calcs.rafE;
 
@@ -1786,17 +1944,8 @@ function renderDashboard() {
         else if (typeNormalized.includes("TÂCHE") || typeNormalized.includes("TACHE")) nbTasks++;
 
         // Project overall progress
-        if (t.statusDesign === 'Terminée') {
-            totalPointsC += 100;
-            doneJConception += parseFloat(calcs.jConception);
-        }
-        totalJConception += parseFloat(calcs.jConception);
-
-        if (t.statusExecution && t.statusExecution.startsWith('Terminée')) {
-            totalPointsE += 100;
-            doneJExecution += parseFloat(calcs.jExecution);
-        }
-        totalJExecution += parseFloat(calcs.jExecution);
+        totalJConception += calcs.rawJConception;
+        totalJExecution += calcs.rawJExecution;
 
         // Workload Attribution
         if (t.assignDesignId) {
@@ -1823,9 +1972,15 @@ function renderDashboard() {
         activeDesignStatuses: Array.from(activeDesignStatuses)
     };
 
-    const advC = viewTickets.length > 0 ? (totalPointsC / viewTickets.length) : 0;
-    const advE = viewTickets.length > 0 ? (totalPointsE / viewTickets.length) : 0;
-    const advTotal = (advC + advE) / 2;
+    doneJConception = Math.max(0, totalJConception - rafC_total);
+    doneJExecution = Math.max(0, totalJExecution - rafE_total);
+
+    const advC = totalJConception > 0 ? (doneJConception / totalJConception) * 100 : 0;
+    const advE = totalJExecution > 0 ? (doneJExecution / totalJExecution) * 100 : 0;
+    
+    const totalJH = totalJConception + totalJExecution;
+    const doneTotal = Math.max(0, totalJH - totalRaf);
+    const advTotal = totalJH > 0 ? (doneTotal / totalJH) * 100 : 0;
 
     // Update KPI values
     const safeSetText = (id, text) => {
@@ -1838,13 +1993,13 @@ function renderDashboard() {
     safeSetText('kpiNbTasks', nbTasks);
     safeSetText('kpiTotalTickets', viewTickets.length);
 
-    safeSetText('kpiJH_C', totalJConception.toFixed(2));
-    safeSetText('kpiJH_E', totalJExecution.toFixed(2));
-    safeSetText('kpiJH_Total', (totalJConception + totalJExecution).toFixed(2));
+    safeSetText('kpiJH_C', formatFrenchFloat(totalJConception));
+    safeSetText('kpiJH_E', formatFrenchFloat(totalJExecution));
+    safeSetText('kpiJH_Total', formatFrenchFloat(totalJConception + totalJExecution));
 
-    safeSetText('kpiRaf_C', rafC_total.toFixed(2));
-    safeSetText('kpiRaf_E', rafE_total.toFixed(2));
-    safeSetText('kpiTotalRaf', totalRaf.toFixed(2));
+    safeSetText('kpiRaf_C', formatFrenchFloat(rafC_total));
+    safeSetText('kpiRaf_E', formatFrenchFloat(rafE_total));
+    safeSetText('kpiTotalRaf', formatFrenchFloat(totalRaf));
 
     safeSetText('kpiAdvC', advC.toFixed(0) + '%');
     safeSetText('kpiAdvE', advE.toFixed(0) + '%');
@@ -1954,6 +2109,76 @@ function renderDashboard() {
             status = 'PENDING';
         }
 
+        // --- Populate delivery date (always shown) ---
+        const dashDeliveryDate = document.getElementById('dashDeliveryDate');
+        const dashMarginSlot = document.getElementById('dashMarginSlot');
+        const dashMarginDays = document.getElementById('dashMarginDays');
+        const dashPossibleDeliverySlot = document.getElementById('dashPossibleDeliverySlot');
+        const dashPossibleDeliveryDate = document.getElementById('dashPossibleDeliveryDate');
+
+        if (dashDeliveryDate) {
+            if (dClient) {
+                dashDeliveryDate.textContent = dClient.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            } else {
+                dashDeliveryDate.textContent = 'Non définie';
+                dashDeliveryDate.style.color = '#9ca3af';
+            }
+        }
+
+        // --- Compute margin (always, for any status with a delivery date) ---
+        let marginDays = null;
+        if (dClient) {
+            const daysNeeded = totalRaf / nbMembers;
+            marginDays = getWorkingDaysPrecise(now, dClient) - daysNeeded;
+        }
+
+        // --- Affichage de la marge (toujours si date définie) ---
+        if (dashMarginSlot && dashMarginDays) {
+            if (marginDays !== null) {
+                dashMarginSlot.style.display = 'flex';
+                const marginRounded = Math.abs(Math.floor(marginDays * 10) / 10);
+                if (marginDays >= 0) {
+                    dashMarginSlot.style.background = 'rgba(16, 185, 129, 0.08)';
+                    dashMarginDays.style.color = '#10b981';
+                    dashMarginDays.textContent = `+${marginRounded.toFixed(1)} j ouvrés`;
+                } else {
+                    dashMarginSlot.style.background = 'rgba(239, 68, 68, 0.08)';
+                    dashMarginDays.style.color = '#ef4444';
+                    dashMarginDays.textContent = `-${marginRounded.toFixed(1)} j ouvrés`;
+                }
+            } else {
+                dashMarginSlot.style.display = 'none';
+            }
+        }
+
+        // --- Affichage Livraison Possible ---
+        if (dashPossibleDeliverySlot && dashPossibleDeliveryDate) {
+            const daysNeeded = totalRaf / nbMembers;
+            // On calcule toujours à partir de "now"
+            const possibleDate = addWorkingDays(now, daysNeeded);
+            
+            if (totalRaf > 0) {
+                dashPossibleDeliverySlot.style.display = 'flex';
+                dashPossibleDeliveryDate.textContent = possibleDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                
+                // Si la date possible dépasse la date client -> Alerte
+                if (dClient && possibleDate > dClient) {
+                    dashPossibleDeliverySlot.style.background = 'rgba(239, 68, 68, 0.08)';
+                    dashPossibleDeliveryDate.style.color = '#ef4444';
+                } else {
+                    dashPossibleDeliverySlot.style.background = 'rgba(245, 158, 11, 0.08)';
+                    dashPossibleDeliveryDate.style.color = '#f59e0b';
+                }
+            } else if (viewTickets.length > 0 && totalRaf === 0) {
+                dashPossibleDeliverySlot.style.display = 'flex';
+                dashPossibleDeliveryDate.textContent = "Terminée";
+                dashPossibleDeliverySlot.style.background = 'rgba(16, 185, 129, 0.08)';
+                dashPossibleDeliveryDate.style.color = '#10b981';
+            } else {
+                dashPossibleDeliverySlot.style.display = 'none';
+            }
+        }
+
         // Update UI
         if (status === 'OK') {
             riskIcon.style.background = 'rgba(16, 185, 129, 0.1)';
@@ -1974,8 +2199,10 @@ function renderDashboard() {
             riskText.style.color = '#6366f1';
             riskText.textContent = msg;
         }
+
         lucide.createIcons();
     }
+
 
     // Update progress bars
     const barC = document.getElementById('kpiAdvCBar');
@@ -2309,6 +2536,9 @@ function updateUI() {
         renderDashboard();
     }
 }
+
+// Window resize handling
+window.addEventListener('resize', updateStickyOffsets);
 
 // Boot
 init();

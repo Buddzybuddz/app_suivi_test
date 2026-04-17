@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="favicon.png">
     <title>Suivi de Test Pro</title>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -103,14 +104,14 @@
                             <thead>
                                 <tr>
                                     <th class="sticky-left-1" style="width: 85px;">ACTIONS</th>
+                                    <th class="sticky-left-2" data-col="number" onclick="toggleSort('tickets', 'number')"
+                                        style="cursor:pointer">N°<span id="sort-tickets-number"></span></th>
                                     <th data-col="feature"
                                         onclick="toggleSort('tickets', 'feature')" style="cursor:pointer; min-width: 180px;">
                                         Fonctionnalité<span id="sort-tickets-feature"></span>
                                     </th>
                                     <th data-col="type" onclick="toggleSort('tickets', 'type')" style="cursor:pointer">
                                         Type<span id="sort-tickets-type"></span></th>
-                                    <th data-col="number" onclick="toggleSort('tickets', 'number')"
-                                        style="cursor:pointer">N°<span id="sort-tickets-number"></span></th>
                                     <th data-col="priority" onclick="toggleSort('tickets', 'priority')"
                                         style="cursor:pointer">Priorité<span id="sort-tickets-priority"></span></th>
                                     <th data-col="assignDesignId" onclick="toggleSort('tickets', 'assignDesignId')"
@@ -138,6 +139,11 @@
                                 </tr>
                                 <tr class="filter-row">
                                     <th class="sticky-left-1"></th>
+                                    <th class="sticky-left-2" data-col="number"><select class="filter-input" data-filter-table="tickets"
+                                            data-filter-col="number"
+                                            onchange="onFilterChange('tickets', 'number', this.value)">
+                                            <option value="">Tout</option>
+                                        </select></th>
                                     <th data-col="feature"><select class="filter-input" data-filter-table="tickets"
                                             data-filter-col="feature"
                                             onchange="onFilterChange('tickets', 'feature', this.value)">
@@ -146,11 +152,6 @@
                                     <th data-col="type"><select class="filter-input" data-filter-table="tickets"
                                             data-filter-col="type"
                                             onchange="onFilterChange('tickets', 'type', this.value)">
-                                            <option value="">Tout</option>
-                                        </select></th>
-                                    <th data-col="number"><select class="filter-input" data-filter-table="tickets"
-                                            data-filter-col="number"
-                                            onchange="onFilterChange('tickets', 'number', this.value)">
                                             <option value="">Tout</option>
                                         </select></th>
                                     <th data-col="priority"><select class="filter-input" data-filter-table="tickets"
@@ -257,15 +258,40 @@
                             </span>
                             <span style="flex: 1; height: 1px; background: rgba(0,0,0,0.08); margin-top: 1px;"></span>
                         </h4>
-                        <div id="dashRiskContainer" class="kpi-card" style="width: 100%; max-width: none; display: flex; align-items: center; gap: 1.5rem; padding: 1.25rem; border: 1px solid rgba(0,0,0,0.05);">
-                            <div id="dashRiskIcon" class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 48px; height: 48px;">
+                        <div id="dashRiskContainer" class="kpi-card" style="width: 100%; max-width: none; display: flex; align-items: center; gap: 1.5rem; padding: 1.25rem; border: 1px solid rgba(0,0,0,0.05); flex-wrap: wrap;">
+                            <div id="dashRiskIcon" class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 48px; height: 48px; flex-shrink: 0;">
                                 <i data-lucide="check-circle"></i>
                             </div>
-                            <div class="kpi-info" style="flex: 1;">
+                            <div class="kpi-info" style="flex: 0 1 auto; min-width: 160px;">
                                 <h3 style="font-size: 0.9rem; margin-bottom: 0.25rem; color: var(--text-main);">État de la livraison</h3>
                                 <p id="dashRiskText" class="kpi-value" style="font-size: 1.1rem; color: #10b981;">Analyse en cours...</p>
                             </div>
+                            <!-- Groupe des 3 bulles centrées -->
+                            <div style="flex: 1; display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap;">
+                                <!-- Date de livraison prévue -->
+                                <div id="dashDeliveryDateSlot" style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.75rem 1.25rem; background: rgba(99,102,241,0.06); border-radius: 12px; min-width: 130px;">
+                                    <span style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap; display: flex; align-items: center; gap: 0.3rem;">
+                                        <i data-lucide="calendar" style="width:12px;height:12px;"></i> Livraison client
+                                    </span>
+                                    <span id="dashDeliveryDate" style="font-size: 1rem; font-weight: 700; color: #6366f1;">—</span>
+                                </div>
+                                <!-- Marge -->
+                                <div id="dashMarginSlot" style="display: none; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.75rem 1.25rem; background: rgba(16,185,129,0.08); border-radius: 12px; min-width: 130px;">
+                                    <span style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap; display: flex; align-items: center; gap: 0.3rem;">
+                                        <i data-lucide="clock" style="width:12px;height:12px;"></i> Marge
+                                    </span>
+                                    <span id="dashMarginDays" style="font-size: 1rem; font-weight: 700; color: #10b981;">—</span>
+                                </div>
+                                <!-- Livraison Possible (Calculé) -->
+                                <div id="dashPossibleDeliverySlot" style="display: none; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.75rem 1.25rem; background: rgba(245,158,11,0.08); border-radius: 12px; min-width: 130px;">
+                                    <span style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap; display: flex; align-items: center; gap: 0.3rem;">
+                                        <i data-lucide="sparkles" style="width:12px;height:12px;"></i> Livraison possible
+                                    </span>
+                                    <span id="dashPossibleDeliveryDate" style="font-size: 1rem; font-weight: 700; color: #f59e0b;">—</span>
+                                </div>
+                            </div>
                         </div>
+
 
                         <!-- Line 1: Tickets -->
                         <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: -0.5rem; display: flex; align-items: center; gap: 0.8rem;">

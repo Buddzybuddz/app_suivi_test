@@ -269,7 +269,7 @@ body {
 .data-table {
   width: auto;
   min-width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
   font-size: 0.875rem;
   table-layout: auto;
   /* Let content decide width, perfect for horizontal scroll */
@@ -287,19 +287,42 @@ body {
 
 .data-table th.sticky-left-1,
 .data-table td.sticky-left-1 {
-  position: sticky;
+  position: sticky !important;
   left: 0;
   width: 85px;
   min-width: 85px;
-  z-index: 10;
+  z-index: 12;
   background-color: white !important;
   border-right: 2px solid var(--border-light);
-  box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.05);
 }
 
 .data-table th.sticky-left-1 {
-  z-index: 30;
+  z-index: 32;
   background-color: #f8fafc !important;
+}
+
+.data-table th.sticky-left-2,
+.data-table td.sticky-left-2 {
+  position: sticky !important;
+  left: 85px;
+  min-width: 70px;
+  z-index: 11;
+  background-color: white !important;
+  border-right: 1px solid var(--border-light);
+  box-shadow: 6px 0 10px -4px rgba(0, 0, 0, 0.15); /* Ombre portée uniquement sur la 2ème colonne */
+}
+
+.data-table th.sticky-left-2 {
+  z-index: 31;
+  background-color: #f8fafc !important;
+}
+
+/* Ensure filter row doesn't break sticky */
+.filter-row th.sticky-left-1,
+.filter-row th.sticky-left-2 {
+  position: sticky !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
 }
 
 .data-table th[data-col="type"] { min-width: 90px; }
@@ -373,8 +396,12 @@ body {
   background-color: #ffffff;
   padding: 0.25rem 0.5rem;
   border-bottom: 1px solid var(--border-light);
-  position: relative;
-  /* FOR RESIZERS */
+  position: relative; /* FOR RESIZERS */
+}
+/* Sticky filter cells must NOT be overridden by position:relative above */
+.filter-row th.sticky-left-1,
+.filter-row th.sticky-left-2 {
+  position: sticky !important;
 }
 
 .filter-input {
@@ -453,6 +480,12 @@ body {
 
 .data-table tr:hover {
   background-color: #f1f5f9;
+}
+/* Sticky cells keep their own background on row hover */
+.data-table tr:hover td.sticky-left-1,
+.data-table tr:hover td.sticky-left-2 {
+  background: white !important;
+  background-color: white !important;
 }
 
 /* KPIs in Dashboard */
@@ -996,4 +1029,13 @@ body {
   background: var(--bg-app) !important;
   border-color: var(--accent-primary) !important;
   color: var(--accent-primary) !important;
+}
+.status-avance {
+  color: #10b981 !important;
+  font-weight: 600;
+}
+
+.status-retard {
+ color: #ef4444 !important;
+  font-weight: 600;
 }
