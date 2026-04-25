@@ -302,12 +302,23 @@ function getCalculations(ticket, project) {
     if (!project) return { jConception: '0.00', jExecution: '0.00', raf: '0.00' };
     const jConception = round015Up(ticket.nbTestCases / project.designRatio);
     const jExecution = round015Up(ticket.nbTestCases / project.executionRatio);
+    const consumed = ticket.consumed || 0;
+
     
-    // Nouvelle règle : Charge entière si pas terminé, 0 sinon
-    const rafC = ticket.statusDesign !== 'Terminée' ? jConception : 0;
-    const rafE = (ticket.statusExecution !== 'Terminée OK' && ticket.statusExecution !== 'Terminée KO') ? jExecution : 0;
+    // Calcul du RAF par phase (on consomme d'abord la conception puis l'exécution)
+    let rafC = 0;
+    if (ticket.statusDesign !== 'Terminée') {
+        rafC = Math.max(0, jConception - consumed);
+    }
+    
+    let rafE = 0;
+    if (ticket.statusExecution !== 'Terminée OK' && ticket.statusExecution !== 'Terminée KO') {
+        const consumedForE = Math.max(0, consumed - jConception);
+        rafE = Math.max(0, jExecution - consumedForE);
+    }
     
     const raf = round015Up(rafC + rafE);
+
     return {
         jConception: formatFrenchFloat(jConception),
         jExecution: formatFrenchFloat(jExecution),
@@ -318,6 +329,7 @@ function getCalculations(ticket, project) {
         rawJExecution: jExecution,
         rawRaf: raf
     };
+
 }
 
 let DOM = {};
@@ -372,12 +384,12 @@ function refreshDOM() {
         vClient: document.getElementById('vClient'),
         vProject: document.getElementById('vProject'),
         vName: document.getElementById('vName'),
-        vDateRecette_D: document.getElementById('vDateRecette_D'),
-        vDateRecette_M: document.getElementById('vDateRecette_M'),
-        vDateRecette_Y: document.getElementById('vDateRecette_Y'),
         vDate_D: document.getElementById('vDate_D'),
         vDate_M: document.getElementById('vDate_M'),
         vDate_Y: document.getElementById('vDate_Y'),
+        vDateActual_D: document.getElementById('vDateActual_D'),
+        vDateActual_M: document.getElementById('vDateActual_M'),
+        vDateActual_Y: document.getElementById('vDateActual_Y'),
 
         clientSelect: document.getElementById('clientSelect'),
         projectSelect: document.getElementById('projectSelect'),
@@ -782,13 +794,13 @@ const openVersionModal = (v = null, fromHeader = false) => {
         DOM.vClient.disabled = true;
         DOM.vProject.disabled = true;
         DOM.vName.value = v.name;
-        setDateValues(DOM.vDateRecette_D, DOM.vDateRecette_M, DOM.vDateRecette_Y, v.deliveryDateRecette);
         setDateValues(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y, v.deliveryDateClient);
+        setDateValues(DOM.vDateActual_D, DOM.vDateActual_M, DOM.vDateActual_Y, v.deliveryDateActual);
     } else {
         DOM.versionModalTitle.textContent = "Nouvelle Version";
         DOM.vId.value = '';
-        setDateValues(DOM.vDateRecette_D, DOM.vDateRecette_M, DOM.vDateRecette_Y, null);
         setDateValues(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y, null);
+        setDateValues(DOM.vDateActual_D, DOM.vDateActual_M, DOM.vDateActual_Y, null);
         DOM.vClient.disabled = false;
         DOM.vProject.disabled = false;
         
@@ -969,8 +981,8 @@ function setupEventListeners() {
             const data = {
                 projectId: DOM.vProject.value,
                 name: DOM.vName.value,
-                deliveryDateRecette: getDateStringFromSelectors(DOM.vDateRecette_D, DOM.vDateRecette_M, DOM.vDateRecette_Y),
-                deliveryDateClient: getDateStringFromSelectors(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y)
+                deliveryDateClient: getDateStringFromSelectors(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y),
+                deliveryDateActual: getDateStringFromSelectors(DOM.vDateActual_D, DOM.vDateActual_M, DOM.vDateActual_Y)
             };
 
             try {
@@ -1190,8 +1202,8 @@ function setupEventListeners() {
     }
 
     // Initialize custom date selectors once
-    setupDateSelectorGroup(DOM.vDateRecette_D, DOM.vDateRecette_M, DOM.vDateRecette_Y);
     setupDateSelectorGroup(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y);
+    setupDateSelectorGroup(DOM.vDateActual_D, DOM.vDateActual_M, DOM.vDateActual_Y);
 
     if (DOM.clientSelect) {
         DOM.clientSelect.addEventListener('change', (e) => {
@@ -1489,8 +1501,9 @@ function renderVersionsTable() {
                 <td>${v.id}</td>
                 <td><strong>${v.name}</strong></td>
                 <td>${pName}</td>
-                <td>${v.deliveryDateRecette ? new Date(v.deliveryDateRecette).toLocaleDateString('fr-FR') : '-'}</td>
+
                 <td>${v.deliveryDateClient ? new Date(v.deliveryDateClient).toLocaleDateString('fr-FR') : '-'}</td>
+                <td>${v.deliveryDateActual ? new Date(v.deliveryDateActual).toLocaleDateString('fr-FR') : '-'}</td>
                 <td>
                     <button class="btn" style="padding: 0.4rem; background: var(--accent-primary);" onclick="editVersion('${v.id}')" title="Modifier">
                         <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
@@ -1815,26 +1828,25 @@ function getFrenchHolidays(year) {
 
 // --- Ajoute des jours ouvrés à une date (float) ---
 function addWorkingDays(startDate, daysToAdd) {
-    if (daysToAdd <= 0) return new Date(startDate);
+    if (daysToAdd === 0) return new Date(startDate);
     
     let result = new Date(startDate);
-    let remainingDays = daysToAdd;
+    const direction = daysToAdd > 0 ? 1 : -1;
+    const daysToIterate = Math.ceil(Math.abs(daysToAdd));
     const cachedHolidays = {};
 
-    // Sécurité : on arrondit à l'entier supérieur pour la date de livraison
-    const daysToIterate = Math.ceil(daysToAdd);
-
-    let added = 0;
-    while (added < daysToIterate) {
-        result.setDate(result.getDate() + 1);
+    let count = 0;
+    while (count < daysToIterate) {
+        result.setDate(result.getDate() + direction);
         const year = result.getFullYear();
         if (!cachedHolidays[year]) cachedHolidays[year] = getFrenchHolidays(year);
         
         const dayOfWeek = result.getDay();
         const timeAtMidnight = new Date(result).setHours(0, 0, 0, 0);
-        
-        if (dayOfWeek !== 0 && dayOfWeek !== 6 && !cachedHolidays[year].includes(timeAtMidnight)) {
-            added++;
+        const isHoliday = cachedHolidays[year].includes(timeAtMidnight);
+
+        if (dayOfWeek !== 0 && dayOfWeek !== 6 && !isHoliday) {
+            count++;
         }
     }
     return result;
@@ -1842,18 +1854,21 @@ function addWorkingDays(startDate, daysToAdd) {
 
 // --- Calcul précis des jours ouvrés (float) entre deux dates (hors weekends/fériés) ---
 function getWorkingDaysPrecise(startDate, endDate) {
-    if (startDate >= endDate) return 0;
+    if (!startDate || !endDate) return 0;
+    const isNegative = startDate > endDate;
+    let start = isNegative ? new Date(endDate) : new Date(startDate);
+    let end = isNegative ? new Date(startDate) : new Date(endDate);
     
     let days = 0;
-    let tempDate = new Date(startDate);
+    let tempDate = new Date(start);
     const cachedHolidays = {};
     
-    while (tempDate < endDate) {
+    while (tempDate < end) {
         const nextDay = new Date(tempDate);
         nextDay.setDate(tempDate.getDate() + 1);
         nextDay.setHours(0, 0, 0, 0); 
         
-        let chunkEnd = nextDay < endDate ? nextDay : endDate;
+        let chunkEnd = nextDay < end ? nextDay : end;
         
         const year = tempDate.getFullYear();
         if (!cachedHolidays[year]) cachedHolidays[year] = getFrenchHolidays(year);
@@ -1861,14 +1876,13 @@ function getWorkingDaysPrecise(startDate, endDate) {
         const dayOfWeek = tempDate.getDay();
         const timeAtMidnight = new Date(tempDate).setHours(0, 0, 0, 0);
 
-        // Ouvré si ni Dimanche(0), ni Samedi(6), ni férié
         if (dayOfWeek !== 0 && dayOfWeek !== 6 && !cachedHolidays[year].includes(timeAtMidnight)) {
             days += (chunkEnd - tempDate) / (1000 * 3600 * 24);
         }
         
         tempDate = nextDay;
     }
-    return days;
+    return isNegative ? -days : days;
 }
 
 // --- Render Dashboard ---
@@ -2039,170 +2053,156 @@ function renderDashboard() {
     }
 
     // --- Delivery Risk Logic ---
-    const riskIcon = document.getElementById('dashRiskIcon');
-    const riskText = document.getElementById('dashRiskText');
+    const riskIcon = document.getElementById("dashRiskIcon");
+    const riskText = document.getElementById("dashRiskText");
+    const riskTitle = document.getElementById("dashRiskTitle");
     
     if (riskIcon && riskText && currentVersion) {
         const now = new Date();
+        const fmt = d => d ? d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }) : "Non définie";
         
         const parseDate = (dStr) => {
             if (!dStr) return null;
             const d = new Date(dStr);
-            // On fixe l'échéance à 17h00 du jour j
             d.setHours(17, 0, 0, 0);
             return isNaN(d.getTime()) ? null : d;
         };
 
-        const dRecette = parseDate(currentVersion.deliveryDateRecette);
         const dClient = parseDate(currentVersion.deliveryDateClient);
+        const dActual = parseDate(currentVersion.deliveryDateActual);
+
         const nbMembers = project.userIds ? Math.max(1, project.userIds.length) : 1;
+        const daysNeededTotal = totalRaf / nbMembers;
+        const daysNeededExecution = rafE_total / nbMembers;
+        const finishDate = addWorkingDays(now, daysNeededTotal);
 
-        let status = 'OK';
-        let msg = 'Dans les temps';
-        const totalPointsC = rafC_total;
-        const totalPointsE = rafE_total;
+        const setSlot = (slotId, valId, value, show = true, color = null, labelId = null, labelText = null) => {
+            const s = document.getElementById(slotId);
+            const v = document.getElementById(valId);
+            const l = labelId ? document.getElementById(labelId) : null;
+            if (s) {
+                s.style.display = show ? "flex" : "none";
+                if (color) s.style.background = color.bg;
+            }
+            if (v) {
+                if (value) v.textContent = value;
+                if (color) v.style.color = color.text;
+            }
+            if (l && labelText) l.textContent = labelText;
+        };
 
-        // Debug log for PM
-        console.log(`[Risk Check] Version: ${currentVersion.name} | RAF Total: ${totalRaf} | Members: ${nbMembers}`);
-
+        let dMaxRecette = null;
+        let maxRecetteStr = "—";
         if (dClient) {
-            if (dRecette) {
-                if (now > dRecette) {
-                    // Scenario 1: On a dépassé la date de recette
-                    const daysRemaining = getWorkingDaysPrecise(now, dClient);
-                    const daysNeeded = totalRaf / nbMembers;
-                    console.log(`[Risk Check] Mode: Post-Recette | DaysRem: ${daysRemaining.toFixed(2)} (ouvrés) | DaysReq: ${daysNeeded.toFixed(2)}`);
-                    if (daysNeeded > daysRemaining) {
-                        status = 'KO';
-                        msg = `Retard estimé à ${round05Up(daysNeeded - daysRemaining).toFixed(2)} jours`;
-                    }
-                } else {
-                    // Scenario 2: Avant la recette
-                    const daysToRecette = getWorkingDaysPrecise(now, dRecette);
-                    const daysNeededForRecette = totalPointsC / nbMembers;
-                    
-                    const daysToClient = getWorkingDaysPrecise(dRecette, dClient);
-                    const daysNeededForClient = totalPointsE / nbMembers;
-
-                    console.log(`[Risk Check] Mode: Avant-Recette | ToRecette: ${daysToRecette.toFixed(2)} ouvrés (Req: ${daysNeededForRecette.toFixed(2)}) | ToClientFromRecette: ${daysToClient.toFixed(2)} ouvrés (Req: ${daysNeededForClient.toFixed(2)})`);
-
-                    if (daysNeededForRecette > daysToRecette) {
-                        status = 'KO';
-                        msg = `Retard Recette estimé à ${round05Up(daysNeededForRecette - daysToRecette).toFixed(2)} jours`;
-                    } else if (daysNeededForClient > daysToClient) {
-                        status = 'KO';
-                        msg = `Retard Client estimé à ${round05Up(daysNeededForClient - daysToClient).toFixed(2)} jours`;
-                    }
-                }
-            } else {
-                // Scenario 3: Pas de date de recette
-                const daysRemaining = getWorkingDaysPrecise(now, dClient);
-                const daysNeeded = totalRaf / nbMembers;
-                console.log(`[Risk Check] Mode: Global | DaysRem: ${daysRemaining.toFixed(2)} (ouvrés) | DaysReq: ${daysNeeded.toFixed(2)}`);
-                if (daysNeeded > daysRemaining) {
-                    status = 'KO';
-                    msg = `Retard estimé à ${round05Up(daysNeeded - daysRemaining).toFixed(2)} jours`;
-                }
-            }
-        } else {
-            msg = "Date de livraison non définie";
-            status = 'PENDING';
+            const executionWithMargin = daysNeededExecution * 1.3;
+            dMaxRecette = addWorkingDays(dClient, -executionWithMargin);
+            maxRecetteStr = fmt(dMaxRecette);
         }
 
-        // --- Populate delivery date (always shown) ---
-        const dashDeliveryDate = document.getElementById('dashDeliveryDate');
-        const dashMarginSlot = document.getElementById('dashMarginSlot');
-        const dashMarginDays = document.getElementById('dashMarginDays');
-        const dashPossibleDeliverySlot = document.getElementById('dashPossibleDeliverySlot');
-        const dashPossibleDeliveryDate = document.getElementById('dashPossibleDeliveryDate');
-
-        if (dashDeliveryDate) {
-            if (dClient) {
-                dashDeliveryDate.textContent = dClient.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            } else {
-                dashDeliveryDate.textContent = 'Non définie';
-                dashDeliveryDate.style.color = '#9ca3af';
-            }
-        }
-
-        // --- Compute margin (always, for any status with a delivery date) ---
-        let marginDays = null;
-        if (dClient) {
-            const daysNeeded = totalRaf / nbMembers;
-            marginDays = getWorkingDaysPrecise(now, dClient) - daysNeeded;
-        }
-
-        // --- Affichage de la marge (toujours si date définie) ---
-        if (dashMarginSlot && dashMarginDays) {
-            if (marginDays !== null) {
-                dashMarginSlot.style.display = 'flex';
-                const marginRounded = Math.abs(Math.floor(marginDays * 10) / 10);
-                if (marginDays >= 0) {
-                    dashMarginSlot.style.background = 'rgba(16, 185, 129, 0.08)';
-                    dashMarginDays.style.color = '#10b981';
-                    dashMarginDays.textContent = `+${marginRounded.toFixed(1)} j ouvrés`;
-                } else {
-                    dashMarginSlot.style.background = 'rgba(239, 68, 68, 0.08)';
-                    dashMarginDays.style.color = '#ef4444';
-                    dashMarginDays.textContent = `-${marginRounded.toFixed(1)} j ouvrés`;
-                }
-            } else {
-                dashMarginSlot.style.display = 'none';
-            }
-        }
-
-        // --- Affichage Livraison Possible ---
-        if (dashPossibleDeliverySlot && dashPossibleDeliveryDate) {
-            const daysNeeded = totalRaf / nbMembers;
-            // On calcule toujours à partir de "now"
-            const possibleDate = addWorkingDays(now, daysNeeded);
+        setSlot("slotClientDate", "valClientDate", fmt(dClient), !!dClient);
+        
+        if (dActual) {
+            setSlot("slotActualDate", "valActualDate", fmt(dActual), true);
+            setSlot("slotMaxRecetteDate", "valMaxRecetteDate", "", false);
+            setSlot("slotPossibleDate", "valPossibleDate", "", false);
             
-            if (totalRaf > 0) {
-                dashPossibleDeliverySlot.style.display = 'flex';
-                dashPossibleDeliveryDate.textContent = possibleDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            if (dClient) {
+                const finalMargin = getWorkingDaysPrecise(dActual, dClient);
+                const isDelayActual = finalMargin < 0;
+                const marginAbsActual = round05Up(Math.abs(finalMargin));
                 
-                // Si la date possible dépasse la date client -> Alerte
-                if (dClient && possibleDate > dClient) {
-                    dashPossibleDeliverySlot.style.background = 'rgba(239, 68, 68, 0.08)';
-                    dashPossibleDeliveryDate.style.color = '#ef4444';
+                if (isDelayActual) {
+                    const color = { bg: "rgba(239, 68, 68, 0.08)", text: "#ef4444" };
+                    setSlot("slotMargin", "valMargin", `${marginAbsActual.toFixed(1)} j`, true, color, "labelMargin", "Retard");
                 } else {
-                    dashPossibleDeliverySlot.style.background = 'rgba(245, 158, 11, 0.08)';
-                    dashPossibleDeliveryDate.style.color = '#f59e0b';
+                    setSlot("slotMargin", "valMargin", "", false);
                 }
-            } else if (viewTickets.length > 0 && totalRaf === 0) {
-                dashPossibleDeliverySlot.style.display = 'flex';
-                dashPossibleDeliveryDate.textContent = "Terminée";
-                dashPossibleDeliverySlot.style.background = 'rgba(16, 185, 129, 0.08)';
-                dashPossibleDeliveryDate.style.color = '#10b981';
+                
+                if (riskTitle) riskTitle.textContent = "";
+                if (riskText) {
+                    riskText.textContent = isDelayActual ? `Livrée avec un retard de ${marginAbsActual.toFixed(1)} ${marginAbsActual <= 1 ? "jour" : "jours"}` : "Version livrée à temps";
+                    riskText.style.color = isDelayActual ? "#ef4444" : "#10b981";
+                }
+                if (riskIcon) {
+                    riskIcon.innerHTML = isDelayActual ? '<i data-lucide="alert-triangle"></i>' : '<i data-lucide="check-circle"></i>';
+                    riskIcon.style.background = isDelayActual ? "rgba(239, 68, 68, 0.1)" : "rgba(16, 185, 129, 0.1)";
+                    riskIcon.style.color = isDelayActual ? "#ef4444" : "#10b981";
+                }
             } else {
-                dashPossibleDeliverySlot.style.display = 'none';
+                setSlot("slotMargin", "valMargin", "", false);
+                if (riskText) riskText.textContent = "";
+            }
+        } else {
+            const margin = dClient ? getWorkingDaysPrecise(finishDate, dClient) : 0;
+            const isDelay = margin < 0;
+            const marginAbs = round05Up(Math.abs(margin));
+
+            let displayFinishDate = finishDate;
+            if (isDelay && dClient && fmt(finishDate) === fmt(dClient)) {
+                displayFinishDate = addWorkingDays(finishDate, 1);
+            }
+
+            const isMaxRecettePassed = dMaxRecette && now > dMaxRecette;
+            const hasUnfinishedExecution = viewTickets.some(t => {
+                const st = t.statusExecution || 'À exécuter';
+                return st !== 'Terminée OK' && st !== 'Terminée KO';
+            });
+            const maxRecetteAlert = isMaxRecettePassed && hasUnfinishedExecution;
+            const maxRecetteColor = maxRecetteAlert ? { bg: "rgba(239, 68, 68, 0.12)", text: "#ef4444" } : null;
+
+            setSlot("slotActualDate", "valActualDate", "", false);
+            setSlot("slotMaxRecetteDate", "valMaxRecetteDate", maxRecetteStr, (!!dClient && !isDelay), maxRecetteColor);
+            setSlot("slotPossibleDate", "valPossibleDate", fmt(displayFinishDate), true);
+            
+            if (dClient) {
+                const color = isDelay 
+                    ? { bg: "rgba(239, 68, 68, 0.08)", text: "#ef4444" }
+                    : { bg: "rgba(16, 185, 129, 0.08)", text: "#10b981" };
+                
+                setSlot("slotMargin", "valMargin", `${marginAbs.toFixed(1)} j`, true, color, "labelMargin", isDelay ? "Retard" : "Marge");
+                
+                if (isDelay) {
+                    if (riskText) {
+                        riskText.textContent = `Retard estimé à ${marginAbs.toFixed(2)} ${marginAbs <= 1 ? "jour" : "jours"}, livraison client possible le ${fmt(displayFinishDate)}`;
+                        riskText.style.color = "#ef4444";
+                    }
+                    if (riskIcon) {
+                        riskIcon.innerHTML = '<i data-lucide="alert-triangle"></i>';
+                        riskIcon.style.background = "rgba(239, 68, 68, 0.1)";
+                        riskIcon.style.color = "#ef4444";
+                    }
+                } else {
+                    if (riskText) {
+                        if (maxRecetteAlert) {
+                            riskText.textContent = `Livraison client OK, mais retard sur le début de recette (date max : ${fmt(dMaxRecette)})`;
+                            riskText.style.color = "#f59e0b";
+                        } else {
+                            riskText.textContent = `Livraison client possible le ${fmt(displayFinishDate)}`;
+                            riskText.style.color = "#10b981";
+                        }
+                    }
+                    if (riskIcon) {
+                        if (maxRecetteAlert) {
+                            riskIcon.innerHTML = '<i data-lucide="alert-circle"></i>';
+                            riskIcon.style.background = "rgba(245, 158, 11, 0.1)";
+                            riskIcon.style.color = "#f59e0b";
+                        } else {
+                            riskIcon.innerHTML = '<i data-lucide="check-circle"></i>';
+                            riskIcon.style.background = "rgba(16, 185, 129, 0.1)";
+                            riskIcon.style.color = "#10b981";
+                        }
+                    }
+                }
+            } else {
+                setSlot("slotMargin", "valMargin", "", false);
+                if (riskText) {
+                    riskText.textContent = "Date de livraison client non définie";
+                    riskText.style.color = "var(--text-muted)";
+                }
             }
         }
-
-        // Update UI
-        if (status === 'OK') {
-            riskIcon.style.background = 'rgba(16, 185, 129, 0.1)';
-            riskIcon.style.color = '#10b981';
-            riskIcon.innerHTML = '<i data-lucide="check-circle"></i>';
-            riskText.style.color = '#10b981';
-            riskText.textContent = msg;
-        } else if (status === 'KO') {
-            riskIcon.style.background = 'rgba(239, 68, 68, 0.1)';
-            riskIcon.style.color = '#ef4444';
-            riskIcon.innerHTML = '<i data-lucide="alert-triangle"></i>';
-            riskText.style.color = '#ef4444';
-            riskText.textContent = msg;
-        } else {
-            riskIcon.style.background = 'rgba(99, 102, 241, 0.1)';
-            riskIcon.style.color = '#6366f1';
-            riskIcon.innerHTML = '<i data-lucide="help-circle"></i>';
-            riskText.style.color = '#6366f1';
-            riskText.textContent = msg;
-        }
-
-        lucide.createIcons();
+        if (typeof lucide !== "undefined") lucide.createIcons();
     }
-
 
     // Update progress bars
     const barC = document.getElementById('kpiAdvCBar');

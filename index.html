@@ -263,35 +263,38 @@
                                 <i data-lucide="check-circle"></i>
                             </div>
                             <div class="kpi-info" style="flex: 0 1 auto; min-width: 160px;">
-                                <h3 style="font-size: 0.9rem; margin-bottom: 0.25rem; color: var(--text-main);">État de la livraison</h3>
+                                <h3 id="dashRiskTitle" style="font-size: 0.9rem; margin-bottom: 0; color: var(--text-main);"></h3>
                                 <p id="dashRiskText" class="kpi-value" style="font-size: 1.1rem; color: #10b981;">Analyse en cours...</p>
                             </div>
-                            <!-- Groupe des 3 bulles centrées -->
-                            <div style="flex: 1; display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap;">
-                                <!-- Date de livraison prévue -->
-                                <div id="dashDeliveryDateSlot" style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.75rem 1.25rem; background: rgba(99,102,241,0.06); border-radius: 12px; min-width: 130px;">
-                                    <span style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap; display: flex; align-items: center; gap: 0.3rem;">
-                                        <i data-lucide="calendar" style="width:12px;height:12px;"></i> Livraison client
-                                    </span>
-                                    <span id="dashDeliveryDate" style="font-size: 1rem; font-weight: 700; color: #6366f1;">—</span>
+                            <!-- Bulles d'état -->
+                            <div style="flex: 1; display: flex; justify-content: flex-end; gap: 0.8rem; flex-wrap: wrap;">
+                                <!-- Livraison Client -->
+                                <div id="slotClientDate" style="display: none; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.5rem 0.8rem; background: rgba(14, 165, 233, 0.1); border-radius: 10px; min-width: 100px;">
+                                    <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap;">Livraison client prévue le</span>
+                                    <span id="valClientDate" style="font-size: 0.85rem; font-weight: 700; color: #0ea5e9;">—</span>
                                 </div>
-                                <!-- Marge -->
-                                <div id="dashMarginSlot" style="display: none; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.75rem 1.25rem; background: rgba(16,185,129,0.08); border-radius: 12px; min-width: 130px;">
-                                    <span style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap; display: flex; align-items: center; gap: 0.3rem;">
-                                        <i data-lucide="clock" style="width:12px;height:12px;"></i> Marge
-                                    </span>
-                                    <span id="dashMarginDays" style="font-size: 1rem; font-weight: 700; color: #10b981;">—</span>
+                                <!-- Recette Max -->
+                                <div id="slotMaxRecetteDate" style="display: none; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.5rem 0.8rem; background: rgba(139, 92, 246, 0.08); border-radius: 10px; min-width: 100px;">
+                                    <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap;">Dev en recette max le</span>
+                                    <span id="valMaxRecetteDate" style="font-size: 0.85rem; font-weight: 700; color: #8b5cf6;">—</span>
                                 </div>
-                                <!-- Livraison Possible (Calculé) -->
-                                <div id="dashPossibleDeliverySlot" style="display: none; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.75rem 1.25rem; background: rgba(245,158,11,0.08); border-radius: 12px; min-width: 130px;">
-                                    <span style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap; display: flex; align-items: center; gap: 0.3rem;">
-                                        <i data-lucide="sparkles" style="width:12px;height:12px;"></i> Livraison possible
-                                    </span>
-                                    <span id="dashPossibleDeliveryDate" style="font-size: 1rem; font-weight: 700; color: #f59e0b;">—</span>
+                                <!-- Livraison Possible -->
+                                <div id="slotPossibleDate" style="display: none; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.5rem 0.8rem; background: rgba(245, 158, 11, 0.08); border-radius: 10px; min-width: 100px;">
+                                    <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap;">Livraison client possible le</span>
+                                    <span id="valPossibleDate" style="font-size: 0.85rem; font-weight: 700; color: #f59e0b;">—</span>
+                                </div>
+                                <!-- Marge / Retard -->
+                                <div id="slotMargin" style="display: none; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.5rem 0.8rem; border-radius: 10px; min-width: 100px;">
+                                    <span id="labelMargin" style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap;">Marge</span>
+                                    <span id="valMargin" style="font-size: 0.85rem; font-weight: 700;">—</span>
+                                </div>
+                                <!-- Livrée le -->
+                                <div id="slotActualDate" style="display: none; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.5rem 0.8rem; background: rgba(16, 185, 129, 0.08); border-radius: 10px; min-width: 100px;">
+                                    <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap;">Livrée le</span>
+                                    <span id="valActualDate" style="font-size: 0.85rem; font-weight: 700; color: #10b981;">—</span>
                                 </div>
                             </div>
                         </div>
-
 
                         <!-- Line 1: Tickets -->
                         <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: -0.5rem; display: flex; align-items: center; gap: 0.8rem;">
@@ -565,11 +568,12 @@
                                     de la Version<span id="sort-versions-name"></span></th>
                                 <th data-col="project" onclick="toggleSort('versions', 'project')"
                                     style="cursor:pointer">Projet<span id="sort-versions-project"></span></th>
-                                <th data-col="deliveryDateRecette" onclick="toggleSort('versions', 'deliveryDateRecette')"
-                                    style="cursor:pointer">Date Recette<span id="sort-versions-deliveryDateRecette"></span></th>
+
                                 <th data-col="deliveryDateClient" onclick="toggleSort('versions', 'deliveryDateClient')"
                                     style="cursor:pointer">Date Livraison Client<span
                                         id="sort-versions-deliveryDateClient"></span></th>
+                                <th data-col="deliveryDateActual" onclick="toggleSort('versions', 'deliveryDateActual')"
+                                    style="cursor:pointer">Date Livraison Réelle<span id="sort-versions-deliveryDateActual"></span></th>
                                 <th>Actions</th>
                             </tr>
                             <tr class="filter-row">
@@ -587,14 +591,15 @@
                                         onchange="onFilterChange('versions', 'project', this.value)">
                                         <option value="">Tout</option>
                                     </select></th>
-                                <th data-col="deliveryDateRecette"><select class="filter-input" data-filter-table="versions"
-                                        data-filter-col="deliveryDateRecette"
-                                        onchange="onFilterChange('versions', 'deliveryDateRecette', this.value)">
-                                        <option value="">Tout</option>
-                                    </select></th>
+
                                 <th data-col="deliveryDateClient"><select class="filter-input" data-filter-table="versions"
                                         data-filter-col="deliveryDateClient"
                                         onchange="onFilterChange('versions', 'deliveryDateClient', this.value)">
+                                        <option value="">Tout</option>
+                                    </select></th>
+                                <th data-col="deliveryDateActual"><select class="filter-input" data-filter-table="versions"
+                                        data-filter-col="deliveryDateActual"
+                                        onchange="onFilterChange('versions', 'deliveryDateActual', this.value)">
                                         <option value="">Tout</option>
                                     </select></th>
                                 <th></th>
@@ -806,72 +811,6 @@
         </div>
     </div>
 
-    <!-- Modal for New/Edit Version -->
-    <div class="modal" id="versionModal">
-        <div class="modal-content glass-panel modal-version">
-            <div class="modal-header">
-                <h3 id="versionModalTitle">Nouvelle Version</h3>
-                <button class="close-btn" id="btnCloseVersionModal"><i data-lucide="x"></i></button>
-            </div>
-            <div class="modal-body">
-                <form id="versionForm" class="project-form">
-                    <input type="hidden" id="vId">
-
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i data-lucide="layers" class="form-section-icon"></i>
-                            <span>Détails de la Version</span>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group form-group-flex">
-                                <label>Client</label>
-                                <select id="vClient" required class="select-input"></select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group form-group-flex">
-                                <label>Projet</label>
-                                <select id="vProject" required class="select-input"></select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group form-group-flex">
-                                <label>Nom de la Version (ex: v1.0.0)</label>
-                                <input type="text" id="vName" required class="text-input"
-                                    placeholder="Ex: v1.0.0, MVP...">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group form-group-flex">
-                                <label>Date de Livraison en Recette</label>
-                                <div class="date-select-group">
-                                    <select id="vDateRecette_D" class="select-input"></select>
-                                    <select id="vDateRecette_M" class="select-input"></select>
-                                    <select id="vDateRecette_Y" class="select-input date-select-year"></select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group form-group-flex">
-                                <label>Date de Livraison Client</label>
-                                <div class="date-select-group">
-                                    <select id="vDate_D" class="select-input"></select>
-                                    <select id="vDate_M" class="select-input"></select>
-                                    <select id="vDate_Y" class="select-input date-select-year"></select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary submit-btn-full">
-                        <i data-lucide="save" class="btn-icon-sm"></i>
-                        Enregistrer
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal for New/Edit User -->
     <div class="modal" id="userModal">
         <div class="modal-content glass-panel modal-user">
@@ -882,27 +821,85 @@
             <div class="modal-body">
                 <form id="userForm" class="project-form">
                     <input type="hidden" id="uId">
-
                     <div class="form-section">
-                        <div class="form-section-title">
-                            <i data-lucide="user" class="form-section-icon"></i>
-                            <span>Profil Utilisateur</span>
+                        <div class="form-group">
+                            <label>Nom Complet</label>
+                            <input type="text" id="uiName" required class="text-input" placeholder="Ex: Jean Dupont">
                         </div>
-                        <div class="form-row">
-                            <div class="form-group form-group-flex">
-                                <label>Nom complet</label>
-                                <input type="text" id="uiName" required class="text-input" placeholder="Jean Dupont">
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label>Rôle</label>
+                            <select id="uRole" class="select-input">
+                                <option>Concepteur</option>
+                                <option>Testeur</option>
+                                <option>Lead Test</option>
+                                <option>Product Owner</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary submit-btn-full" style="margin-top: 1.5rem;">
+                        <i data-lucide="save" class="btn-icon-sm"></i>
+                        Enregistrer
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for New/Edit Version -->
+    <div class="modal" id="versionModal">
+        <div class="modal-content glass-panel modal-version">
+            <div class="modal-header">
+                <h3 id="versionModalTitle">Nouvelle Version</h3>
+                <button class="close-btn" id="btnCloseVersionModal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="versionForm" class="project-form">
+                    <input type="hidden" id="vId">
+                    
+                    <!-- Sélection Projet -->
+                    <div class="form-section">
+                         <div class="form-section-title">
+                            <i data-lucide="folder" class="form-section-icon"></i>
+                            <span>Projet & Client</span>
+                        </div>
+                        <div class="form-row form-row-2col">
+                            <div class="form-group">
+                                <label>Client</label>
+                                <select id="vClient" class="select-input"></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Projet</label>
+                                <select id="vProject" class="select-input"></select>
                             </div>
                         </div>
-                        <!-- Champ Email retiré à la demande de l'utilisateur -->
-                        <div class="form-row">
-                            <div class="form-group form-group-flex">
-                                <label>Rôle</label>
-                                <select id="uRole" class="select-input">
-                                    <option value="Chef de projet">Chef de projet</option>
-                                    <option value="Concepteur">Concepteur</option>
-                                    <option value="Testeur">Testeur</option>
-                                </select>
+                    </div>
+
+                    <!-- Détails Version -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i data-lucide="layers" class="form-section-icon"></i>
+                            <span>Détails de la version</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Nom de la version</label>
+                            <input type="text" id="vName" required class="text-input" placeholder="Ex: v1.0.0">
+                        </div>
+                        <!-- Date Livraison Client -->
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label>Date de Livraison Client prévue</label>
+                            <div class="date-selector-group">
+                                <select id="vDate_D" class="select-input date-day"></select>
+                                <select id="vDate_M" class="select-input date-month"></select>
+                                <select id="vDate_Y" class="select-input date-year"></select>
+                            </div>
+
+                        <!-- Date Livraison Réelle -->
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label>Date de Livraison Réelle (Fige la version)</label>
+                            <div class="date-selector-group">
+                                <select id="vDateActual_D" class="select-input date-day"></select>
+                                <select id="vDateActual_M" class="select-input date-month"></select>
+                                <select id="vDateActual_Y" class="select-input date-year"></select>
                             </div>
                         </div>
                     </div>
@@ -916,8 +913,16 @@
         </div>
     </div>
 
-    <script src="appwrite_config.js?v=FORCE_2026_FINAL"></script>
-    <script src="app.js?v=FORCE_2026_FINAL"></script>
+    <!-- Scripts -->
+    <script src="appwrite_config.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Initialisation Lucide après le chargement du DOM
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            if (typeof init === 'function') init();
+        });
+    </script>
 </body>
 
 </html>
