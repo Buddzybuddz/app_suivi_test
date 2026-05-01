@@ -636,6 +636,7 @@ const openProjectModal = (p = null) => {
         currentProjectStates = ['Nouveau', 'Validé', 'Rejeté', 'Fermé'];
         currentProjectUsers = [];
     }
+    populatePUserSelectToAdd();
     renderProjectMembersBadge();
     renderProjectStatesBadge();
     DOM.projectModal.classList.add('show');
