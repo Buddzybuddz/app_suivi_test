@@ -1227,24 +1227,34 @@ function setupEventListeners() {
 
     DOM.ticketForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        const submitBtn = DOM.ticketForm.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i data-lucide="loader"></i> Enregistrement...';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
         const tIdValue = DOM.tId ? DOM.tId.value : null;
         const nbTests = parseFloat(DOM.fTests.value) || 0;
 
         const targetVersionId = DOM.fVersion.value || currentVersionId;
-        const targetVersion = Store.versions.find(v => v.id === targetVersionId);
-        const targetProjectId = targetVersion ? targetVersion.projectId : null;
         const newNumber = parseInt(DOM.fNum.value) || 0;
 
-        // Validation d'unicité par projet
-        if (targetProjectId && newNumber > 0) {
+        // Validation d'unicité par version
+        if (targetVersionId && newNumber > 0) {
             const isDuplicate = Store.tickets.some(t => {
                 if (tIdValue && t.id === tIdValue) return false; // Ignorer le ticket web en cours d'édition
-                const v = Store.versions.find(ver => ver.id === t.versionId);
-                return v && v.projectId === targetProjectId && t.number === newNumber;
+                return String(t.versionId) === String(targetVersionId) && Number(t.number) === Number(newNumber);
             });
 
             if (isDuplicate) {
-                alert(`Le numéro de ticket #${newNumber} est déjà utilisé dans ce projet. Veuillez en choisir un autre.`);
+                alert("ce ticket existe deja dans la version");
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i data-lucide="save" class="btn-icon-sm"></i> Enregistrer';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
                 return;
             }
         }
@@ -1278,6 +1288,12 @@ function setupEventListeners() {
         } catch (error) {
             console.error("Error saving ticket:", error);
             alert("Erreur lors de l'enregistrement du ticket.");
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i data-lucide="save" class="btn-icon-sm"></i> Enregistrer';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
         }
     });
 }
@@ -2493,5 +2509,4 @@ function updateUI() {
 // Window resize handling
 window.addEventListener('resize', updateStickyOffsets);
 
-// Boot
-init();
+// Boot handled by index.html (DOMContentLoaded)
