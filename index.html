@@ -916,7 +916,17 @@
     <!-- Scripts -->
     <script src="appwrite_config.js"></script>
     <script src="utils.js"></script>
-    <script src="app.js"></script>
+    <!-- app.js scinde en modules (scope global classique, ordre de chargement significatif) -->
+    <script src="js/state.js"></script>
+    <script src="js/table-tools.js"></script>
+    <script src="js/dom.js"></script>
+    <script src="js/init.js"></script>
+    <script src="js/views-forms.js"></script>
+    <script src="js/events.js"></script>
+    <script src="js/render-tables.js"></script>
+    <script src="js/render-tickets.js"></script>
+    <script src="js/calc-dates.js"></script>
+    <script src="js/dashboard.js"></script>
     <script>
         // Initialisation Lucide après le chargement du DOM
         document.addEventListener('DOMContentLoaded', () => {

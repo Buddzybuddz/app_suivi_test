@@ -4,11 +4,12 @@ Ce fichier `agent.md` définit les règles d'architecture, les frameworks et les
 
 ## 1. Architecture
 
-Le projet est construit selon une architecture **Serverless / BaaS (Backend-as-a-Service)** couplée à une **Single Page Application (SPA)** monolithique pour le front-end. 
+Le projet est construit selon une architecture **Serverless / BaaS (Backend-as-a-Service)** couplée à une **Single Page Application (SPA)** pour le front-end.
 
-- **Front-end :** Vanilla HTML, CSS, JavaScript (`index.html`, `styles.css`, `app.js`). Aucun framework front-end lourd (React, Vue, Angular) n'est utilisé. Aucun bundler (Webpack, Vite) n'est présent.
+- **Front-end :** Vanilla HTML, CSS, JavaScript (`index.html`, `styles.css`, `utils.js`, dossier `js/`). Aucun framework front-end lourd (React, Vue, Angular) n'est utilisé. Aucun bundler (Webpack, Vite) n'est présent.
 - **Back-end :** Le projet s'appuie exclusivement sur **Appwrite** Cloud (`https://fra.cloud.appwrite.io/v1`). La logique métier de persistance et de requêtage des bases de données est directement gérée côté client via le SDK Appwrite (`appwrite_config.js`). (Note : Le projet utilisait potentiellement PocketBase par le passé, mais a migré vers Appwrite).
-- **Logique Métier :** La logique est principalement concentrée dans `app.js`. Les calculs de charge (Jours de Conception/Exécution, RAF) sont effectués à la volée côté client (`getCalculations`).
+- **Organisation du JS :** L'ancien `app.js` monolithique a été scindé en fichiers thématiques dans `js/`, chargés en **scope global classique** (pas de modules ES) dans un ordre significatif défini par `index.html` : `state.js` (Store + Appwrite), `table-tools.js` (tri/filtre/resize), `dom.js` (cache DOM), `init.js` (persistance sélection + init), `views-forms.js` (vues, selects, modales, dates), `events.js` (listeners + mutations tickets), `render-tables.js`, `render-tickets.js`, `calc-dates.js` (jours ouvrés / fériés FR), `dashboard.js` (KPIs + graphiques + `updateUI`). Les handlers appelés depuis le HTML inline restent exposés via `window.*`.
+- **Logique Métier :** Les fonctions pures (calculs de charge, formatage) sont dans `utils.js` (testé). Les calculs de charge (Jours de Conception/Exécution, RAF) sont effectués à la volée côté client (`getCalculations`).
 
 ## 2. Frameworks de Tests
 
@@ -21,8 +22,9 @@ Le projet est construit selon une architecture **Serverless / BaaS (Backend-as-a
 
 - **Vanilla JS (ES6+) :** Utilisation intensive de fonctionnalités modernes (Destructuring, Promises, `async/await`, Arrow functions).
 - **Gestion de l'État (State Management) :**
-  - Utilisation d'un objet global `Store` dans `app.js` contenant les collections (users, projects, versions, tickets) ainsi que l'état de l'interface (tri, filtres, largeurs de colonnes).
+  - Utilisation d'un objet global `Store` (dans `js/state.js`) contenant les collections (users, projects, versions, tickets) ainsi que l'état de l'interface (tri, filtres, largeurs de colonnes).
   - Persistance de l'état de l'interface utilisateur (Client, Projet, Version sélectionnés) via `localStorage` (ex: `TestTracker_Client`).
+  - Un flag `DEBUG` (activable via `?debug` dans l'URL) et le helper `debug()` conditionnent tous les logs de debug.
 - **Manipulation du DOM :**
   - Approche déclarative manuelle via un objet `DOM` rafraîchi par `refreshDOM()`.
   - Rendu et mise à jour de l'interface gérés par des fonctions dédiées (ex: `updateUI()`, `renderProjectsTable()`).
@@ -32,8 +34,10 @@ Le projet est construit selon une architecture **Serverless / BaaS (Backend-as-a
 - **Logique de Calculs Spécifique :**
   - Les arrondis métier doivent utiliser les fonctions dédiées `round015Up` (multiple de 0.15) et `round05Up` (multiple de 0.5).
   - L'affichage des flottants doit respecter le formatage français avec virgule via `formatFrenchFloat`.
-- **Scripts Utilitaires :**
-  - Le répertoire `scratch/` contient historiquement des scripts Python utilisés pour faire des remplacements de chaînes de caractères complexes dans `app.js` en guise de "patchs". Toutefois, l'édition directe du fichier `app.js` est privilégiée.
+- **Sécurité du rendu :**
+  - Toute donnée dynamique interpolée dans un template `innerHTML` **doit** passer par `escapeHtml()` (défini dans `utils.js`). Ne jamais injecter de valeur utilisateur brute.
+- **Édition du code :**
+  - Éditer directement les fichiers de `js/`. Le dossier `scratch/` et ses scripts Python de "patch" ont été supprimés — ils n'ont plus lieu d'être depuis le découpage.
 
 ## 4. Catalogue de Compétences (Skills)
 Pour exécuter des tâches complexes, tu as accès à une bibliothèque de compétences locales.

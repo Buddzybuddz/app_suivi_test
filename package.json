@@ -2,12 +2,13 @@
   "name": "app_suivi_test",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "index.html",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "serve": "python3 -m http.server 8000"
   },
   "repository": {
     "type": "git",
