@@ -13,10 +13,10 @@ risque de livraison).
   et `js/calc-dates.js`.
 - **Back-end :** [Appwrite Cloud](https://appwrite.io) (`https://fra.cloud.appwrite.io/v1`),
   interrogé directement depuis le navigateur via le SDK. Config dans `appwrite_config.js`.
+- **Auth :** session Appwrite email/mot de passe (`js/auth.js`). L'app exige une session
+  avant de charger quoi que ce soit ; la session dure ~1 an (login demandé une fois par
+  navigateur). Bouton « Déconnexion » en bas de la sidebar.
 - **Libs CDN :** Chart.js, Lucide, html2canvas (versions épinglées dans `index.html`).
-
-> Pas d'authentification : l'app est destinée à un seul utilisateur. La sécurité repose sur
-> les permissions des collections Appwrite.
 
 ## Démarrer en local
 
@@ -25,10 +25,24 @@ npm install
 npm run serve      # sert le dossier sur http://localhost:8000
 ```
 
-Ouvrir <http://localhost:8000/>. Ajouter `?debug` à l'URL pour activer les logs console.
+Ouvrir <http://localhost:8000/> et se connecter. Ajouter `?debug` à l'URL pour les logs console.
 
 Aucune variable d'environnement : le projet Appwrite est référencé en clair dans
-`appwrite_config.js` (identifiants publics côté client).
+`appwrite_config.js` (identifiants publics côté client — la sécurité tient aux permissions
+des collections, voir ci-dessous).
+
+## Configuration Appwrite (à faire une fois, côté console)
+
+Pour que l'authentification protège réellement les données :
+
+1. **Auth → Settings** : désactiver l'inscription libre (« Users signup »).
+2. **Auth → Users** : créer le(s) compte(s) autorisé(s) (email + mot de passe).
+3. Pour chacune des 4 collections (`users`, `projects`, `versions`, `tickets`) :
+    - **Settings → Permissions** : retirer le rôle `Any`, ajouter le rôle `Users` avec
+      `Create` / `Read` / `Update` / `Delete`.
+    - Laisser « Document Security » désactivé.
+
+Sans l'étape 3, les collections restent lisibles/modifiables sans être connecté.
 
 ## Scripts npm
 

@@ -22,7 +22,36 @@
     </head>
 
     <body>
-        <div class="app-container">
+        <!-- Écran de connexion (affiché tant qu'aucune session Appwrite active) -->
+        <div id="loginScreen" class="login-screen" hidden>
+            <form id="loginForm" class="login-card">
+                <div class="login-logo">
+                    <i data-lucide="check-circle-2" class="icon-accent"></i>
+                    <h2>TestTracker</h2>
+                </div>
+                <p class="login-hint">Connexion requise pour accéder aux données.</p>
+                <label for="loginEmail">Email</label>
+                <input
+                    type="email"
+                    id="loginEmail"
+                    class="text-input"
+                    required
+                    autocomplete="username"
+                />
+                <label for="loginPassword">Mot de passe</label>
+                <input
+                    type="password"
+                    id="loginPassword"
+                    class="text-input"
+                    required
+                    autocomplete="current-password"
+                />
+                <button type="submit" class="btn btn-primary">Se connecter</button>
+                <p id="loginError" class="login-error" role="alert"></p>
+            </form>
+        </div>
+
+        <div class="app-container" hidden>
             <!-- Sidebar -->
             <aside class="sidebar" data-html2canvas-ignore>
                 <div class="logo">
@@ -47,6 +76,10 @@
                         <span>Utilisateurs</span>
                     </a>
                 </nav>
+                <button type="button" id="btnLogout" class="nav-logout" hidden>
+                    <i data-lucide="log-out"></i>
+                    <span id="logoutLabel">Déconnexion</span>
+                </button>
             </aside>
 
             <!-- Main Content -->
@@ -1895,11 +1928,11 @@
         <script src="js/render-tickets.js"></script>
         <script src="js/calc-dates.js"></script>
         <script src="js/dashboard.js"></script>
+        <script src="js/auth.js"></script>
         <script>
-            // Initialisation Lucide après le chargement du DOM
+            // Vérifie la session Appwrite AVANT de démarrer l'app (voir js/auth.js).
             document.addEventListener('DOMContentLoaded', () => {
-                if (typeof lucide !== 'undefined') lucide.createIcons();
-                if (typeof init === 'function') init();
+                bootstrap();
             });
         </script>
     </body>

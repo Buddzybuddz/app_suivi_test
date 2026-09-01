@@ -1132,3 +1132,103 @@ body {
 .saved-flash {
     animation: savedFlash 0.9s ease-out;
 }
+
+/* L'attribut [hidden] doit primer sur les display: flex/grid des conteneurs */
+[hidden] {
+    display: none !important;
+}
+
+/* --- Écran de connexion --- */
+.login-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-app);
+    padding: 1.5rem;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 360px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.login-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+}
+
+.login-logo h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.login-hint {
+    margin: 0 0 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.login-card label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+}
+
+.login-card .btn {
+    margin-top: 1rem;
+    justify-content: center;
+}
+
+.login-error {
+    margin: 0.75rem 0 0;
+    min-height: 1.2em;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--danger);
+}
+
+/* --- Bouton de déconnexion (sidebar) --- */
+.nav-logout {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+.nav-logout:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-inverse);
+}
+
+.nav-logout i {
+    width: 18px;
+    height: 18px;
+}
