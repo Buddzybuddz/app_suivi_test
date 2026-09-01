@@ -60,10 +60,18 @@ function showLoginScreen(message) {
             );
             location.reload();
         } catch (err) {
-            errEl.textContent =
-                err && err.code === 401
-                    ? 'Identifiants incorrects.'
-                    : 'Connexion impossible. Réessayez.';
+            console.error('Login failed:', err);
+            if (err && err.code === 401) {
+                errEl.textContent = 'Identifiants incorrects.';
+            } else if (err && err.code === 400 && /password/i.test(err.message || '')) {
+                errEl.textContent = 'Mot de passe invalide (8 caractères minimum).';
+            } else if (err && err.message) {
+                errEl.textContent = `Connexion impossible : ${err.message}`;
+            } else {
+                errEl.textContent =
+                    "Connexion impossible (réseau ou CORS). Vérifie que l'origine est " +
+                    'déclarée dans Appwrite → Overview → Platforms.';
+            }
             btn.disabled = false;
             btn.textContent = 'Se connecter';
         }
