@@ -1,0 +1,5 @@
+node_modules/
+generated-videos/
+docs/
+package-lock.json
+favicon.png

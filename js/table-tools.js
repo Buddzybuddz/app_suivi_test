@@ -4,9 +4,12 @@
 // Calcule la largeur minimale requise (Version Sécurité Maximale)
 function getRequiredWidth(options) {
     if (!options || options.length === 0) return 100;
-    const longest = options.reduce((a, b) => (a || "").toString().length > (b || "").toString().length ? a : b, "");
+    const longest = options.reduce(
+        (a, b) => ((a || '').toString().length > (b || '').toString().length ? a : b),
+        ''
+    );
     // Version "Équilibrée" : 10px par caractère + 90px d'offset (Chevron + Marges)
-    const w = (longest.toString().length * 9) + 80;
+    const w = longest.toString().length * 9 + 80;
     return Math.ceil(w);
 }
 
@@ -23,42 +26,56 @@ window.toggleSort = (table, key) => {
 
 function updateFilterOptions(tableKey, data) {
     const selects = document.querySelectorAll(`.filter-input[data-filter-table="${tableKey}"]`);
-    selects.forEach(select => {
+    selects.forEach((select) => {
         const col = select.dataset.filterCol;
         if (!col) return;
 
         const currentVal = Store.filters[tableKey][col] || '';
         const uniqueValues = new Set();
 
-        data.forEach(item => {
+        data.forEach((item) => {
             let val = '';
             if (tableKey === 'tickets') {
                 if (col === 'assignDesignId' || col === 'assignExecutionId') {
                     val = getUserName(item[col]);
                 } else if (col === 'jConception') {
-                    val = (item.nbTestCases / (Store.projects.find(p => p.id === currentProjectId)?.designRatio || 1)).toFixed(2);
+                    val = (
+                        item.nbTestCases /
+                        (Store.projects.find((p) => p.id === currentProjectId)?.designRatio || 1)
+                    ).toFixed(2);
                 } else if (col === 'jExecution') {
-                    val = (item.nbTestCases / (Store.projects.find(p => p.id === currentProjectId)?.executionRatio || 1)).toFixed(2);
+                    val = (
+                        item.nbTestCases /
+                        (Store.projects.find((p) => p.id === currentProjectId)?.executionRatio || 1)
+                    ).toFixed(2);
                 } else if (col === 'raf') {
-                    const p = Store.projects.find(pr => pr.id === currentProjectId);
+                    const p = Store.projects.find((pr) => pr.id === currentProjectId);
                     const c = getCalculations(item, p);
                     val = c.raf;
                 } else {
                     val = item[col];
                 }
             } else if (tableKey === 'versions' && col === 'project') {
-                val = Store.projects.find(p => p.id === item.projectId)?.name || '';
+                val = Store.projects.find((p) => p.id === item.projectId)?.name || '';
             } else {
                 val = item[col];
             }
             if (val !== undefined && val !== null) uniqueValues.add(val.toString());
         });
 
-        const sortedValues = Array.from(uniqueValues).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+        const sortedValues = Array.from(uniqueValues).sort((a, b) =>
+            a.localeCompare(b, undefined, { numeric: true })
+        );
 
         // Preserve "Tout" and reconstruction
-        select.innerHTML = '<option value="">Tout</option>' +
-            sortedValues.map(v => `<option value="${escapeHtml(v)}" ${v.toLowerCase() === currentVal.toLowerCase() ? 'selected' : ''}>${escapeHtml(v)}</option>`).join('');
+        select.innerHTML =
+            '<option value="">Tout</option>' +
+            sortedValues
+                .map(
+                    (v) =>
+                        `<option value="${escapeHtml(v)}" ${v.toLowerCase() === currentVal.toLowerCase() ? 'selected' : ''}>${escapeHtml(v)}</option>`
+                )
+                .join('');
     });
 }
 
@@ -80,7 +97,7 @@ function filterData(data, tableKey) {
     const filters = Store.filters[tableKey];
     if (!filters || Object.keys(filters).length === 0) return data;
 
-    return data.filter(item => {
+    return data.filter((item) => {
         return Object.entries(filters).every(([col, searchVal]) => {
             if (!searchVal) return true;
 
@@ -92,18 +109,24 @@ function filterData(data, tableKey) {
                 } else if (col === 'jConception') {
                     // This is calculated, we might need the project to recalculate or just skip
                     // For now, let's just use string conversion of the item properties
-                    targetVal = (item.nbTestCases / (Store.projects.find(p => p.id === currentProjectId)?.designRatio || 1)).toString();
+                    targetVal = (
+                        item.nbTestCases /
+                        (Store.projects.find((p) => p.id === currentProjectId)?.designRatio || 1)
+                    ).toString();
                 } else if (col === 'jExecution') {
-                    targetVal = (item.nbTestCases / (Store.projects.find(p => p.id === currentProjectId)?.executionRatio || 1)).toString();
+                    targetVal = (
+                        item.nbTestCases /
+                        (Store.projects.find((p) => p.id === currentProjectId)?.executionRatio || 1)
+                    ).toString();
                 } else if (col === 'raf') {
-                    const p = Store.projects.find(pr => pr.id === currentProjectId);
+                    const p = Store.projects.find((pr) => pr.id === currentProjectId);
                     const c = getCalculations(item, p);
                     targetVal = c.raf.toString();
                 } else {
                     targetVal = (item[col] || '').toString();
                 }
             } else if (tableKey === 'versions' && col === 'project') {
-                targetVal = Store.projects.find(p => p.id === item.projectId)?.name || '';
+                targetVal = Store.projects.find((p) => p.id === item.projectId)?.name || '';
             } else {
                 targetVal = (item[col] || '').toString();
             }
@@ -129,23 +152,24 @@ function sortData(data, table) {
         let valB = b[key] ?? '';
 
         // Handle nested or special fields
-        if (key === 'project') { // For versions table
-            valA = Store.projects.find(p => p.id === a.projectId)?.name || '';
-            valB = Store.projects.find(p => p.id === b.projectId)?.name || '';
+        if (key === 'project') {
+            // For versions table
+            valA = Store.projects.find((p) => p.id === a.projectId)?.name || '';
+            valB = Store.projects.find((p) => p.id === b.projectId)?.name || '';
         }
 
         if (typeof valA === 'string') {
             const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
             return dir === 'asc' ? cmp : -cmp;
         }
-        return dir === 'asc' ? (valA - valB) : (valB - valA);
+        return dir === 'asc' ? valA - valB : valB - valA;
     });
 }
 
 function updateSortIndicators(table) {
     const opt = Store.sortOptions[table];
     // Clear all indicators for this table
-    document.querySelectorAll(`[id^="sort-${table}-"]`).forEach(s => s.textContent = '');
+    document.querySelectorAll(`[id^="sort-${table}-"]`).forEach((s) => (s.textContent = ''));
     // Set active one
     const active = document.getElementById(`sort-${table}-${opt.key}`);
     if (active) {
@@ -164,7 +188,7 @@ function enableColumnResizing(tableElement, tableKey) {
         const colId = th.dataset.col;
         if (!colId || colId === 'actions') return;
 
-        const masterTh = firstRowHeaders.find(m => m.dataset.col === colId) || th;
+        const masterTh = firstRowHeaders.find((m) => m.dataset.col === colId) || th;
 
         if (Store.columnWidths[tableKey][colId]) {
             masterTh.style.width = Store.columnWidths[tableKey][colId] + 'px';
@@ -179,8 +203,8 @@ function enableColumnResizing(tableElement, tableKey) {
 
             // Initial total width sync
             let initialTotal = 0;
-            firstRowHeaders.forEach(h => {
-                initialTotal += (parseInt(h.style.width) || h.offsetWidth || 100);
+            firstRowHeaders.forEach((h) => {
+                initialTotal += parseInt(h.style.width) || h.offsetWidth || 100;
             });
             tableElement.style.width = initialTotal + 'px';
 
@@ -200,8 +224,8 @@ function enableColumnResizing(tableElement, tableKey) {
 
                     // Force table to be wide enough to contain all fixed columns
                     let totalWidth = 0;
-                    firstRowHeaders.forEach(h => {
-                        totalWidth += (parseInt(h.style.width) || h.offsetWidth || 100);
+                    firstRowHeaders.forEach((h) => {
+                        totalWidth += parseInt(h.style.width) || h.offsetWidth || 100;
                     });
                     tableElement.style.width = totalWidth + 'px';
                 };
@@ -234,4 +258,3 @@ function enableColumnResizing(tableElement, tableKey) {
 }
 
 // getCalculations migrée vers utils.js
-

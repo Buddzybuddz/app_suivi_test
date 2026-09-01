@@ -13,4 +13,3 @@ const COLLECTIONS = {
     VERSIONS: 'versions',
     TICKETS: 'tickets'
 };
-

@@ -4,14 +4,14 @@
 // --- Calcule les jours fériés français pour une année donnée (incluant jours mobiles) ---
 function getFrenchHolidays(year) {
     const holidays = [
-        new Date(year, 0, 1),   // Jour de l'an
-        new Date(year, 4, 1),   // Fête du Travail
-        new Date(year, 4, 8),   // Victoire 1945
-        new Date(year, 6, 14),  // Fête Nationale
-        new Date(year, 7, 15),  // Assomption
-        new Date(year, 10, 1),  // Toussaint
+        new Date(year, 0, 1), // Jour de l'an
+        new Date(year, 4, 1), // Fête du Travail
+        new Date(year, 4, 8), // Victoire 1945
+        new Date(year, 6, 14), // Fête Nationale
+        new Date(year, 7, 15), // Assomption
+        new Date(year, 10, 1), // Toussaint
         new Date(year, 10, 11), // Armistice 1918
-        new Date(year, 11, 25)  // Noël
+        new Date(year, 11, 25) // Noël
     ];
 
     // Algorithme de Meeus/Jones/Butcher pour Pâques
@@ -34,16 +34,16 @@ function getFrenchHolidays(year) {
     const easter = new Date(year, month, day);
     const easterMonday = new Date(easter);
     easterMonday.setDate(easter.getDate() + 1);
-    
+
     const ascension = new Date(easter);
     ascension.setDate(easter.getDate() + 39);
-    
+
     const pentecostMonday = new Date(easter);
     pentecostMonday.setDate(easter.getDate() + 50);
 
     holidays.push(easterMonday, ascension, pentecostMonday);
-    
-    return holidays.map(d => {
+
+    return holidays.map((d) => {
         d.setHours(0, 0, 0, 0);
         return d.getTime();
     });
@@ -52,7 +52,7 @@ function getFrenchHolidays(year) {
 // --- Ajoute des jours ouvrés à une date (float) ---
 function addWorkingDays(startDate, daysToAdd) {
     if (daysToAdd === 0) return new Date(startDate);
-    
+
     let result = new Date(startDate);
     const direction = daysToAdd > 0 ? 1 : -1;
     const daysToIterate = Math.ceil(Math.abs(daysToAdd));
@@ -63,7 +63,7 @@ function addWorkingDays(startDate, daysToAdd) {
         result.setDate(result.getDate() + direction);
         const year = result.getFullYear();
         if (!cachedHolidays[year]) cachedHolidays[year] = getFrenchHolidays(year);
-        
+
         const dayOfWeek = result.getDay();
         const timeAtMidnight = new Date(result).setHours(0, 0, 0, 0);
         const isHoliday = cachedHolidays[year].includes(timeAtMidnight);
@@ -81,30 +81,34 @@ function getWorkingDaysPrecise(startDate, endDate) {
     const isNegative = startDate > endDate;
     let start = isNegative ? new Date(endDate) : new Date(startDate);
     let end = isNegative ? new Date(startDate) : new Date(endDate);
-    
+
     let days = 0;
     let tempDate = new Date(start);
     const cachedHolidays = {};
-    
+
     while (tempDate < end) {
         const nextDay = new Date(tempDate);
         nextDay.setDate(tempDate.getDate() + 1);
-        nextDay.setHours(0, 0, 0, 0); 
-        
+        nextDay.setHours(0, 0, 0, 0);
+
         let chunkEnd = nextDay < end ? nextDay : end;
-        
+
         const year = tempDate.getFullYear();
         if (!cachedHolidays[year]) cachedHolidays[year] = getFrenchHolidays(year);
-        
+
         const dayOfWeek = tempDate.getDay();
         const timeAtMidnight = new Date(tempDate).setHours(0, 0, 0, 0);
 
         if (dayOfWeek !== 0 && dayOfWeek !== 6 && !cachedHolidays[year].includes(timeAtMidnight)) {
             days += (chunkEnd - tempDate) / (1000 * 3600 * 24);
         }
-        
+
         tempDate = nextDay;
     }
     return isNegative ? -days : days;
 }
 
+// Export pour l'environnement de test (Vitest/Node) — sans effet dans le navigateur.
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { getFrenchHolidays, addWorkingDays, getWorkingDaysPrecise };
+}

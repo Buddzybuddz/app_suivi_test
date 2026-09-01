@@ -5,7 +5,7 @@
 function setupEventListeners() {
     // Sidebar Navigation
     const navElements = document.querySelectorAll('.nav-item');
-    navElements.forEach(item => {
+    navElements.forEach((item) => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
             const targetEl = e.currentTarget;
@@ -15,20 +15,16 @@ function setupEventListeners() {
     });
 
     // Fermeture générique des modales : clic sur l'arrière-plan + touche Échap
-    document.querySelectorAll('.modal').forEach(modal => {
+    document.querySelectorAll('.modal').forEach((modal) => {
         modal.addEventListener('mousedown', (e) => {
             if (e.target === modal) modal.classList.remove('show');
         });
     });
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
+            document.querySelectorAll('.modal.show').forEach((m) => m.classList.remove('show'));
         }
     });
-
-
-
-
 
     if (DOM.btnAddState) {
         DOM.btnAddState.addEventListener('click', () => {
@@ -46,7 +42,7 @@ function setupEventListeners() {
             const uid = DOM.pUserSelectToAdd.value;
             if (!uid) return;
             if (currentProjectUsers.includes(uid)) {
-                notify("Cet utilisateur est déjà attribué à ce projet.", 'warning');
+                notify('Cet utilisateur est déjà attribué à ce projet.', 'warning');
                 return;
             }
             currentProjectUsers.push(uid);
@@ -81,9 +77,19 @@ function setupEventListeners() {
             try {
                 let res;
                 if (pId) {
-                    res = await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROJECTS, pId, data);
+                    res = await databases.updateDocument(
+                        DATABASE_ID,
+                        COLLECTIONS.PROJECTS,
+                        pId,
+                        data
+                    );
                 } else {
-                    res = await databases.createDocument(DATABASE_ID, COLLECTIONS.PROJECTS, ID.unique(), data);
+                    res = await databases.createDocument(
+                        DATABASE_ID,
+                        COLLECTIONS.PROJECTS,
+                        ID.unique(),
+                        data
+                    );
                     currentProjectId = res.$id;
                 }
 
@@ -96,20 +102,20 @@ function setupEventListeners() {
                 updateUI();
                 notify(pId ? 'Projet mis à jour.' : 'Projet créé.', 'success');
             } catch (error) {
-                console.error("Error saving project:", error);
+                console.error('Error saving project:', error);
                 notify("Échec de l'enregistrement du projet.", 'error');
             }
         });
     }
 
-
-
     // Listener pour le changement de client dans la modale version
     if (DOM.vClient) {
         DOM.vClient.addEventListener('change', (e) => {
             const clientName = e.target.value;
-            const filtered = Store.projects.filter(p => (p.client || '') === clientName);
-            DOM.vProject.innerHTML = filtered.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
+            const filtered = Store.projects.filter((p) => (p.client || '') === clientName);
+            DOM.vProject.innerHTML = filtered
+                .map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`)
+                .join('');
         });
     }
 
@@ -138,16 +144,34 @@ function setupEventListeners() {
             const data = {
                 projectId: DOM.vProject.value,
                 name: DOM.vName.value,
-                deliveryDateClient: getDateStringFromSelectors(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y),
-                deliveryDateActual: getDateStringFromSelectors(DOM.vDateActual_D, DOM.vDateActual_M, DOM.vDateActual_Y)
+                deliveryDateClient: getDateStringFromSelectors(
+                    DOM.vDate_D,
+                    DOM.vDate_M,
+                    DOM.vDate_Y
+                ),
+                deliveryDateActual: getDateStringFromSelectors(
+                    DOM.vDateActual_D,
+                    DOM.vDateActual_M,
+                    DOM.vDateActual_Y
+                )
             };
 
             try {
                 let res;
                 if (vId) {
-                    res = await databases.updateDocument(DATABASE_ID, COLLECTIONS.VERSIONS, vId, data);
+                    res = await databases.updateDocument(
+                        DATABASE_ID,
+                        COLLECTIONS.VERSIONS,
+                        vId,
+                        data
+                    );
                 } else {
-                    res = await databases.createDocument(DATABASE_ID, COLLECTIONS.VERSIONS, ID.unique(), data);
+                    res = await databases.createDocument(
+                        DATABASE_ID,
+                        COLLECTIONS.VERSIONS,
+                        ID.unique(),
+                        data
+                    );
                     currentVersionId = res.$id;
                 }
 
@@ -161,12 +185,11 @@ function setupEventListeners() {
                 renderVersionsTable();
                 notify(vId ? 'Version mise à jour.' : 'Version créée.', 'success');
             } catch (error) {
-                console.error("Error saving version:", error);
+                console.error('Error saving version:', error);
                 notify("Échec de l'enregistrement de la version.", 'error');
             }
         });
     }
-
 
     if (DOM.btnNewUser) {
         DOM.btnNewUser.addEventListener('click', () => {
@@ -181,12 +204,12 @@ function setupEventListeners() {
             e.preventDefault();
             const uid = DOM.uId.value;
             const newName = DOM.uiName.value.trim();
-            
+
             // Vérification de l'unicité globale
-            const isDuplicate = Store.users.some(u => 
-                u.name.toLowerCase() === newName.toLowerCase() && u.id !== uid
+            const isDuplicate = Store.users.some(
+                (u) => u.name.toLowerCase() === newName.toLowerCase() && u.id !== uid
             );
-            
+
             if (isDuplicate) {
                 notify("Cet utilisateur existe déjà dans l'annuaire.", 'warning');
                 return;
@@ -202,7 +225,12 @@ function setupEventListeners() {
                 if (uid) {
                     res = await databases.updateDocument(DATABASE_ID, COLLECTIONS.USERS, uid, data);
                 } else {
-                    res = await databases.createDocument(DATABASE_ID, COLLECTIONS.USERS, ID.unique(), data);
+                    res = await databases.createDocument(
+                        DATABASE_ID,
+                        COLLECTIONS.USERS,
+                        ID.unique(),
+                        data
+                    );
                 }
 
                 upsertStoreDoc('users', res);
@@ -214,7 +242,7 @@ function setupEventListeners() {
                 updateUI();
                 notify(uid ? 'Utilisateur mis à jour.' : 'Utilisateur créé.', 'success');
             } catch (error) {
-                console.error("Error saving user:", error);
+                console.error('Error saving user:', error);
                 notify("Échec de l'enregistrement de l'utilisateur.", 'error');
             }
         });
@@ -228,10 +256,10 @@ function setupEventListeners() {
 
             try {
                 const viewTracker = document.getElementById('view-tracker');
-                
+
                 // 1. CLONE - Deep clone to avoid messing with live DOM
                 const clone = viewTracker.cloneNode(true);
-                
+
                 // 2. PREPARE THE CLONE STYLE - Off-screen and absolute height
                 const originalWidth = viewTracker.offsetWidth;
                 clone.style.position = 'absolute';
@@ -241,28 +269,31 @@ function setupEventListeners() {
                 clone.style.height = 'auto'; // CRITICAL: Force auto height
                 clone.style.overflow = 'visible'; // CRITICAL: Show everything
                 clone.style.backgroundColor = '#f1f5f9';
-                
+
                 document.body.appendChild(clone);
-                
+
                 // 3. CLEANUP THE CLONE (Remove charts, tabs, ignored elements)
                 const chartsClone = clone.querySelector('#chartsRegion');
                 if (chartsClone) chartsClone.remove();
-                
+
                 const tabsClone = clone.querySelector('.tabs-container');
                 if (tabsClone) tabsClone.remove();
-                
+
                 // Remove elements marked with data-html2canvas-ignore
-                clone.querySelectorAll('[data-html2canvas-ignore]').forEach(el => el.remove());
-                
+                clone.querySelectorAll('[data-html2canvas-ignore]').forEach((el) => el.remove());
+
                 // 4. REPLACE SELECTS WITH STATIC TEXT IN CLONE
-                clone.querySelectorAll('select').forEach(sel => {
+                clone.querySelectorAll('select').forEach((sel) => {
                     const originalSel = document.getElementById(sel.id);
-                    const val = originalSel ? originalSel.options[originalSel.selectedIndex]?.text : '-';
-                    
+                    const val = originalSel
+                        ? originalSel.options[originalSel.selectedIndex]?.text
+                        : '-';
+
                     const span = document.createElement('span');
                     span.textContent = val;
-                    span.style.cssText = 'font-weight: 700; font-size: 1.1rem; color: var(--text-main); margin-top: 0.2rem; display: block;';
-                    
+                    span.style.cssText =
+                        'font-weight: 700; font-size: 1.1rem; color: var(--text-main); margin-top: 0.2rem; display: block;';
+
                     sel.replaceWith(span);
                 });
 
@@ -284,7 +315,7 @@ function setupEventListeners() {
 
                 canvas.toBlob(async (blob) => {
                     if (!blob) throw new Error("Erreur lors de la création de l'image.");
-                    const item = new ClipboardItem({ "image/png": blob });
+                    const item = new ClipboardItem({ 'image/png': blob });
                     await navigator.clipboard.write([item]);
 
                     DOM.btnCopyDashboard.innerHTML = '<i data-lucide="check"></i> Copié !';
@@ -299,7 +330,7 @@ function setupEventListeners() {
                 });
             } catch (err) {
                 console.error(err);
-                notify("Échec de la capture du rapport.", 'error');
+                notify('Échec de la capture du rapport.', 'error');
                 DOM.btnCopyDashboard.innerHTML = originalText;
             }
         });
@@ -317,7 +348,7 @@ function setupEventListeners() {
 
                 const clone = chartsRegion.cloneNode(true);
                 const originalWidth = chartsRegion.offsetWidth;
-                
+
                 clone.style.position = 'absolute';
                 clone.style.left = '-9999px';
                 clone.style.top = '0';
@@ -325,7 +356,7 @@ function setupEventListeners() {
                 clone.style.height = 'auto';
                 clone.style.overflow = 'visible';
                 clone.style.backgroundColor = '#f1f5f9';
-                
+
                 document.body.appendChild(clone);
 
                 const canvas = await html2canvas(clone, {
@@ -340,7 +371,7 @@ function setupEventListeners() {
 
                 canvas.toBlob(async (blob) => {
                     if (!blob) throw new Error("Erreur lors de la création de l'image.");
-                    const item = new ClipboardItem({ "image/png": blob });
+                    const item = new ClipboardItem({ 'image/png': blob });
                     await navigator.clipboard.write([item]);
 
                     DOM.btnCopyCharts.innerHTML = '<i data-lucide="check"></i> Copié !';
@@ -355,7 +386,7 @@ function setupEventListeners() {
                 });
             } catch (err) {
                 console.error(err);
-                notify("Échec de la capture des graphiques.", 'error');
+                notify('Échec de la capture des graphiques.', 'error');
                 DOM.btnCopyCharts.innerHTML = originalText;
             }
         });
@@ -378,9 +409,9 @@ function setupEventListeners() {
 
     DOM.projectSelect.addEventListener('change', (e) => {
         currentProjectId = e.target.value;
-        const p = Store.projects.find(proj => proj.id === currentProjectId);
+        const p = Store.projects.find((proj) => proj.id === currentProjectId);
         if (p) currentClientName = p.client || '';
-        
+
         currentVersionId = ''; // Invalider la version courante
         validateAndSaveState();
         populateHeaderSelects();
@@ -399,10 +430,10 @@ function setupEventListeners() {
         renderTicketsTable();
     });
 
-    DOM.tabs.forEach(tab => {
+    DOM.tabs.forEach((tab) => {
         tab.addEventListener('click', (e) => {
-            DOM.tabs.forEach(t => t.classList.remove('active'));
-            DOM.tabContents.forEach(c => c.classList.remove('active'));
+            DOM.tabs.forEach((t) => t.classList.remove('active'));
+            DOM.tabContents.forEach((c) => c.classList.remove('active'));
 
             e.target.classList.add('active');
             activeTab = e.target.dataset.tab;
@@ -424,7 +455,7 @@ function setupEventListeners() {
         if (DOM.tId) DOM.tId.value = '';
         DOM.fVersion.value = currentVersionId;
         const mTitle = document.getElementById('modalTitle');
-        if (mTitle) mTitle.textContent = "Nouveau Ticket";
+        if (mTitle) mTitle.textContent = 'Nouveau Ticket';
         DOM.modal.classList.add('show');
     });
 
@@ -450,16 +481,20 @@ function setupEventListeners() {
 
         // Validation d'unicité par version
         if (targetVersionId && newNumber > 0) {
-            const isDuplicate = Store.tickets.some(t => {
+            const isDuplicate = Store.tickets.some((t) => {
                 if (tIdValue && t.id === tIdValue) return false; // Ignorer le ticket web en cours d'édition
-                return String(t.versionId) === String(targetVersionId) && Number(t.number) === Number(newNumber);
+                return (
+                    String(t.versionId) === String(targetVersionId) &&
+                    Number(t.number) === Number(newNumber)
+                );
             });
 
             if (isDuplicate) {
-                notify("Un ticket porte déjà ce numéro dans cette version.", 'warning');
+                notify('Un ticket porte déjà ce numéro dans cette version.', 'warning');
                 if (submitBtn) {
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i data-lucide="save" class="btn-icon-sm"></i> Enregistrer';
+                    submitBtn.innerHTML =
+                        '<i data-lucide="save" class="btn-icon-sm"></i> Enregistrer';
                     if (typeof lucide !== 'undefined') lucide.createIcons();
                 }
                 return;
@@ -476,18 +511,33 @@ function setupEventListeners() {
             assignExecutionId: DOM.fAssE.value || null,
             nbTestCases: nbTests,
             ticketState: DOM.fState.value,
-            consumed: tIdValue ? (Store.tickets.find(t => t.id === tIdValue)?.consumed || 0) : 0,
-            statusDesign: tIdValue ? (Store.tickets.find(t => t.id === tIdValue)?.statusDesign || 'À faire') : 'À faire',
-            statusExecution: tIdValue ? (Store.tickets.find(t => t.id === tIdValue)?.statusExecution || 'En attente livraison') : 'En attente livraison',
-            comment: tIdValue ? (Store.tickets.find(t => t.id === tIdValue)?.comment || '') : ''
+            consumed: tIdValue ? Store.tickets.find((t) => t.id === tIdValue)?.consumed || 0 : 0,
+            statusDesign: tIdValue
+                ? Store.tickets.find((t) => t.id === tIdValue)?.statusDesign || 'À faire'
+                : 'À faire',
+            statusExecution: tIdValue
+                ? Store.tickets.find((t) => t.id === tIdValue)?.statusExecution ||
+                  'En attente livraison'
+                : 'En attente livraison',
+            comment: tIdValue ? Store.tickets.find((t) => t.id === tIdValue)?.comment || '' : ''
         };
 
         try {
             let res;
             if (tIdValue) {
-                res = await databases.updateDocument(DATABASE_ID, COLLECTIONS.TICKETS, tIdValue, data);
+                res = await databases.updateDocument(
+                    DATABASE_ID,
+                    COLLECTIONS.TICKETS,
+                    tIdValue,
+                    data
+                );
             } else {
-                res = await databases.createDocument(DATABASE_ID, COLLECTIONS.TICKETS, ID.unique(), data);
+                res = await databases.createDocument(
+                    DATABASE_ID,
+                    COLLECTIONS.TICKETS,
+                    ID.unique(),
+                    data
+                );
             }
 
             upsertStoreDoc('tickets', res);
@@ -495,7 +545,7 @@ function setupEventListeners() {
             updateUI();
             notify(tIdValue ? 'Ticket mis à jour.' : 'Ticket créé.', 'success');
         } catch (error) {
-            console.error("Error saving ticket:", error);
+            console.error('Error saving ticket:', error);
             notify("Échec de l'enregistrement du ticket.", 'error');
         } finally {
             if (submitBtn) {
@@ -508,7 +558,7 @@ function setupEventListeners() {
 }
 
 function getUserName(id) {
-    return Store.users.find(u => u.id === id)?.name || '-';
+    return Store.users.find((u) => u.id === id)?.name || '-';
 }
 
 async function updateTicket(id, fieldOrUpdates, value) {
@@ -520,7 +570,7 @@ async function updateTicket(id, fieldOrUpdates, value) {
     }
 
     // MàJ optimiste : on applique localement puis on confirme / on annule.
-    const ticket = Store.tickets.find(t => t.id === id);
+    const ticket = Store.tickets.find((t) => t.id === id);
     const previous = ticket ? { ...ticket } : null;
     if (ticket) Object.assign(ticket, updates);
     updateUI();
@@ -530,7 +580,7 @@ async function updateTicket(id, fieldOrUpdates, value) {
         if (ticket) Object.assign(ticket, mapDoc(res));
         notify('Enregistré.', 'success', 1500);
     } catch (error) {
-        console.error("Error updating ticket:", error);
+        console.error('Error updating ticket:', error);
         if (ticket && previous) Object.assign(ticket, previous); // rollback
         updateUI();
         notify("Échec de l'enregistrement — modification annulée.", 'error');
@@ -541,81 +591,58 @@ function getTicketThresholds(ticket) {
     let projectId = ticket.projectId;
     // Fallback si projectId n'est pas directement sur le ticket (lié via la version)
     if (!projectId && ticket.versionId) {
-        const v = Store.versions.find(ver => ver.id === ticket.versionId);
+        const v = Store.versions.find((ver) => ver.id === ticket.versionId);
         if (v) projectId = v.projectId;
     }
     // Si toujours rien, on prend le projet sélectionné par défaut
-    const project = Store.projects.find(p => p.id === projectId) || Store.projects.find(p => p.id === currentProjectId);
-    
-    if (!project) return { jC: 0, jE: 0 };
-    const jC = round015Up(ticket.nbTestCases / project.designRatio);
-    const jE = round015Up(ticket.nbTestCases / project.executionRatio);
-    return { jC, jE };
+    const project =
+        Store.projects.find((p) => p.id === projectId) ||
+        Store.projects.find((p) => p.id === currentProjectId);
+    return computeThresholds(ticket, project); // logique pure -> utils.js
 }
 
 window.onConsommeChange = (id, val) => {
     const numVal = parseFloat(val.toString().replace(',', '.')) || 0;
-    const ticket = Store.tickets.find(t => t.id === id);
+    const ticket = Store.tickets.find((t) => t.id === id);
     if (!ticket) return;
 
     const { jC, jE } = getTicketThresholds(ticket);
-    const updates = { consumed: numVal };
-    const eps = 0.001;
-
-    if (numVal === 0) {
-        updates.statusDesign = "À faire";
-        updates.statusExecution = "À exécuter";
-    } else {
-        // Règles Conception
-        if (numVal < jC - eps) updates.statusDesign = "En cours";
-        else updates.statusDesign = "Terminée";
-
-        // Règles Exécution
-        if (numVal <= jC + eps) {
-            updates.statusExecution = "En attente livraison";
-        } else if (numVal >= (jC + jE) - eps) {
-            updates.statusExecution = "Terminée OK";
-        } else {
-            updates.statusExecution = "En cours d'exécution";
-        }
-    }
-
-    updateTicket(id, updates);
+    const { statusDesign, statusExecution } = deriveStatusesOnConsumed(numVal, jC, jE);
+    updateTicket(id, { consumed: numVal, statusDesign, statusExecution });
 };
 
 window.onDesignChange = (id, val) => {
-    const ticket = Store.tickets.find(t => t.id === id);
+    const ticket = Store.tickets.find((t) => t.id === id);
     if (!ticket) return;
 
     const updates = { statusDesign: val };
-    if (val === "Terminée") {
+    if (val === 'Terminée') {
         const { jC } = getTicketThresholds(ticket);
         updates.consumed = jC;
-        updates.statusExecution = "En attente livraison";
-    } else if (val === "À faire") {
+        updates.statusExecution = 'En attente livraison';
+    } else if (val === 'À faire') {
         updates.consumed = 0;
-        updates.statusExecution = "À exécuter";
+        updates.statusExecution = 'À exécuter';
     }
     updateTicket(id, updates);
 };
 
 window.onExecChange = (id, val) => {
-    const ticket = Store.tickets.find(t => t.id === id);
+    const ticket = Store.tickets.find((t) => t.id === id);
     if (!ticket) return;
 
     const updates = { statusExecution: val };
-    if (val === "Terminée OK") {
+    if (val === 'Terminée OK') {
         const { jC, jE } = getTicketThresholds(ticket);
         updates.consumed = jC + jE;
-        updates.statusDesign = "Terminée";
-    } else if (val === "À exécuter") {
+        updates.statusDesign = 'Terminée';
+    } else if (val === 'À exécuter') {
         const { jC } = getTicketThresholds(ticket);
-        updates.consumed = jC; 
-        updates.statusDesign = "Terminée";
+        updates.consumed = jC;
+        updates.statusDesign = 'Terminée';
     }
     updateTicket(id, updates);
 };
 
 window.onCommentChange = (id, val) => updateTicket(id, 'comment', val);
 window.onTicketStateChange = (id, val) => updateTicket(id, 'ticketState', val);
-

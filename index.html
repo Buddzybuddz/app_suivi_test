@@ -1,941 +1,1906 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" type="image/png" href="favicon.png" />
+        <title>Suivi de Test Pro</title>
+        <!-- Google Fonts -->
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <!-- Chart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+        <!-- html2canvas for image export -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <!-- Lucide Icons -->
+        <script src="https://unpkg.com/lucide@1.38.0"></script>
+        <!-- Appwrite SDK -->
+        <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
+        <link rel="stylesheet" href="styles.css" />
+    </head>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="favicon.png">
-    <title>Suivi de Test Pro</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
-    <!-- html2canvas for image export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@1.38.0"></script>
-    <!-- Appwrite SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
-    <link rel="stylesheet" href="styles.css">
-</head>
-
-<body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar" data-html2canvas-ignore>
-            <div class="logo">
-                <i data-lucide="check-circle-2" class="icon-accent"></i>
-                <h2>TestTracker</h2>
-            </div>
-            <nav class="nav-menu">
-                <a href="#" class="nav-item active" data-view="tracker">
-                    <i data-lucide="layout-dashboard"></i>
-                    <span>Tableau de bord</span>
-                </a>
-                <a href="#" class="nav-item" data-view="projects">
-                    <i data-lucide="folder-kanban"></i>
-                    <span>Projets</span>
-                </a>
-                <a href="#" class="nav-item" data-view="versions">
-                    <i data-lucide="layers"></i>
-                    <span>Versions</span>
-                </a>
-                <a href="#" class="nav-item" data-view="users">
-                    <i data-lucide="users"></i>
-                    <span>Utilisateurs</span>
-                </a>
-            </nav>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- View: Tracker -->
-            <div id="view-tracker" class="view-section active">
-                <!-- Header -->
-                <header class="top-header">
-                    <div class="header-left">
-                        <div class="dropdown-group">
-                            <label>Client</label>
-                            <select id="clientSelect" class="select-input"></select>
-                        </div>
-                        <div class="dropdown-group">
-                            <label>Projet</label>
-                            <select id="projectSelect" class="select-input"></select>
-                        </div>
-                        <div class="dropdown-group header-dropdown-group">
-                            <div class="form-group">
-                                <label>Version</label>
-                                <select id="versionSelect" class="select-input"></select>
-                            </div>
-                            <button class="btn btn-icon-only" id="btnNewVersion" title="Nouvelle Version" data-html2canvas-ignore>
-                                <i data-lucide="plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="header-right">
-                        <button class="btn btn-primary" id="btnNewTicket" data-html2canvas-ignore>
-                            <i data-lucide="plus"></i>
-                            Nouveau Ticket
-                        </button>
-                        <div class="user-profile" data-html2canvas-ignore>
-                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" class="avatar">
-                        </div>
-                    </div>
-                </header>
-
-                <!-- Tabs Navigation -->
-                <div class="tabs-container" data-html2canvas-ignore>
-                    <button class="tab-btn active" data-tab="details">Détails des Tickets</button>
-                    <button class="tab-btn" data-tab="dashboard">Tableau de Bord</button>
+    <body>
+        <div class="app-container">
+            <!-- Sidebar -->
+            <aside class="sidebar" data-html2canvas-ignore>
+                <div class="logo">
+                    <i data-lucide="check-circle-2" class="icon-accent"></i>
+                    <h2>TestTracker</h2>
                 </div>
+                <nav class="nav-menu">
+                    <a href="#" class="nav-item active" data-view="tracker">
+                        <i data-lucide="layout-dashboard"></i>
+                        <span>Tableau de bord</span>
+                    </a>
+                    <a href="#" class="nav-item" data-view="projects">
+                        <i data-lucide="folder-kanban"></i>
+                        <span>Projets</span>
+                    </a>
+                    <a href="#" class="nav-item" data-view="versions">
+                        <i data-lucide="layers"></i>
+                        <span>Versions</span>
+                    </a>
+                    <a href="#" class="nav-item" data-view="users">
+                        <i data-lucide="users"></i>
+                        <span>Utilisateurs</span>
+                    </a>
+                </nav>
+            </aside>
 
-                <!-- Tab Content: Details -->
-                <div id="tab-details" class="tab-content active">
-                    <div class="toolbar">
-                        <div class="filter-group">
-                            <i data-lucide="filter"></i>
-                            <select id="filterUser" class="select-input">
-                                <option value="">Tous les utilisateurs</option>
-                            </select>
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- View: Tracker -->
+                <div id="view-tracker" class="view-section active">
+                    <!-- Header -->
+                    <header class="top-header">
+                        <div class="header-left">
+                            <div class="dropdown-group">
+                                <label>Client</label>
+                                <select id="clientSelect" class="select-input"></select>
+                            </div>
+                            <div class="dropdown-group">
+                                <label>Projet</label>
+                                <select id="projectSelect" class="select-input"></select>
+                            </div>
+                            <div class="dropdown-group header-dropdown-group">
+                                <div class="form-group">
+                                    <label>Version</label>
+                                    <select id="versionSelect" class="select-input"></select>
+                                </div>
+                                <button
+                                    class="btn btn-icon-only"
+                                    id="btnNewVersion"
+                                    title="Nouvelle Version"
+                                    data-html2canvas-ignore
+                                >
+                                    <i data-lucide="plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="header-right">
+                            <button
+                                class="btn btn-primary"
+                                id="btnNewTicket"
+                                data-html2canvas-ignore
+                            >
+                                <i data-lucide="plus"></i>
+                                Nouveau Ticket
+                            </button>
+                            <div class="user-profile" data-html2canvas-ignore>
+                                <img
+                                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
+                                    alt="User"
+                                    class="avatar"
+                                />
+                            </div>
+                        </div>
+                    </header>
+
+                    <!-- Tabs Navigation -->
+                    <div class="tabs-container" data-html2canvas-ignore>
+                        <button class="tab-btn active" data-tab="details">
+                            Détails des Tickets
+                        </button>
+                        <button class="tab-btn" data-tab="dashboard">Tableau de Bord</button>
+                    </div>
+
+                    <!-- Tab Content: Details -->
+                    <div id="tab-details" class="tab-content active">
+                        <div class="toolbar">
+                            <div class="filter-group">
+                                <i data-lucide="filter"></i>
+                                <select id="filterUser" class="select-input">
+                                    <option value="">Tous les utilisateurs</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th class="sticky-left-1" style="width: 85px">ACTIONS</th>
+                                        <th
+                                            class="sticky-left-2"
+                                            data-col="number"
+                                            onclick="toggleSort('tickets', 'number')"
+                                            style="cursor: pointer"
+                                        >
+                                            N°<span id="sort-tickets-number"></span>
+                                        </th>
+                                        <th
+                                            data-col="feature"
+                                            onclick="toggleSort('tickets', 'feature')"
+                                            style="cursor: pointer; min-width: 180px"
+                                        >
+                                            Fonctionnalité<span id="sort-tickets-feature"></span>
+                                        </th>
+                                        <th
+                                            data-col="type"
+                                            onclick="toggleSort('tickets', 'type')"
+                                            style="cursor: pointer"
+                                        >
+                                            Type<span id="sort-tickets-type"></span>
+                                        </th>
+                                        <th
+                                            data-col="priority"
+                                            onclick="toggleSort('tickets', 'priority')"
+                                            style="cursor: pointer"
+                                        >
+                                            Priorité<span id="sort-tickets-priority"></span>
+                                        </th>
+                                        <th
+                                            data-col="assignDesignId"
+                                            onclick="toggleSort('tickets', 'assignDesignId')"
+                                            style="cursor: pointer"
+                                        >
+                                            Assigné (C)<span
+                                                id="sort-tickets-assignDesignId"
+                                            ></span>
+                                        </th>
+                                        <th
+                                            data-col="assignExecutionId"
+                                            onclick="toggleSort('tickets', 'assignExecutionId')"
+                                            style="cursor: pointer"
+                                        >
+                                            Assigné (E)<span
+                                                id="sort-tickets-assignExecutionId"
+                                            ></span>
+                                        </th>
+                                        <th
+                                            data-col="nbTestCases"
+                                            onclick="toggleSort('tickets', 'nbTestCases')"
+                                            style="cursor: pointer"
+                                        >
+                                            Nb Tests<span id="sort-tickets-nbTestCases"></span>
+                                        </th>
+                                        <th
+                                            data-col="ticketState"
+                                            onclick="toggleSort('tickets', 'ticketState')"
+                                            style="cursor: pointer"
+                                        >
+                                            État<span id="sort-tickets-ticketState"></span>
+                                        </th>
+                                        <th data-col="jConception">J/H (C)</th>
+                                        <th data-col="jExecution">J/H (E)</th>
+                                        <th
+                                            data-col="consumed"
+                                            onclick="toggleSort('tickets', 'consumed')"
+                                            style="cursor: pointer"
+                                        >
+                                            Consommé<span id="sort-tickets-consumed"></span>
+                                        </th>
+                                        <th data-col="raf">RAF</th>
+                                        <th
+                                            data-col="statusDesign"
+                                            onclick="toggleSort('tickets', 'statusDesign')"
+                                            style="cursor: pointer"
+                                        >
+                                            Statut (C)<span id="sort-tickets-statusDesign"></span>
+                                        </th>
+                                        <th
+                                            data-col="statusExecution"
+                                            onclick="toggleSort('tickets', 'statusExecution')"
+                                            style="cursor: pointer"
+                                        >
+                                            Statut (E)<span
+                                                id="sort-tickets-statusExecution"
+                                            ></span>
+                                        </th>
+                                        <th data-col="comment">Commentaire</th>
+                                    </tr>
+                                    <tr class="filter-row">
+                                        <th class="sticky-left-1"></th>
+                                        <th class="sticky-left-2" data-col="number">
+                                            <select
+                                                class="filter-input"
+                                                data-filter-table="tickets"
+                                                data-filter-col="number"
+                                                onchange="
+                                                    onFilterChange('tickets', 'number', this.value)
+                                                "
+                                            >
+                                                <option value="">Tout</option>
+                                            </select>
+                                        </th>
+                                        <th data-col="feature">
+                                            <select
+                                                class="filter-input"
+                                                data-filter-table="tickets"
+                                                data-filter-col="feature"
+                                                onchange="
+                                                    onFilterChange('tickets', 'feature', this.value)
+                                                "
+                                            >
+                                                <option value="">Tout</option>
+                                            </select>
+                                        </th>
+                                        <th data-col="type">
+                                            <select
+                                                class="filter-input"
+                                                data-filter-table="tickets"
+                                                data-filter-col="type"
+                                                onchange="
+                                                    onFilterChange('tickets', 'type', this.value)
+                                                "
+                                            >
+                                                <option value="">Tout</option>
+                                            </select>
+                                        </th>
+                                        <th data-col="priority">
+                                            <select
+                                                class="filter-input"
+                                                data-filter-table="tickets"
+                                                data-filter-col="priority"
+                                                onchange="
+                                                    onFilterChange(
+                                                        'tickets',
+                                                        'priority',
+                                                        this.value
+                                                    )
+                                                "
+                                            >
+                                                <option value="">Tout</option>
+                                            </select>
+                                        </th>
+                                        <th data-col="assignDesignId">
+                                            <select
+                                                class="filter-input"
+                                                data-filter-table="tickets"
+                                                data-filter-col="assignDesignId"
+                                                onchange="
+                                                    onFilterChange(
+                                                        'tickets',
+                                                        'assignDesignId',
+                                                        this.value
+                                                    )
+                                                "
+                                            >
+                                                <option value="">Tout</option>
+                                            </select>
+                                        </th>
+                                        <th data-col="assignExecutionId">
+                                            <select
+                                                class="filter-input"
+                                                data-filter-table="tickets"
+                                                data-filter-col="assignExecutionId"
+                                                onchange="
+                                                    onFilterChange(
+                                                        'tickets',
+                                                        'assignExecutionId',
+                                                        this.value
+                                                    )
+                                                "
+                                            >
+                                                <option value="">Tout</option>
+                                            </select>
+                                        </th>
+                                        <th data-col="nbTestCases">
+                                            <select
+                                                class="filter-input"
+                                                data-filter-table="tickets"
+                                                data-filter-col="nbTestCases"
+                                                onchange="
+                                                    onFilterChange(
+                                                        'tickets',
+                                                        'nbTestCases',
+                                                        this.value
+                                                    )
+                                                "
+                                            >
+                                                <option value="">Tout</option>
+                                            </select>
+                                        </th>
+                                        <th data-col="ticketState">
+                                            <select
+                                                class="filter-input"
+                                                data-filter-table="tickets"
+                                                data-filter-col="ticketState"
+                                                onchange="
+                                                    onFilterChange(
+                                                        'tickets',
+                                                        'ticketState',
+                                                        this.value
+                                                    )
+                                                "
+                                            >
+                                                <option value="">Tout</option>
+                                            </select>
+                                        </th>
+                                        <th data-col="jConception">
+                                            <select
+                                                class="filter-input"
+                                                data-filter-table="tickets"
+                                                data-filter-col="jConception"
+                                                onchange="
+                                                    onFilterChange(
+                                                        'tickets',
+                                                        'jConception',
+                                                        this.value
+                                                    )
+                                                "
+                                            >
+                                                <option value="">Tout</option>
+                                            </select>
+                                        </th>
+                                        <th data-col="jExecution">
+                                            <select
+                                                class="filter-input"
+                                                data-filter-table="tickets"
+                                                data-filter-col="jExecution"
+                                                onchange="
+                                                    onFilterChange(
+                                                        'tickets',
+                                                        'jExecution',
+                                                        this.value
+                                                    )
+                                                "
+                                            >
+                                                <option value="">Tout</option>
+                                            </select>
+                                        </th>
+                                        <th data-col="consumed">
+                                            <select
+                                                class="filter-input"
+                                                data-filter-table="tickets"
+                                                data-filter-col="consumed"
+                                                onchange="
+                                                    onFilterChange(
+                                                        'tickets',
+                                                        'consumed',
+                                                        this.value
+                                                    )
+                                                "
+                                            >
+                                                <option value="">Tout</option>
+                                            </select>
+                                        </th>
+                                        <th data-col="raf">
+                                            <select
+                                                class="filter-input"
+                                                data-filter-table="tickets"
+                                                data-filter-col="raf"
+                                                onchange="
+                                                    onFilterChange('tickets', 'raf', this.value)
+                                                "
+                                            >
+                                                <option value="">Tout</option>
+                                            </select>
+                                        </th>
+                                        <th data-col="statusDesign">
+                                            <select
+                                                class="filter-input"
+                                                data-filter-table="tickets"
+                                                data-filter-col="statusDesign"
+                                                onchange="
+                                                    onFilterChange(
+                                                        'tickets',
+                                                        'statusDesign',
+                                                        this.value
+                                                    )
+                                                "
+                                            >
+                                                <option value="">Tout</option>
+                                            </select>
+                                        </th>
+                                        <th data-col="statusExecution">
+                                            <select
+                                                class="filter-input"
+                                                data-filter-table="tickets"
+                                                data-filter-col="statusExecution"
+                                                onchange="
+                                                    onFilterChange(
+                                                        'tickets',
+                                                        'statusExecution',
+                                                        this.value
+                                                    )
+                                                "
+                                            >
+                                                <option value="">Tout</option>
+                                            </select>
+                                        </th>
+                                        <th data-col="comment">
+                                            <select
+                                                class="filter-input"
+                                                data-filter-table="tickets"
+                                                data-filter-col="comment"
+                                                onchange="
+                                                    onFilterChange('tickets', 'comment', this.value)
+                                                "
+                                            >
+                                                <option value="">Tout</option>
+                                            </select>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ticketsTbody">
+                                    <!-- Injected by JS -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    <div class="table-wrapper">
+
+                    <!-- Tab Content: Dashboard -->
+                    <div id="tab-dashboard" class="tab-content">
+                        <div
+                            class="dashboard-header-info"
+                            style="
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: flex-end;
+                                padding: 1.25rem 1.25rem 0 1.25rem;
+                            "
+                        >
+                            <div class="dashboard-title-group" data-html2canvas-ignore>
+                                <h2
+                                    style="
+                                        font-size: 1.25rem;
+                                        font-weight: 800;
+                                        color: var(--text-main);
+                                        margin-bottom: 0.25rem;
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 0.5rem;
+                                    "
+                                >
+                                    <span id="dashProjectName">-</span>
+                                    <span style="color: var(--text-muted); font-weight: 400"
+                                        >—</span
+                                    >
+                                    <span
+                                        id="dashVersionName"
+                                        style="color: var(--text-muted); font-weight: 600"
+                                        >-</span
+                                    >
+                                </h2>
+                            </div>
+                            <div
+                                class="toolbar"
+                                style="border-bottom: none; display: flex; padding: 0; gap: 0.5rem"
+                                data-html2canvas-ignore
+                            >
+                                <button
+                                    class="btn btn-primary"
+                                    id="btnCopyDashboard"
+                                    style="background: var(--accent-secondary)"
+                                >
+                                    <i data-lucide="file-text"></i>
+                                    Reporting
+                                </button>
+                                <button
+                                    class="btn btn-primary"
+                                    id="btnCopyCharts"
+                                    style="background: #8b5cf6"
+                                >
+                                    <i data-lucide="pie-chart"></i>
+                                    Graphiques
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Global KPI -->
+                        <!-- Global KPI Detailed Rows -->
+                        <div
+                            class="dashboard-summary"
+                            style="
+                                padding: 0 1.25rem 1.25rem 1.25rem;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 1rem;
+                                margin-top: 1.5rem;
+                            "
+                        >
+                            <!-- Risk Analysis Row -->
+                            <h4
+                                style="
+                                    font-size: 0.75rem;
+                                    text-transform: uppercase;
+                                    letter-spacing: 0.05em;
+                                    color: var(--text-muted);
+                                    margin-bottom: -0.5rem;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 0.8rem;
+                                "
+                            >
+                                <span
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 0.5rem;
+                                        white-space: nowrap;
+                                    "
+                                >
+                                    <i
+                                        data-lucide="shield-alert"
+                                        style="width: 14px; height: 14px"
+                                    ></i>
+                                    Analyse des Risques de Livraison
+                                </span>
+                                <span
+                                    style="
+                                        flex: 1;
+                                        height: 1px;
+                                        background: rgba(0, 0, 0, 0.08);
+                                        margin-top: 1px;
+                                    "
+                                ></span>
+                            </h4>
+                            <div
+                                id="dashRiskContainer"
+                                class="kpi-card"
+                                style="
+                                    width: 100%;
+                                    max-width: none;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 1.5rem;
+                                    padding: 1.25rem;
+                                    border: 1px solid rgba(0, 0, 0, 0.05);
+                                    flex-wrap: wrap;
+                                "
+                            >
+                                <div
+                                    id="dashRiskIcon"
+                                    class="kpi-icon"
+                                    style="
+                                        background: rgba(16, 185, 129, 0.1);
+                                        color: #10b981;
+                                        width: 48px;
+                                        height: 48px;
+                                        flex-shrink: 0;
+                                    "
+                                >
+                                    <i data-lucide="check-circle"></i>
+                                </div>
+                                <div class="kpi-info" style="flex: 0 1 auto; min-width: 160px">
+                                    <h3
+                                        id="dashRiskTitle"
+                                        style="
+                                            font-size: 0.9rem;
+                                            margin-bottom: 0;
+                                            color: var(--text-main);
+                                        "
+                                    ></h3>
+                                    <p
+                                        id="dashRiskText"
+                                        class="kpi-value"
+                                        style="font-size: 1.1rem; color: #10b981"
+                                    >
+                                        Analyse en cours...
+                                    </p>
+                                </div>
+                                <!-- Bulles d'état -->
+                                <div
+                                    style="
+                                        flex: 1;
+                                        display: flex;
+                                        justify-content: flex-end;
+                                        gap: 0.8rem;
+                                        flex-wrap: wrap;
+                                    "
+                                >
+                                    <!-- Livraison Client -->
+                                    <div
+                                        id="slotClientDate"
+                                        style="
+                                            display: none;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            gap: 0.1rem;
+                                            padding: 0.5rem 0.8rem;
+                                            background: rgba(14, 165, 233, 0.1);
+                                            border-radius: 10px;
+                                            min-width: 100px;
+                                        "
+                                    >
+                                        <span
+                                            style="
+                                                font-size: 0.6rem;
+                                                text-transform: uppercase;
+                                                letter-spacing: 0.05em;
+                                                color: var(--text-muted);
+                                                white-space: nowrap;
+                                            "
+                                            >Livraison client prévue le</span
+                                        >
+                                        <span
+                                            id="valClientDate"
+                                            style="
+                                                font-size: 0.85rem;
+                                                font-weight: 700;
+                                                color: #0ea5e9;
+                                            "
+                                            >—</span
+                                        >
+                                    </div>
+                                    <!-- Recette Max -->
+                                    <div
+                                        id="slotMaxRecetteDate"
+                                        style="
+                                            display: none;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            gap: 0.1rem;
+                                            padding: 0.5rem 0.8rem;
+                                            background: rgba(139, 92, 246, 0.08);
+                                            border-radius: 10px;
+                                            min-width: 100px;
+                                        "
+                                    >
+                                        <span
+                                            style="
+                                                font-size: 0.6rem;
+                                                text-transform: uppercase;
+                                                letter-spacing: 0.05em;
+                                                color: var(--text-muted);
+                                                white-space: nowrap;
+                                            "
+                                            >Dev en recette max le</span
+                                        >
+                                        <span
+                                            id="valMaxRecetteDate"
+                                            style="
+                                                font-size: 0.85rem;
+                                                font-weight: 700;
+                                                color: #8b5cf6;
+                                            "
+                                            >—</span
+                                        >
+                                    </div>
+                                    <!-- Livraison Possible -->
+                                    <div
+                                        id="slotPossibleDate"
+                                        style="
+                                            display: none;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            gap: 0.1rem;
+                                            padding: 0.5rem 0.8rem;
+                                            background: rgba(245, 158, 11, 0.08);
+                                            border-radius: 10px;
+                                            min-width: 100px;
+                                        "
+                                    >
+                                        <span
+                                            style="
+                                                font-size: 0.6rem;
+                                                text-transform: uppercase;
+                                                letter-spacing: 0.05em;
+                                                color: var(--text-muted);
+                                                white-space: nowrap;
+                                            "
+                                            >Livraison client possible le</span
+                                        >
+                                        <span
+                                            id="valPossibleDate"
+                                            style="
+                                                font-size: 0.85rem;
+                                                font-weight: 700;
+                                                color: #f59e0b;
+                                            "
+                                            >—</span
+                                        >
+                                    </div>
+                                    <!-- Marge / Retard -->
+                                    <div
+                                        id="slotMargin"
+                                        style="
+                                            display: none;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            gap: 0.1rem;
+                                            padding: 0.5rem 0.8rem;
+                                            border-radius: 10px;
+                                            min-width: 100px;
+                                        "
+                                    >
+                                        <span
+                                            id="labelMargin"
+                                            style="
+                                                font-size: 0.6rem;
+                                                text-transform: uppercase;
+                                                letter-spacing: 0.05em;
+                                                color: var(--text-muted);
+                                                white-space: nowrap;
+                                            "
+                                            >Marge</span
+                                        >
+                                        <span
+                                            id="valMargin"
+                                            style="font-size: 0.85rem; font-weight: 700"
+                                            >—</span
+                                        >
+                                    </div>
+                                    <!-- Livrée le -->
+                                    <div
+                                        id="slotActualDate"
+                                        style="
+                                            display: none;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            gap: 0.1rem;
+                                            padding: 0.5rem 0.8rem;
+                                            background: rgba(16, 185, 129, 0.08);
+                                            border-radius: 10px;
+                                            min-width: 100px;
+                                        "
+                                    >
+                                        <span
+                                            style="
+                                                font-size: 0.6rem;
+                                                text-transform: uppercase;
+                                                letter-spacing: 0.05em;
+                                                color: var(--text-muted);
+                                                white-space: nowrap;
+                                            "
+                                            >Livrée le</span
+                                        >
+                                        <span
+                                            id="valActualDate"
+                                            style="
+                                                font-size: 0.85rem;
+                                                font-weight: 700;
+                                                color: #10b981;
+                                            "
+                                            >—</span
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Line 1: Tickets -->
+                            <h4
+                                style="
+                                    font-size: 0.75rem;
+                                    text-transform: uppercase;
+                                    letter-spacing: 0.05em;
+                                    color: var(--text-muted);
+                                    margin-bottom: -0.5rem;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 0.8rem;
+                                "
+                            >
+                                <span
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 0.5rem;
+                                        white-space: nowrap;
+                                    "
+                                >
+                                    <i data-lucide="layers-2" style="width: 14px; height: 14px"></i>
+                                    Périmètre
+                                </span>
+                                <span
+                                    style="
+                                        flex: 1;
+                                        height: 1px;
+                                        background: rgba(0, 0, 0, 0.08);
+                                        margin-top: 1px;
+                                    "
+                                ></span>
+                            </h4>
+                            <div
+                                class="stat-row"
+                                style="
+                                    display: grid;
+                                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                                    gap: 1rem;
+                                "
+                            >
+                                <div class="kpi-card">
+                                    <div
+                                        class="kpi-icon"
+                                        style="background: rgba(99, 102, 241, 0.1); color: #6366f1"
+                                    >
+                                        <i data-lucide="file-text"></i>
+                                    </div>
+                                    <div class="kpi-info">
+                                        <h3>Nb US</h3>
+                                        <p class="kpi-value" id="kpiNbUS">0</p>
+                                    </div>
+                                </div>
+                                <div class="kpi-card">
+                                    <div
+                                        class="kpi-icon"
+                                        style="background: rgba(239, 68, 68, 0.1); color: #ef4444"
+                                    >
+                                        <i data-lucide="bug"></i>
+                                    </div>
+                                    <div class="kpi-info">
+                                        <h3>Nb Bugs</h3>
+                                        <p class="kpi-value" id="kpiNbBugs">0</p>
+                                    </div>
+                                </div>
+                                <div class="kpi-card">
+                                    <div
+                                        class="kpi-icon"
+                                        style="background: rgba(245, 158, 11, 0.1); color: #f59e0b"
+                                    >
+                                        <i data-lucide="check-square"></i>
+                                    </div>
+                                    <div class="kpi-info">
+                                        <h3>Nb Tâches</h3>
+                                        <p class="kpi-value" id="kpiNbTasks">0</p>
+                                    </div>
+                                </div>
+                                <div
+                                    class="kpi-card"
+                                    style="border: 1px solid rgba(99, 102, 241, 0.2)"
+                                >
+                                    <div class="kpi-icon" style="background: #6366f1; color: white">
+                                        <i data-lucide="ticket"></i>
+                                    </div>
+                                    <div class="kpi-info">
+                                        <h3>Total Tickets</h3>
+                                        <p class="kpi-value" id="kpiTotalTickets">0</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- New: Detailed Feature Breakdown -->
+                            <div
+                                id="dashFeatureBreakdown"
+                                style="
+                                    display: grid;
+                                    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                                    gap: 1rem;
+                                    margin-top: 0.5rem;
+                                "
+                            >
+                                <!-- Injected by JS -->
+                            </div>
+
+                            <!-- Line 2: J/H Totaux -->
+                            <h4
+                                style="
+                                    font-size: 0.75rem;
+                                    text-transform: uppercase;
+                                    letter-spacing: 0.05em;
+                                    color: var(--text-muted);
+                                    margin-bottom: -0.5rem;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 0.8rem;
+                                "
+                            >
+                                <span
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 0.5rem;
+                                        white-space: nowrap;
+                                    "
+                                >
+                                    <i data-lucide="calendar" style="width: 14px; height: 14px"></i>
+                                    Volume d'Effort Total (J/h)
+                                </span>
+                                <span
+                                    style="
+                                        flex: 1;
+                                        height: 1px;
+                                        background: rgba(0, 0, 0, 0.08);
+                                        margin-top: 1px;
+                                    "
+                                ></span>
+                            </h4>
+                            <div
+                                class="stat-row"
+                                style="
+                                    display: grid;
+                                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                                    gap: 1rem;
+                                "
+                            >
+                                <div class="kpi-card">
+                                    <div
+                                        class="kpi-icon"
+                                        style="background: rgba(16, 185, 129, 0.1); color: #10b981"
+                                    >
+                                        <i data-lucide="pen-tool"></i>
+                                    </div>
+                                    <div class="kpi-info">
+                                        <h3>J/H Conception</h3>
+                                        <p class="kpi-value" id="kpiJH_C">0.00</p>
+                                    </div>
+                                </div>
+                                <div class="kpi-card">
+                                    <div
+                                        class="kpi-icon"
+                                        style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9"
+                                    >
+                                        <i data-lucide="play-circle"></i>
+                                    </div>
+                                    <div class="kpi-info">
+                                        <h3>J/H Exécution</h3>
+                                        <p class="kpi-value" id="kpiJH_E">0.00</p>
+                                    </div>
+                                </div>
+                                <div
+                                    class="kpi-card"
+                                    style="border: 1px solid rgba(139, 92, 246, 0.2)"
+                                >
+                                    <div class="kpi-icon" style="background: #8b5cf6; color: white">
+                                        <i data-lucide="layers"></i>
+                                    </div>
+                                    <div class="kpi-info">
+                                        <h3>Total J/H</h3>
+                                        <p class="kpi-value" id="kpiJH_Total">0.00</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Line 3: RAF Detailed -->
+                            <h4
+                                style="
+                                    font-size: 0.75rem;
+                                    text-transform: uppercase;
+                                    letter-spacing: 0.05em;
+                                    color: var(--text-muted);
+                                    margin-bottom: -0.5rem;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 0.8rem;
+                                "
+                            >
+                                <span
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 0.5rem;
+                                        white-space: nowrap;
+                                    "
+                                >
+                                    <i
+                                        data-lucide="hourglass"
+                                        style="width: 14px; height: 14px"
+                                    ></i>
+                                    Reste à Faire (RAF)
+                                </span>
+                                <span
+                                    style="
+                                        flex: 1;
+                                        height: 1px;
+                                        background: rgba(0, 0, 0, 0.08);
+                                        margin-top: 1px;
+                                    "
+                                ></span>
+                            </h4>
+                            <div
+                                class="stat-row"
+                                style="
+                                    display: grid;
+                                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                                    gap: 1rem;
+                                "
+                            >
+                                <div class="kpi-card">
+                                    <div
+                                        class="kpi-icon"
+                                        style="background: rgba(16, 185, 129, 0.1); color: #10b981"
+                                    >
+                                        <i data-lucide="target"></i>
+                                    </div>
+                                    <div class="kpi-info">
+                                        <h3>RAF Conception</h3>
+                                        <p class="kpi-value" id="kpiRaf_C">0.00</p>
+                                    </div>
+                                </div>
+                                <div class="kpi-card">
+                                    <div
+                                        class="kpi-icon"
+                                        style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9"
+                                    >
+                                        <i data-lucide="navigation"></i>
+                                    </div>
+                                    <div class="kpi-info">
+                                        <h3>RAF Exécution</h3>
+                                        <p class="kpi-value" id="kpiRaf_E">0.00</p>
+                                    </div>
+                                </div>
+                                <div
+                                    class="kpi-card"
+                                    style="border: 1px solid rgba(249, 115, 22, 0.2)"
+                                >
+                                    <div class="kpi-icon" style="background: #f97316; color: white">
+                                        <i data-lucide="clock"></i>
+                                    </div>
+                                    <div class="kpi-info">
+                                        <h3>RAF Global</h3>
+                                        <p class="kpi-value" id="kpiTotalRaf">0.00</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Line 4: Progress -->
+                            <h4
+                                style="
+                                    font-size: 0.75rem;
+                                    text-transform: uppercase;
+                                    letter-spacing: 0.05em;
+                                    color: var(--text-muted);
+                                    margin-bottom: -0.5rem;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 0.8rem;
+                                "
+                            >
+                                <span
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 0.5rem;
+                                        white-space: nowrap;
+                                    "
+                                >
+                                    <i
+                                        data-lucide="trending-up"
+                                        style="width: 14px; height: 14px"
+                                    ></i>
+                                    Progression Réelle (%)
+                                </span>
+                                <span
+                                    style="
+                                        flex: 1;
+                                        height: 1px;
+                                        background: rgba(0, 0, 0, 0.08);
+                                        margin-top: 1px;
+                                    "
+                                ></span>
+                            </h4>
+                            <div
+                                class="stat-row"
+                                style="
+                                    display: grid;
+                                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                                    gap: 1rem;
+                                "
+                            >
+                                <div class="kpi-card">
+                                    <div class="kpi-icon"><i data-lucide="percent"></i></div>
+                                    <div class="kpi-info">
+                                        <h3>Avance. Conception</h3>
+                                        <p class="kpi-value" id="kpiAdvC">0%</p>
+                                        <div class="kpi-progress">
+                                            <div
+                                                class="kpi-progress-bar"
+                                                id="kpiAdvCBar"
+                                                style="width: 0%"
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="kpi-card">
+                                    <div class="kpi-icon"><i data-lucide="activity"></i></div>
+                                    <div class="kpi-info">
+                                        <h3>Avance. Exécution</h3>
+                                        <p class="kpi-value" id="kpiAdvE">0%</p>
+                                        <div class="kpi-progress">
+                                            <div
+                                                class="kpi-progress-bar"
+                                                id="kpiAdvEBar"
+                                                style="width: 0%"
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div
+                                    class="kpi-card"
+                                    style="border: 1px solid rgba(236, 72, 153, 0.2)"
+                                >
+                                    <div class="kpi-icon" style="background: #ec4899; color: white">
+                                        <i data-lucide="pie-chart"></i>
+                                    </div>
+                                    <div class="kpi-info">
+                                        <h3>Avancement Total</h3>
+                                        <p class="kpi-value" id="kpiAdvTotal">0%</p>
+                                        <div class="kpi-progress">
+                                            <div
+                                                class="kpi-progress-bar"
+                                                id="kpiAdvTotalBar"
+                                                style="width: 0%"
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Area -->
+                        <div
+                            id="chartsRegion"
+                            style="padding: 0 1.25rem 0.5rem 1.25rem; margin-top: 2rem"
+                        >
+                            <h4
+                                style="
+                                    font-size: 0.75rem;
+                                    text-transform: uppercase;
+                                    letter-spacing: 0.05em;
+                                    color: var(--text-muted);
+                                    margin-bottom: 1rem;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 0.8rem;
+                                "
+                            >
+                                <span
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 0.5rem;
+                                        white-space: nowrap;
+                                    "
+                                >
+                                    <i
+                                        data-lucide="bar-chart-3"
+                                        style="width: 14px; height: 14px"
+                                    ></i>
+                                    Analyses Graphiques Détaillées
+                                </span>
+                            </h4>
+                            <div class="charts-grid">
+                                <!-- Conception Status -->
+                                <div class="chart-card glass-panel">
+                                    <h3>Statut de Conception par Type</h3>
+                                    <div class="chart-container">
+                                        <canvas id="chartTypeDesign"></canvas>
+                                    </div>
+                                </div>
+                                <div class="chart-card glass-panel">
+                                    <h3>Statut de Conception par Fonctionnalité</h3>
+                                    <div class="chart-container">
+                                        <canvas id="chartFeatureDesign"></canvas>
+                                    </div>
+                                </div>
+                                <!-- Execution Status -->
+                                <div class="chart-card glass-panel">
+                                    <h3>Statut d'Exécution par Type</h3>
+                                    <div class="chart-container">
+                                        <canvas id="chartTypeExec"></canvas>
+                                    </div>
+                                </div>
+                                <div class="chart-card glass-panel">
+                                    <h3>Statut d'Exécution par Fonctionnalité</h3>
+                                    <div class="chart-container">
+                                        <canvas id="chartFeatureExec"></canvas>
+                                    </div>
+                                </div>
+                                <div class="chart-card glass-panel">
+                                    <h3>Avancement Conception vs Exécution</h3>
+                                    <div class="chart-container">
+                                        <canvas id="chartProgress"></canvas>
+                                    </div>
+                                </div>
+                                <div class="chart-card glass-panel">
+                                    <h3>Répartition globale des Statuts</h3>
+                                    <div class="chart-container">
+                                        <canvas id="chartStatus"></canvas>
+                                    </div>
+                                </div>
+                                <div class="chart-card glass-panel">
+                                    <h3>Charge (RAF) par Utilisateur</h3>
+                                    <div class="chart-container">
+                                        <canvas id="chartWorkload"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /view-tracker -->
+
+                <!-- View: Projects -->
+                <div id="view-projects" class="view-section">
+                    <div class="top-header glass-panel" style="justify-content: space-between">
+                        <h2>Gestion des Projets</h2>
+                        <button class="btn btn-primary" id="btnNewProject">
+                            <i data-lucide="plus"></i>
+                            Nouveau Projet
+                        </button>
+                    </div>
+                    <div class="table-wrapper glass-panel" style="padding: 1rem">
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th class="sticky-left-1" style="width: 85px;">ACTIONS</th>
-                                    <th class="sticky-left-2" data-col="number" onclick="toggleSort('tickets', 'number')"
-                                        style="cursor:pointer">N°<span id="sort-tickets-number"></span></th>
-                                    <th data-col="feature"
-                                        onclick="toggleSort('tickets', 'feature')" style="cursor:pointer; min-width: 180px;">
-                                        Fonctionnalité<span id="sort-tickets-feature"></span>
+                                    <th
+                                        data-col="id"
+                                        onclick="toggleSort('projects', 'id')"
+                                        style="cursor: pointer"
+                                    >
+                                        ID<span id="sort-projects-id"></span>
                                     </th>
-                                    <th data-col="type" onclick="toggleSort('tickets', 'type')" style="cursor:pointer">
-                                        Type<span id="sort-tickets-type"></span></th>
-                                    <th data-col="priority" onclick="toggleSort('tickets', 'priority')"
-                                        style="cursor:pointer">Priorité<span id="sort-tickets-priority"></span></th>
-                                    <th data-col="assignDesignId" onclick="toggleSort('tickets', 'assignDesignId')"
-                                        style="cursor:pointer">Assigné (C)<span id="sort-tickets-assignDesignId"></span>
+                                    <th
+                                        data-col="client"
+                                        onclick="toggleSort('projects', 'client')"
+                                        style="cursor: pointer"
+                                    >
+                                        Client<span id="sort-projects-client"></span>
                                     </th>
-                                    <th data-col="assignExecutionId"
-                                        onclick="toggleSort('tickets', 'assignExecutionId')" style="cursor:pointer">
-                                        Assigné (E)<span id="sort-tickets-assignExecutionId"></span></th>
-                                    <th data-col="nbTestCases" onclick="toggleSort('tickets', 'nbTestCases')"
-                                        style="cursor:pointer">Nb Tests<span id="sort-tickets-nbTestCases"></span></th>
-                                    <th data-col="ticketState" onclick="toggleSort('tickets', 'ticketState')"
-                                        style="cursor:pointer">État<span id="sort-tickets-ticketState"></span></th>
-                                    <th data-col="jConception">J/H (C)</th>
-                                    <th data-col="jExecution">J/H (E)</th>
-                                    <th data-col="consumed" onclick="toggleSort('tickets', 'consumed')"
-                                        style="cursor:pointer">Consommé<span id="sort-tickets-consumed"></span></th>
-                                    <th data-col="raf">RAF</th>
-                                    <th data-col="statusDesign" onclick="toggleSort('tickets', 'statusDesign')"
-                                        style="cursor:pointer">Statut (C)<span id="sort-tickets-statusDesign"></span>
+                                    <th
+                                        data-col="name"
+                                        onclick="toggleSort('projects', 'name')"
+                                        style="cursor: pointer"
+                                    >
+                                        Nom du Projet<span id="sort-projects-name"></span>
                                     </th>
-                                    <th data-col="statusExecution" onclick="toggleSort('tickets', 'statusExecution')"
-                                        style="cursor:pointer">Statut (E)<span id="sort-tickets-statusExecution"></span>
+                                    <th
+                                        data-col="ratioC"
+                                        onclick="toggleSort('projects', 'designRatio')"
+                                        style="cursor: pointer"
+                                    >
+                                        Ratio Conception<span id="sort-projects-designRatio"></span>
                                     </th>
-                                    <th data-col="comment">Commentaire</th>
+                                    <th
+                                        data-col="ratioE"
+                                        onclick="toggleSort('projects', 'executionRatio')"
+                                        style="cursor: pointer"
+                                    >
+                                        Ratio Exécution<span
+                                            id="sort-projects-executionRatio"
+                                        ></span>
+                                    </th>
+                                    <th>Actions</th>
                                 </tr>
                                 <tr class="filter-row">
-                                    <th class="sticky-left-1"></th>
-                                    <th class="sticky-left-2" data-col="number"><select class="filter-input" data-filter-table="tickets"
-                                            data-filter-col="number"
-                                            onchange="onFilterChange('tickets', 'number', this.value)">
+                                    <th data-col="id">
+                                        <select
+                                            class="filter-input"
+                                            data-filter-table="projects"
+                                            data-filter-col="id"
+                                            onchange="onFilterChange('projects', 'id', this.value)"
+                                        >
                                             <option value="">Tout</option>
-                                        </select></th>
-                                    <th data-col="feature"><select class="filter-input" data-filter-table="tickets"
-                                            data-filter-col="feature"
-                                            onchange="onFilterChange('tickets', 'feature', this.value)">
+                                        </select>
+                                    </th>
+                                    <th data-col="client">
+                                        <select
+                                            class="filter-input"
+                                            data-filter-table="projects"
+                                            data-filter-col="client"
+                                            onchange="
+                                                onFilterChange('projects', 'client', this.value)
+                                            "
+                                        >
                                             <option value="">Tout</option>
-                                        </select></th>
-                                    <th data-col="type"><select class="filter-input" data-filter-table="tickets"
-                                            data-filter-col="type"
-                                            onchange="onFilterChange('tickets', 'type', this.value)">
+                                        </select>
+                                    </th>
+                                    <th data-col="name">
+                                        <select
+                                            class="filter-input"
+                                            data-filter-table="projects"
+                                            data-filter-col="name"
+                                            onchange="
+                                                onFilterChange('projects', 'name', this.value)
+                                            "
+                                        >
                                             <option value="">Tout</option>
-                                        </select></th>
-                                    <th data-col="priority"><select class="filter-input" data-filter-table="tickets"
-                                            data-filter-col="priority"
-                                            onchange="onFilterChange('tickets', 'priority', this.value)">
+                                        </select>
+                                    </th>
+                                    <th data-col="designRatio">
+                                        <select
+                                            class="filter-input"
+                                            data-filter-table="projects"
+                                            data-filter-col="designRatio"
+                                            onchange="
+                                                onFilterChange(
+                                                    'projects',
+                                                    'designRatio',
+                                                    this.value
+                                                )
+                                            "
+                                        >
                                             <option value="">Tout</option>
-                                        </select></th>
-                                    <th data-col="assignDesignId"><select class="filter-input"
-                                            data-filter-table="tickets" data-filter-col="assignDesignId"
-                                            onchange="onFilterChange('tickets', 'assignDesignId', this.value)">
+                                        </select>
+                                    </th>
+                                    <th data-col="executionRatio">
+                                        <select
+                                            class="filter-input"
+                                            data-filter-table="projects"
+                                            data-filter-col="executionRatio"
+                                            onchange="
+                                                onFilterChange(
+                                                    'projects',
+                                                    'executionRatio',
+                                                    this.value
+                                                )
+                                            "
+                                        >
                                             <option value="">Tout</option>
-                                        </select></th>
-                                    <th data-col="assignExecutionId"><select class="filter-input"
-                                            data-filter-table="tickets" data-filter-col="assignExecutionId"
-                                            onchange="onFilterChange('tickets', 'assignExecutionId', this.value)">
-                                            <option value="">Tout</option>
-                                        </select></th>
-                                    <th data-col="nbTestCases"><select class="filter-input" data-filter-table="tickets"
-                                            data-filter-col="nbTestCases"
-                                            onchange="onFilterChange('tickets', 'nbTestCases', this.value)">
-                                            <option value="">Tout</option>
-                                        </select></th>
-                                    <th data-col="ticketState"><select class="filter-input" data-filter-table="tickets"
-                                            data-filter-col="ticketState"
-                                            onchange="onFilterChange('tickets', 'ticketState', this.value)">
-                                            <option value="">Tout</option>
-                                        </select></th>
-                                    <th data-col="jConception"><select class="filter-input" data-filter-table="tickets"
-                                            data-filter-col="jConception"
-                                            onchange="onFilterChange('tickets', 'jConception', this.value)">
-                                            <option value="">Tout</option>
-                                        </select></th>
-                                    <th data-col="jExecution"><select class="filter-input" data-filter-table="tickets"
-                                            data-filter-col="jExecution"
-                                            onchange="onFilterChange('tickets', 'jExecution', this.value)">
-                                            <option value="">Tout</option>
-                                        </select></th>
-                                    <th data-col="consumed"><select class="filter-input" data-filter-table="tickets"
-                                            data-filter-col="consumed"
-                                            onchange="onFilterChange('tickets', 'consumed', this.value)">
-                                            <option value="">Tout</option>
-                                        </select></th>
-                                    <th data-col="raf"><select class="filter-input" data-filter-table="tickets"
-                                            data-filter-col="raf"
-                                            onchange="onFilterChange('tickets', 'raf', this.value)">
-                                            <option value="">Tout</option>
-                                        </select></th>
-                                    <th data-col="statusDesign"><select class="filter-input" data-filter-table="tickets"
-                                            data-filter-col="statusDesign"
-                                            onchange="onFilterChange('tickets', 'statusDesign', this.value)">
-                                            <option value="">Tout</option>
-                                        </select></th>
-                                    <th data-col="statusExecution"><select class="filter-input"
-                                            data-filter-table="tickets" data-filter-col="statusExecution"
-                                            onchange="onFilterChange('tickets', 'statusExecution', this.value)">
-                                            <option value="">Tout</option>
-                                        </select></th>
-                                    <th data-col="comment"><select class="filter-input" data-filter-table="tickets"
-                                            data-filter-col="comment"
-                                            onchange="onFilterChange('tickets', 'comment', this.value)">
-                                            <option value="">Tout</option>
-                                        </select></th>
+                                        </select>
+                                    </th>
+                                    <th></th>
                                 </tr>
                             </thead>
-                            <tbody id="ticketsTbody">
+                            <tbody id="projectsTbody">
                                 <!-- Injected by JS -->
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- Tab Content: Dashboard -->
-                <div id="tab-dashboard" class="tab-content">
-                    <div class="dashboard-header-info"
-                        style="display:flex; justify-content:space-between; align-items:flex-end; padding: 1.25rem 1.25rem 0 1.25rem;">
-                        <div class="dashboard-title-group" data-html2canvas-ignore>
-                            <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem;">
-                                <span id="dashProjectName">-</span>
-                                <span style="color: var(--text-muted); font-weight: 400;">—</span>
-                                <span id="dashVersionName" style="color: var(--text-muted); font-weight: 600;">-</span>
-                            </h2>
-                        </div>
-                        <div class="toolbar" style="border-bottom:none; display:flex; padding:0; gap: 0.5rem;" data-html2canvas-ignore>
-                            <button class="btn btn-primary" id="btnCopyDashboard"
-                                style="background: var(--accent-secondary);">
-                                <i data-lucide="file-text"></i>
-                                Reporting
-                            </button>
-                            <button class="btn btn-primary" id="btnCopyCharts"
-                                style="background: #8b5cf6;">
-                                <i data-lucide="pie-chart"></i>
-                                Graphiques
-                            </button>
-                        </div>
+                <!-- View: Users -->
+                <div id="view-users" class="view-section">
+                    <div class="top-header glass-panel" style="justify-content: space-between">
+                        <h2>Gestion des Utilisateurs</h2>
+                        <button class="btn btn-primary" id="btnNewUser">
+                            <i data-lucide="user-plus"></i>
+                            Nouvel Utilisateur
+                        </button>
                     </div>
-                    <!-- Global KPI -->
-                    <!-- Global KPI Detailed Rows -->
-                    <div class="dashboard-summary" style="padding: 0 1.25rem 1.25rem 1.25rem; display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem;">
-                        
-                        <!-- Risk Analysis Row -->
-                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: -0.5rem; display: flex; align-items: center; gap: 0.8rem;">
-                            <span style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                <i data-lucide="shield-alert" style="width: 14px; height: 14px;"></i> Analyse des Risques de Livraison
-                            </span>
-                            <span style="flex: 1; height: 1px; background: rgba(0,0,0,0.08); margin-top: 1px;"></span>
-                        </h4>
-                        <div id="dashRiskContainer" class="kpi-card" style="width: 100%; max-width: none; display: flex; align-items: center; gap: 1.5rem; padding: 1.25rem; border: 1px solid rgba(0,0,0,0.05); flex-wrap: wrap;">
-                            <div id="dashRiskIcon" class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 48px; height: 48px; flex-shrink: 0;">
-                                <i data-lucide="check-circle"></i>
-                            </div>
-                            <div class="kpi-info" style="flex: 0 1 auto; min-width: 160px;">
-                                <h3 id="dashRiskTitle" style="font-size: 0.9rem; margin-bottom: 0; color: var(--text-main);"></h3>
-                                <p id="dashRiskText" class="kpi-value" style="font-size: 1.1rem; color: #10b981;">Analyse en cours...</p>
-                            </div>
-                            <!-- Bulles d'état -->
-                            <div style="flex: 1; display: flex; justify-content: flex-end; gap: 0.8rem; flex-wrap: wrap;">
-                                <!-- Livraison Client -->
-                                <div id="slotClientDate" style="display: none; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.5rem 0.8rem; background: rgba(14, 165, 233, 0.1); border-radius: 10px; min-width: 100px;">
-                                    <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap;">Livraison client prévue le</span>
-                                    <span id="valClientDate" style="font-size: 0.85rem; font-weight: 700; color: #0ea5e9;">—</span>
-                                </div>
-                                <!-- Recette Max -->
-                                <div id="slotMaxRecetteDate" style="display: none; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.5rem 0.8rem; background: rgba(139, 92, 246, 0.08); border-radius: 10px; min-width: 100px;">
-                                    <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap;">Dev en recette max le</span>
-                                    <span id="valMaxRecetteDate" style="font-size: 0.85rem; font-weight: 700; color: #8b5cf6;">—</span>
-                                </div>
-                                <!-- Livraison Possible -->
-                                <div id="slotPossibleDate" style="display: none; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.5rem 0.8rem; background: rgba(245, 158, 11, 0.08); border-radius: 10px; min-width: 100px;">
-                                    <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap;">Livraison client possible le</span>
-                                    <span id="valPossibleDate" style="font-size: 0.85rem; font-weight: 700; color: #f59e0b;">—</span>
-                                </div>
-                                <!-- Marge / Retard -->
-                                <div id="slotMargin" style="display: none; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.5rem 0.8rem; border-radius: 10px; min-width: 100px;">
-                                    <span id="labelMargin" style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap;">Marge</span>
-                                    <span id="valMargin" style="font-size: 0.85rem; font-weight: 700;">—</span>
-                                </div>
-                                <!-- Livrée le -->
-                                <div id="slotActualDate" style="display: none; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.5rem 0.8rem; background: rgba(16, 185, 129, 0.08); border-radius: 10px; min-width: 100px;">
-                                    <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap;">Livrée le</span>
-                                    <span id="valActualDate" style="font-size: 0.85rem; font-weight: 700; color: #10b981;">—</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Line 1: Tickets -->
-                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: -0.5rem; display: flex; align-items: center; gap: 0.8rem;">
-                            <span style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                <i data-lucide="layers-2" style="width: 14px; height: 14px;"></i> Périmètre
-                            </span>
-                            <span style="flex: 1; height: 1px; background: rgba(0,0,0,0.08); margin-top: 1px;"></span>
-                        </h4>
-                        <div class="stat-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                            <div class="kpi-card">
-                                <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;"><i data-lucide="file-text"></i></div>
-                                <div class="kpi-info"><h3>Nb US</h3><p class="kpi-value" id="kpiNbUS">0</p></div>
-                            </div>
-                            <div class="kpi-card">
-                                <div class="kpi-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;"><i data-lucide="bug"></i></div>
-                                <div class="kpi-info"><h3>Nb Bugs</h3><p class="kpi-value" id="kpiNbBugs">0</p></div>
-                            </div>
-                            <div class="kpi-card">
-                                <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i data-lucide="check-square"></i></div>
-                                <div class="kpi-info"><h3>Nb Tâches</h3><p class="kpi-value" id="kpiNbTasks">0</p></div>
-                            </div>
-                            <div class="kpi-card" style="border: 1px solid rgba(99, 102, 241, 0.2);">
-                                <div class="kpi-icon" style="background: #6366f1; color: white;"><i data-lucide="ticket"></i></div>
-                                <div class="kpi-info"><h3>Total Tickets</h3><p class="kpi-value" id="kpiTotalTickets">0</p></div>
-                            </div>
-                        </div>
-                        <!-- New: Detailed Feature Breakdown -->
-                        <div id="dashFeatureBreakdown" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
-                            <!-- Injected by JS -->
-                        </div>
-
-                        <!-- Line 2: J/H Totaux -->
-                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: -0.5rem; display: flex; align-items: center; gap: 0.8rem;">
-                            <span style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                <i data-lucide="calendar" style="width: 14px; height: 14px;"></i> Volume d'Effort Total (J/h)
-                            </span>
-                            <span style="flex: 1; height: 1px; background: rgba(0,0,0,0.08); margin-top: 1px;"></span>
-                        </h4>
-                        <div class="stat-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                            <div class="kpi-card">
-                                <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i data-lucide="pen-tool"></i></div>
-                                <div class="kpi-info"><h3>J/H Conception</h3><p class="kpi-value" id="kpiJH_C">0.00</p></div>
-                            </div>
-                            <div class="kpi-card">
-                                <div class="kpi-icon" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;"><i data-lucide="play-circle"></i></div>
-                                <div class="kpi-info"><h3>J/H Exécution</h3><p class="kpi-value" id="kpiJH_E">0.00</p></div>
-                            </div>
-                            <div class="kpi-card" style="border: 1px solid rgba(139, 92, 246, 0.2);">
-                                <div class="kpi-icon" style="background: #8b5cf6; color: white;"><i data-lucide="layers"></i></div>
-                                <div class="kpi-info"><h3>Total J/H</h3><p class="kpi-value" id="kpiJH_Total">0.00</p></div>
-                            </div>
-                        </div>
-
-                        <!-- Line 3: RAF Detailed -->
-                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: -0.5rem; display: flex; align-items: center; gap: 0.8rem;">
-                            <span style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                <i data-lucide="hourglass" style="width: 14px; height: 14px;"></i> Reste à Faire (RAF)
-                            </span>
-                            <span style="flex: 1; height: 1px; background: rgba(0,0,0,0.08); margin-top: 1px;"></span>
-                        </h4>
-                        <div class="stat-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                            <div class="kpi-card">
-                                <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i data-lucide="target"></i></div>
-                                <div class="kpi-info"><h3>RAF Conception</h3><p class="kpi-value" id="kpiRaf_C">0.00</p></div>
-                            </div>
-                            <div class="kpi-card">
-                                <div class="kpi-icon" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;"><i data-lucide="navigation"></i></div>
-                                <div class="kpi-info"><h3>RAF Exécution</h3><p class="kpi-value" id="kpiRaf_E">0.00</p></div>
-                            </div>
-                            <div class="kpi-card" style="border: 1px solid rgba(249, 115, 22, 0.2);">
-                                <div class="kpi-icon" style="background: #f97316; color: white;"><i data-lucide="clock"></i></div>
-                                <div class="kpi-info"><h3>RAF Global</h3><p class="kpi-value" id="kpiTotalRaf">0.00</p></div>
-                            </div>
-                        </div>
-
-                        <!-- Line 4: Progress -->
-                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: -0.5rem; display: flex; align-items: center; gap: 0.8rem;">
-                            <span style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i> Progression Réelle (%)
-                            </span>
-                            <span style="flex: 1; height: 1px; background: rgba(0,0,0,0.08); margin-top: 1px;"></span>
-                        </h4>
-                        <div class="stat-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                            <div class="kpi-card">
-                                <div class="kpi-icon"><i data-lucide="percent"></i></div>
-                                <div class="kpi-info">
-                                    <h3>Avance. Conception</h3>
-                                    <p class="kpi-value" id="kpiAdvC">0%</p>
-                                    <div class="kpi-progress"><div class="kpi-progress-bar" id="kpiAdvCBar" style="width: 0%"></div></div>
-                                </div>
-                            </div>
-                            <div class="kpi-card">
-                                <div class="kpi-icon"><i data-lucide="activity"></i></div>
-                                <div class="kpi-info">
-                                    <h3>Avance. Exécution</h3>
-                                    <p class="kpi-value" id="kpiAdvE">0%</p>
-                                    <div class="kpi-progress"><div class="kpi-progress-bar" id="kpiAdvEBar" style="width: 0%"></div></div>
-                                </div>
-                            </div>
-                            <div class="kpi-card" style="border: 1px solid rgba(236, 72, 153, 0.2);">
-                                <div class="kpi-icon" style="background: #ec4899; color: white;"><i data-lucide="pie-chart"></i></div>
-                                <div class="kpi-info">
-                                    <h3>Avancement Total</h3>
-                                    <p class="kpi-value" id="kpiAdvTotal">0%</p>
-                                    <div class="kpi-progress"><div class="kpi-progress-bar" id="kpiAdvTotalBar" style="width: 0%"></div></div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="table-wrapper glass-panel" style="padding: 1rem">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nom Complet</th>
+                                    <th>Rôle</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTbody">
+                                <!-- Injected by JS -->
+                            </tbody>
+                        </table>
                     </div>
+                </div>
 
-                    <!-- Charts Area -->
-                    <div id="chartsRegion" style="padding: 0 1.25rem 0.5rem 1.25rem; margin-top: 2rem;">
-                        <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem;">
-                            <span style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                                <i data-lucide="bar-chart-3" style="width: 14px; height: 14px;"></i> Analyses Graphiques Détaillées
-                            </span>
-                        </h4>
-                    <div class="charts-grid">
-                        <!-- Conception Status -->
-                        <div class="chart-card glass-panel">
-                            <h3>Statut de Conception par Type</h3>
-                            <div class="chart-container">
-                                <canvas id="chartTypeDesign"></canvas>
-                            </div>
-                        </div>
-                        <div class="chart-card glass-panel">
-                            <h3>Statut de Conception par Fonctionnalité</h3>
-                            <div class="chart-container">
-                                <canvas id="chartFeatureDesign"></canvas>
-                            </div>
-                        </div>
-                        <!-- Execution Status -->
-                        <div class="chart-card glass-panel">
-                            <h3>Statut d'Exécution par Type</h3>
-                            <div class="chart-container">
-                                <canvas id="chartTypeExec"></canvas>
-                            </div>
-                        </div>
-                        <div class="chart-card glass-panel">
-                            <h3>Statut d'Exécution par Fonctionnalité</h3>
-                            <div class="chart-container">
-                                <canvas id="chartFeatureExec"></canvas>
-                            </div>
-                        </div>
-                        <div class="chart-card glass-panel">
-                            <h3>Avancement Conception vs Exécution</h3>
-                            <div class="chart-container">
-                                <canvas id="chartProgress"></canvas>
-                            </div>
-                        </div>
-                        <div class="chart-card glass-panel">
-                            <h3>Répartition globale des Statuts</h3>
-                            <div class="chart-container">
-                                <canvas id="chartStatus"></canvas>
-                            </div>
-                        </div>
-                        <div class="chart-card glass-panel">
-                            <h3>Charge (RAF) par Utilisateur</h3>
-                            <div class="chart-container">
-                                <canvas id="chartWorkload"></canvas>
-                        </div>
+                <!-- View: Versions -->
+                <div id="view-versions" class="view-section">
+                    <div class="top-header glass-panel" style="justify-content: space-between">
+                        <h2>Gestion des Versions</h2>
+                        <button class="btn btn-primary" id="btnNewVersionPage">
+                            <i data-lucide="plus"></i>
+                            Nouvelle Version
+                        </button>
                     </div>
+                    <div class="table-wrapper glass-panel" style="padding: 1rem">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th
+                                        data-col="id"
+                                        onclick="toggleSort('versions', 'id')"
+                                        style="cursor: pointer"
+                                    >
+                                        ID<span id="sort-versions-id"></span>
+                                    </th>
+                                    <th
+                                        data-col="name"
+                                        onclick="toggleSort('versions', 'name')"
+                                        style="cursor: pointer"
+                                    >
+                                        Nom de la Version<span id="sort-versions-name"></span>
+                                    </th>
+                                    <th
+                                        data-col="project"
+                                        onclick="toggleSort('versions', 'project')"
+                                        style="cursor: pointer"
+                                    >
+                                        Projet<span id="sort-versions-project"></span>
+                                    </th>
+
+                                    <th
+                                        data-col="deliveryDateClient"
+                                        onclick="toggleSort('versions', 'deliveryDateClient')"
+                                        style="cursor: pointer"
+                                    >
+                                        Date Livraison Client<span
+                                            id="sort-versions-deliveryDateClient"
+                                        ></span>
+                                    </th>
+                                    <th
+                                        data-col="deliveryDateActual"
+                                        onclick="toggleSort('versions', 'deliveryDateActual')"
+                                        style="cursor: pointer"
+                                    >
+                                        Date Livraison Réelle<span
+                                            id="sort-versions-deliveryDateActual"
+                                        ></span>
+                                    </th>
+                                    <th>Actions</th>
+                                </tr>
+                                <tr class="filter-row">
+                                    <th data-col="id">
+                                        <select
+                                            class="filter-input"
+                                            data-filter-table="versions"
+                                            data-filter-col="id"
+                                            onchange="onFilterChange('versions', 'id', this.value)"
+                                        >
+                                            <option value="">Tout</option>
+                                        </select>
+                                    </th>
+                                    <th data-col="name">
+                                        <select
+                                            class="filter-input"
+                                            data-filter-table="versions"
+                                            data-filter-col="name"
+                                            onchange="
+                                                onFilterChange('versions', 'name', this.value)
+                                            "
+                                        >
+                                            <option value="">Tout</option>
+                                        </select>
+                                    </th>
+                                    <th data-col="project">
+                                        <select
+                                            class="filter-input"
+                                            data-filter-table="versions"
+                                            data-filter-col="project"
+                                            onchange="
+                                                onFilterChange('versions', 'project', this.value)
+                                            "
+                                        >
+                                            <option value="">Tout</option>
+                                        </select>
+                                    </th>
+
+                                    <th data-col="deliveryDateClient">
+                                        <select
+                                            class="filter-input"
+                                            data-filter-table="versions"
+                                            data-filter-col="deliveryDateClient"
+                                            onchange="
+                                                onFilterChange(
+                                                    'versions',
+                                                    'deliveryDateClient',
+                                                    this.value
+                                                )
+                                            "
+                                        >
+                                            <option value="">Tout</option>
+                                        </select>
+                                    </th>
+                                    <th data-col="deliveryDateActual">
+                                        <select
+                                            class="filter-input"
+                                            data-filter-table="versions"
+                                            data-filter-col="deliveryDateActual"
+                                            onchange="
+                                                onFilterChange(
+                                                    'versions',
+                                                    'deliveryDateActual',
+                                                    this.value
+                                                )
+                                            "
+                                        >
+                                            <option value="">Tout</option>
+                                        </select>
+                                    </th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="versionsTbody">
+                                <!-- Injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Modal for New/Edit Project -->
+        <div class="modal" id="projectModal">
+            <div class="modal-content glass-panel modal-project">
+                <div class="modal-header">
+                    <h3 id="projectModalTitle">Nouveau Projet</h3>
+                    <button class="close-btn" id="btnCloseProjectModal">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="projectForm" class="project-form">
+                        <input type="hidden" id="pId" />
+
+                        <!-- Section: Informations du projet -->
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i data-lucide="info" class="form-section-icon"></i>
+                                <span>Informations du projet</span>
+                            </div>
+                            <div class="form-row form-row-2col">
+                                <div class="form-group form-group-flex">
+                                    <label>Client</label>
+                                    <input
+                                        type="text"
+                                        id="pClient"
+                                        required
+                                        class="text-input"
+                                        placeholder="Ex: Client X"
+                                    />
+                                </div>
+                                <div class="form-group form-group-flex">
+                                    <label>Nom du Projet</label>
+                                    <input
+                                        type="text"
+                                        id="pName"
+                                        required
+                                        class="text-input"
+                                        placeholder="Ex: Boutique v2"
+                                    />
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group form-group-flex">
+                                    <label>États possibles du ticket</label>
+                                    <div class="member-add-row">
+                                        <input
+                                            type="text"
+                                            id="pStateInput"
+                                            class="text-input"
+                                            placeholder="Ex: En cours"
+                                        />
+                                        <button
+                                            type="button"
+                                            class="btn btn-primary btn-compact"
+                                            id="btnAddState"
+                                        >
+                                            <i data-lucide="plus" class="btn-icon-sm"></i>
+                                            Ajouter
+                                        </button>
+                                    </div>
+                                    <div id="projectStatesContainer" class="members-container">
+                                        <span class="members-placeholder">Aucun état défini.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section: Membres du projet -->
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i data-lucide="users" class="form-section-icon"></i>
+                                <span>Membres du projet</span>
+                            </div>
+                            <div class="member-add-row">
+                                <select id="pUserSelectToAdd" class="select-input member-select">
+                                    <option value="">-- Sélectionner un utilisateur --</option>
+                                </select>
+                                <button
+                                    type="button"
+                                    class="btn btn-primary btn-compact"
+                                    id="btnAddExistingUser"
+                                >
+                                    <i data-lucide="user-plus" class="btn-icon-sm"></i>
+                                    Ajouter
+                                </button>
+                            </div>
+                            <!-- Le composant de création intra-projet a été retiré de ce niveau.  -->
+                            <div id="projectMembersContainer" class="members-container">
+                                <span class="members-placeholder">Aucun membre sélectionné.</span>
+                            </div>
+                        </div>
+
+                        <!-- Section: Ratios de productivité -->
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i data-lucide="gauge" class="form-section-icon"></i>
+                                <span>Ratios de productivité</span>
+                            </div>
+                            <div class="form-row form-row-2col">
+                                <div class="form-group">
+                                    <label>Ratio Conception (tests/jour)</label>
+                                    <input
+                                        type="number"
+                                        id="pRatioC"
+                                        required
+                                        class="text-input"
+                                        min="1"
+                                        step="0.5"
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label>Ratio Exécution (tests/jour)</label>
+                                    <input
+                                        type="number"
+                                        id="pRatioE"
+                                        required
+                                        class="text-input"
+                                        min="1"
+                                        step="0.5"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit -->
+                        <button type="submit" class="btn btn-primary submit-btn-full">
+                            <i data-lucide="save" class="btn-icon-sm"></i>
+                            Enregistrer
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
-    </div><!-- /view-tracker -->
 
-    <!-- View: Projects -->
-            <div id="view-projects" class="view-section">
-                <div class="top-header glass-panel" style="justify-content: space-between;">
-                    <h2>Gestion des Projets</h2>
-                    <button class="btn btn-primary" id="btnNewProject">
-                        <i data-lucide="plus"></i>
-                        Nouveau Projet
-                    </button>
+        <!-- Modal for New/Edit Ticket -->
+        <div class="modal" id="ticketModal">
+            <div class="modal-content glass-panel modal-ticket">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Nouveau Ticket</h3>
+                    <button class="close-btn" id="btnCloseModal"><i data-lucide="x"></i></button>
                 </div>
-                <div class="table-wrapper glass-panel" style="padding: 1rem;">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th data-col="id" onclick="toggleSort('projects', 'id')" style="cursor:pointer">ID<span
-                                        id="sort-projects-id"></span></th>
-                                <th data-col="client" onclick="toggleSort('projects', 'client')" style="cursor:pointer">Client<span id="sort-projects-client"></span></th>
-                                <th data-col="name" onclick="toggleSort('projects', 'name')" style="cursor:pointer">Nom
-                                    du Projet<span id="sort-projects-name"></span></th>
-                                <th data-col="ratioC" onclick="toggleSort('projects', 'designRatio')"
-                                    style="cursor:pointer">Ratio Conception<span id="sort-projects-designRatio"></span>
-                                </th>
-                                <th data-col="ratioE" onclick="toggleSort('projects', 'executionRatio')"
-                                    style="cursor:pointer">Ratio Exécution<span
-                                        id="sort-projects-executionRatio"></span></th>
-                                <th>Actions</th>
-                            </tr>
-                            <tr class="filter-row">
-                                <th data-col="id"><select class="filter-input" data-filter-table="projects"
-                                        data-filter-col="id" onchange="onFilterChange('projects', 'id', this.value)">
-                                        <option value="">Tout</option>
-                                    </select></th>
-                                <th data-col="client"><select class="filter-input" data-filter-table="projects"
-                                        data-filter-col="client"
-                                        onchange="onFilterChange('projects', 'client', this.value)">
-                                        <option value="">Tout</option>
-                                    </select></th>
-                                <th data-col="name"><select class="filter-input" data-filter-table="projects"
-                                        data-filter-col="name"
-                                        onchange="onFilterChange('projects', 'name', this.value)">
-                                        <option value="">Tout</option>
-                                    </select></th>
-                                <th data-col="designRatio"><select class="filter-input" data-filter-table="projects"
-                                        data-filter-col="designRatio"
-                                        onchange="onFilterChange('projects', 'designRatio', this.value)">
-                                        <option value="">Tout</option>
-                                    </select></th>
-                                <th data-col="executionRatio"><select class="filter-input" data-filter-table="projects"
-                                        data-filter-col="executionRatio"
-                                        onchange="onFilterChange('projects', 'executionRatio', this.value)">
-                                        <option value="">Tout</option>
-                                    </select></th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody id="projectsTbody">
-                            <!-- Injected by JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                <div class="modal-body">
+                    <form id="ticketForm" class="project-form">
+                        <input type="hidden" id="tId" />
 
-            <!-- View: Users -->
-            <div id="view-users" class="view-section">
-                <div class="top-header glass-panel" style="justify-content: space-between;">
-                    <h2>Gestion des Utilisateurs</h2>
-                    <button class="btn btn-primary" id="btnNewUser">
-                        <i data-lucide="user-plus"></i>
-                        Nouvel Utilisateur
-                    </button>
-                </div>
-                <div class="table-wrapper glass-panel" style="padding: 1rem;">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Nom Complet</th>
-                                <th>Rôle</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersTbody">
-                            <!-- Injected by JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- View: Versions -->
-            <div id="view-versions" class="view-section">
-                <div class="top-header glass-panel" style="justify-content: space-between;">
-                    <h2>Gestion des Versions</h2>
-                    <button class="btn btn-primary" id="btnNewVersionPage">
-                        <i data-lucide="plus"></i>
-                        Nouvelle Version
-                    </button>
-                </div>
-                <div class="table-wrapper glass-panel" style="padding: 1rem;">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th data-col="id" onclick="toggleSort('versions', 'id')" style="cursor:pointer">ID<span
-                                        id="sort-versions-id"></span></th>
-                                <th data-col="name" onclick="toggleSort('versions', 'name')" style="cursor:pointer">Nom
-                                    de la Version<span id="sort-versions-name"></span></th>
-                                <th data-col="project" onclick="toggleSort('versions', 'project')"
-                                    style="cursor:pointer">Projet<span id="sort-versions-project"></span></th>
-
-                                <th data-col="deliveryDateClient" onclick="toggleSort('versions', 'deliveryDateClient')"
-                                    style="cursor:pointer">Date Livraison Client<span
-                                        id="sort-versions-deliveryDateClient"></span></th>
-                                <th data-col="deliveryDateActual" onclick="toggleSort('versions', 'deliveryDateActual')"
-                                    style="cursor:pointer">Date Livraison Réelle<span id="sort-versions-deliveryDateActual"></span></th>
-                                <th>Actions</th>
-                            </tr>
-                            <tr class="filter-row">
-                                <th data-col="id"><select class="filter-input" data-filter-table="versions"
-                                        data-filter-col="id" onchange="onFilterChange('versions', 'id', this.value)">
-                                        <option value="">Tout</option>
-                                    </select></th>
-                                <th data-col="name"><select class="filter-input" data-filter-table="versions"
-                                        data-filter-col="name"
-                                        onchange="onFilterChange('versions', 'name', this.value)">
-                                        <option value="">Tout</option>
-                                    </select></th>
-                                <th data-col="project"><select class="filter-input" data-filter-table="versions"
-                                        data-filter-col="project"
-                                        onchange="onFilterChange('versions', 'project', this.value)">
-                                        <option value="">Tout</option>
-                                    </select></th>
-
-                                <th data-col="deliveryDateClient"><select class="filter-input" data-filter-table="versions"
-                                        data-filter-col="deliveryDateClient"
-                                        onchange="onFilterChange('versions', 'deliveryDateClient', this.value)">
-                                        <option value="">Tout</option>
-                                    </select></th>
-                                <th data-col="deliveryDateActual"><select class="filter-input" data-filter-table="versions"
-                                        data-filter-col="deliveryDateActual"
-                                        onchange="onFilterChange('versions', 'deliveryDateActual', this.value)">
-                                        <option value="">Tout</option>
-                                    </select></th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody id="versionsTbody">
-                            <!-- Injected by JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-        </main>
-    </div>
-
-    <!-- Modal for New/Edit Project -->
-    <div class="modal" id="projectModal">
-        <div class="modal-content glass-panel modal-project">
-            <div class="modal-header">
-                <h3 id="projectModalTitle">Nouveau Projet</h3>
-                <button class="close-btn" id="btnCloseProjectModal"><i data-lucide="x"></i></button>
-            </div>
-            <div class="modal-body">
-                <form id="projectForm" class="project-form">
-                    <input type="hidden" id="pId">
-
-                    <!-- Section: Informations du projet -->
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i data-lucide="info" class="form-section-icon"></i>
-                            <span>Informations du projet</span>
-                        </div>
-                        <div class="form-row form-row-2col">
-                            <div class="form-group form-group-flex">
-                                <label>Client</label>
-                                <input type="text" id="pClient" required class="text-input" placeholder="Ex: Client X">
+                        <!-- Section: Détails du Ticket -->
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i data-lucide="file-text" class="form-section-icon"></i>
+                                <span>Détails du Ticket</span>
                             </div>
-                            <div class="form-group form-group-flex">
-                                <label>Nom du Projet</label>
-                                <input type="text" id="pName" required class="text-input" placeholder="Ex: Boutique v2">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group form-group-flex">
-                                <label>États possibles du ticket</label>
-                                <div class="member-add-row">
-                                    <input type="text" id="pStateInput" class="text-input" placeholder="Ex: En cours">
-                                    <button type="button" class="btn btn-primary btn-compact" id="btnAddState">
-                                        <i data-lucide="plus" class="btn-icon-sm"></i>
-                                        Ajouter
-                                    </button>
+                            <div class="form-row">
+                                <div class="form-group form-group-flex">
+                                    <label>Fonctionnalité</label>
+                                    <input
+                                        type="text"
+                                        id="fFeat"
+                                        required
+                                        class="text-input"
+                                        placeholder="Ex: Boutique, Panier..."
+                                        list="feature-list"
+                                    />
+                                    <datalist id="feature-list"></datalist>
                                 </div>
-                                <div id="projectStatesContainer" class="members-container">
-                                    <span class="members-placeholder">Aucun état défini.</span>
+                            </div>
+                            <div class="form-row form-row-2col">
+                                <div class="form-group">
+                                    <label>Type</label>
+                                    <select id="fType" class="select-input">
+                                        <option>US</option>
+                                        <option>Bug</option>
+                                        <option>Tâche</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Numéro</label>
+                                    <input type="number" id="fNum" required class="text-input" />
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group form-group-flex">
+                                    <label>Version</label>
+                                    <select id="fVersion" class="select-input" required></select>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Section: Membres du projet -->
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i data-lucide="users" class="form-section-icon"></i>
-                            <span>Membres du projet</span>
-                        </div>
-                        <div class="member-add-row">
-                            <select id="pUserSelectToAdd" class="select-input member-select">
-                                <option value="">-- Sélectionner un utilisateur --</option>
-                            </select>
-                            <button type="button" class="btn btn-primary btn-compact" id="btnAddExistingUser">
-                                <i data-lucide="user-plus" class="btn-icon-sm"></i>
-                                Ajouter
-                            </button>
-                        </div>
-                        <!-- Le composant de création intra-projet a été retiré de ce niveau.  -->
-                        <div id="projectMembersContainer" class="members-container">
-                            <span class="members-placeholder">Aucun membre sélectionné.</span>
-                        </div>
-                    </div>
-
-                    <!-- Section: Ratios de productivité -->
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i data-lucide="gauge" class="form-section-icon"></i>
-                            <span>Ratios de productivité</span>
-                        </div>
-                        <div class="form-row form-row-2col">
-                            <div class="form-group">
-                                <label>Ratio Conception (tests/jour)</label>
-                                <input type="number" id="pRatioC" required class="text-input" min="1" step="0.5">
+                        <!-- Section: Attribution & État -->
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i data-lucide="user-check" class="form-section-icon"></i>
+                                <span>Attribution & État</span>
                             </div>
-                            <div class="form-group">
-                                <label>Ratio Exécution (tests/jour)</label>
-                                <input type="number" id="pRatioE" required class="text-input" min="1" step="0.5">
+                            <div class="form-row form-row-2col">
+                                <div class="form-group">
+                                    <label>Assigné Conception</label>
+                                    <select id="fAssC" class="select-input"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Assigné Exécution</label>
+                                    <select id="fAssE" class="select-input"></select>
+                                </div>
+                            </div>
+                            <div class="form-row form-row-2col">
+                                <div class="form-group">
+                                    <label>Priorité</label>
+                                    <select id="fPrio" class="select-input">
+                                        <option>Basse</option>
+                                        <option>Moyenne</option>
+                                        <option>Haute</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>État ticket</label>
+                                    <select id="fState" class="select-input"></select>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Submit -->
-                    <button type="submit" class="btn btn-primary submit-btn-full">
-                        <i data-lucide="save" class="btn-icon-sm"></i>
-                        Enregistrer
-                    </button>
-                </form>
+                        <!-- Section: Métriques -->
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i data-lucide="bar-chart-3" class="form-section-icon"></i>
+                                <span>Métriques</span>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group form-group-flex">
+                                    <label>Nombre de cas de test</label>
+                                    <input
+                                        type="number"
+                                        id="fTests"
+                                        class="text-input"
+                                        min="0"
+                                        placeholder="Estimation de l'effort"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary submit-btn-full">
+                            <i data-lucide="save" class="btn-icon-sm"></i>
+                            Enregistrer
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Modal for New/Edit Ticket -->
-    <div class="modal" id="ticketModal">
-        <div class="modal-content glass-panel modal-ticket">
-            <div class="modal-header">
-                <h3 id="modalTitle">Nouveau Ticket</h3>
-                <button class="close-btn" id="btnCloseModal"><i data-lucide="x"></i></button>
-            </div>
-            <div class="modal-body">
-                <form id="ticketForm" class="project-form">
-                    <input type="hidden" id="tId">
-
-                    <!-- Section: Détails du Ticket -->
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i data-lucide="file-text" class="form-section-icon"></i>
-                            <span>Détails du Ticket</span>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group form-group-flex">
-                                <label>Fonctionnalité</label>
-                                <input type="text" id="fFeat" required class="text-input"
-                                    placeholder="Ex: Boutique, Panier..." list="feature-list">
-                                <datalist id="feature-list"></datalist>
-                            </div>
-                        </div>
-                        <div class="form-row form-row-2col">
+        <!-- Modal for New/Edit User -->
+        <div class="modal" id="userModal">
+            <div class="modal-content glass-panel modal-user">
+                <div class="modal-header">
+                    <h3 id="userModalTitle">Nouvel Utilisateur</h3>
+                    <button class="close-btn" id="btnCloseUserModal">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm" class="project-form">
+                        <input type="hidden" id="uId" />
+                        <div class="form-section">
                             <div class="form-group">
-                                <label>Type</label>
-                                <select id="fType" class="select-input">
-                                    <option>US</option>
-                                    <option>Bug</option>
-                                    <option>Tâche</option>
+                                <label>Nom Complet</label>
+                                <input
+                                    type="text"
+                                    id="uiName"
+                                    required
+                                    class="text-input"
+                                    placeholder="Ex: Jean Dupont"
+                                />
+                            </div>
+                            <div class="form-group" style="margin-top: 1rem">
+                                <label>Rôle</label>
+                                <select id="uRole" class="select-input">
+                                    <option>Concepteur</option>
+                                    <option>Testeur</option>
+                                    <option>Lead Test</option>
+                                    <option>Product Owner</option>
                                 </select>
                             </div>
-                            <div class="form-group">
-                                <label>Numéro</label>
-                                <input type="number" id="fNum" required class="text-input">
-                            </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group form-group-flex">
-                                <label>Version</label>
-                                <select id="fVersion" class="select-input" required></select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Section: Attribution & État -->
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i data-lucide="user-check" class="form-section-icon"></i>
-                            <span>Attribution & État</span>
-                        </div>
-                        <div class="form-row form-row-2col">
-                            <div class="form-group">
-                                <label>Assigné Conception</label>
-                                <select id="fAssC" class="select-input"></select>
-                            </div>
-                            <div class="form-group">
-                                <label>Assigné Exécution</label>
-                                <select id="fAssE" class="select-input"></select>
-                            </div>
-                        </div>
-                        <div class="form-row form-row-2col">
-                            <div class="form-group">
-                                <label>Priorité</label>
-                                <select id="fPrio" class="select-input">
-                                    <option>Basse</option>
-                                    <option>Moyenne</option>
-                                    <option>Haute</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>État ticket</label>
-                                <select id="fState" class="select-input"></select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Section: Métriques -->
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i data-lucide="bar-chart-3" class="form-section-icon"></i>
-                            <span>Métriques</span>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group form-group-flex">
-                                <label>Nombre de cas de test</label>
-                                <input type="number" id="fTests" class="text-input" min="0"
-                                    placeholder="Estimation de l'effort">
-                            </div>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary submit-btn-full">
-                        <i data-lucide="save" class="btn-icon-sm"></i>
-                        Enregistrer
-                    </button>
-                </form>
+                        <button
+                            type="submit"
+                            class="btn btn-primary submit-btn-full"
+                            style="margin-top: 1.5rem"
+                        >
+                            <i data-lucide="save" class="btn-icon-sm"></i>
+                            Enregistrer
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Modal for New/Edit User -->
-    <div class="modal" id="userModal">
-        <div class="modal-content glass-panel modal-user">
-            <div class="modal-header">
-                <h3 id="userModalTitle">Nouvel Utilisateur</h3>
-                <button class="close-btn" id="btnCloseUserModal"><i data-lucide="x"></i></button>
-            </div>
-            <div class="modal-body">
-                <form id="userForm" class="project-form">
-                    <input type="hidden" id="uId">
-                    <div class="form-section">
-                        <div class="form-group">
-                            <label>Nom Complet</label>
-                            <input type="text" id="uiName" required class="text-input" placeholder="Ex: Jean Dupont">
-                        </div>
-                        <div class="form-group" style="margin-top: 1rem;">
-                            <label>Rôle</label>
-                            <select id="uRole" class="select-input">
-                                <option>Concepteur</option>
-                                <option>Testeur</option>
-                                <option>Lead Test</option>
-                                <option>Product Owner</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary submit-btn-full" style="margin-top: 1.5rem;">
-                        <i data-lucide="save" class="btn-icon-sm"></i>
-                        Enregistrer
+        <!-- Modal for New/Edit Version -->
+        <div class="modal" id="versionModal">
+            <div class="modal-content glass-panel modal-version">
+                <div class="modal-header">
+                    <h3 id="versionModalTitle">Nouvelle Version</h3>
+                    <button class="close-btn" id="btnCloseVersionModal">
+                        <i data-lucide="x"></i>
                     </button>
-                </form>
-            </div>
-        </div>
-    </div>
+                </div>
+                <div class="modal-body">
+                    <form id="versionForm" class="project-form">
+                        <input type="hidden" id="vId" />
 
-    <!-- Modal for New/Edit Version -->
-    <div class="modal" id="versionModal">
-        <div class="modal-content glass-panel modal-version">
-            <div class="modal-header">
-                <h3 id="versionModalTitle">Nouvelle Version</h3>
-                <button class="close-btn" id="btnCloseVersionModal"><i data-lucide="x"></i></button>
-            </div>
-            <div class="modal-body">
-                <form id="versionForm" class="project-form">
-                    <input type="hidden" id="vId">
-                    
-                    <!-- Sélection Projet -->
-                    <div class="form-section">
-                         <div class="form-section-title">
-                            <i data-lucide="folder" class="form-section-icon"></i>
-                            <span>Projet & Client</span>
+                        <!-- Sélection Projet -->
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i data-lucide="folder" class="form-section-icon"></i>
+                                <span>Projet & Client</span>
+                            </div>
+                            <div class="form-row form-row-2col">
+                                <div class="form-group">
+                                    <label>Client</label>
+                                    <select id="vClient" class="select-input"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Projet</label>
+                                    <select id="vProject" class="select-input"></select>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-row form-row-2col">
-                            <div class="form-group">
-                                <label>Client</label>
-                                <select id="vClient" class="select-input"></select>
+
+                        <!-- Détails Version -->
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i data-lucide="layers" class="form-section-icon"></i>
+                                <span>Détails de la version</span>
                             </div>
                             <div class="form-group">
-                                <label>Projet</label>
-                                <select id="vProject" class="select-input"></select>
+                                <label>Nom de la version</label>
+                                <input
+                                    type="text"
+                                    id="vName"
+                                    required
+                                    class="text-input"
+                                    placeholder="Ex: v1.0.0"
+                                />
+                            </div>
+                            <!-- Date Livraison Client -->
+                            <div class="form-group" style="margin-top: 1rem">
+                                <label>Date de Livraison Client prévue</label>
+                                <div class="date-selector-group">
+                                    <select id="vDate_D" class="select-input date-day"></select>
+                                    <select id="vDate_M" class="select-input date-month"></select>
+                                    <select id="vDate_Y" class="select-input date-year"></select>
+                                </div>
+                            </div>
+
+                            <!-- Date Livraison Réelle -->
+                            <div class="form-group" style="margin-top: 1rem">
+                                <label>Date de Livraison Réelle (Fige la version)</label>
+                                <div class="date-selector-group">
+                                    <select
+                                        id="vDateActual_D"
+                                        class="select-input date-day"
+                                    ></select>
+                                    <select
+                                        id="vDateActual_M"
+                                        class="select-input date-month"
+                                    ></select>
+                                    <select
+                                        id="vDateActual_Y"
+                                        class="select-input date-year"
+                                    ></select>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Détails Version -->
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i data-lucide="layers" class="form-section-icon"></i>
-                            <span>Détails de la version</span>
-                        </div>
-                        <div class="form-group">
-                            <label>Nom de la version</label>
-                            <input type="text" id="vName" required class="text-input" placeholder="Ex: v1.0.0">
-                        </div>
-                        <!-- Date Livraison Client -->
-                        <div class="form-group" style="margin-top: 1rem;">
-                            <label>Date de Livraison Client prévue</label>
-                            <div class="date-selector-group">
-                                <select id="vDate_D" class="select-input date-day"></select>
-                                <select id="vDate_M" class="select-input date-month"></select>
-                                <select id="vDate_Y" class="select-input date-year"></select>
-                            </div>
-                        </div>
-
-                        <!-- Date Livraison Réelle -->
-                        <div class="form-group" style="margin-top: 1rem;">
-                            <label>Date de Livraison Réelle (Fige la version)</label>
-                            <div class="date-selector-group">
-                                <select id="vDateActual_D" class="select-input date-day"></select>
-                                <select id="vDateActual_M" class="select-input date-month"></select>
-                                <select id="vDateActual_Y" class="select-input date-year"></select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary submit-btn-full">
-                        <i data-lucide="save" class="btn-icon-sm"></i>
-                        Enregistrer
-                    </button>
-                </form>
+                        <button type="submit" class="btn btn-primary submit-btn-full">
+                            <i data-lucide="save" class="btn-icon-sm"></i>
+                            Enregistrer
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Scripts -->
-    <script src="appwrite_config.js"></script>
-    <script src="utils.js"></script>
-    <!-- app.js scinde en modules (scope global classique, ordre de chargement significatif) -->
-    <script src="js/state.js"></script>
-    <script src="js/notify.js"></script>
-    <script src="js/table-tools.js"></script>
-    <script src="js/dom.js"></script>
-    <script src="js/init.js"></script>
-    <script src="js/views-forms.js"></script>
-    <script src="js/events.js"></script>
-    <script src="js/render-tables.js"></script>
-    <script src="js/render-tickets.js"></script>
-    <script src="js/calc-dates.js"></script>
-    <script src="js/dashboard.js"></script>
-    <script>
-        // Initialisation Lucide après le chargement du DOM
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-            if (typeof init === 'function') init();
-        });
-    </script>
-</body>
-
+        <!-- Scripts -->
+        <script src="appwrite_config.js"></script>
+        <script src="utils.js"></script>
+        <!-- app.js scinde en modules (scope global classique, ordre de chargement significatif) -->
+        <script src="js/state.js"></script>
+        <script src="js/notify.js"></script>
+        <script src="js/table-tools.js"></script>
+        <script src="js/dom.js"></script>
+        <script src="js/init.js"></script>
+        <script src="js/views-forms.js"></script>
+        <script src="js/events.js"></script>
+        <script src="js/render-tables.js"></script>
+        <script src="js/render-tickets.js"></script>
+        <script src="js/calc-dates.js"></script>
+        <script src="js/dashboard.js"></script>
+        <script>
+            // Initialisation Lucide après le chargement du DOM
+            document.addEventListener('DOMContentLoaded', () => {
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                if (typeof init === 'function') init();
+            });
+        </script>
+    </body>
 </html>

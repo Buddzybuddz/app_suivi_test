@@ -6,7 +6,9 @@ lucide.createIcons();
 
 // Logs de debug : activer en passant DEBUG à true (ou via ?debug dans l'URL).
 const DEBUG = /[?&]debug\b/.test(location.search);
-const debug = (...args) => { if (DEBUG) console.log(...args); };
+const debug = (...args) => {
+    if (DEBUG) console.log(...args);
+};
 
 // --- Data Models and Persistence (Appwrite) ---
 
@@ -37,14 +39,14 @@ async function loadStore() {
             databases.listDocuments(DATABASE_ID, COLLECTIONS.TICKETS, [Query.limit(5000)])
         ]);
 
-        Store.users = users.documents.map(d => ({ id: d.$id, ...d }));
-        Store.projects = projects.documents.map(d => ({ id: d.$id, ...d }));
-        Store.versions = versions.documents.map(d => ({ id: d.$id, ...d }));
-        Store.tickets = tickets.documents.map(d => ({ id: d.$id, ...d }));
+        Store.users = users.documents.map((d) => ({ id: d.$id, ...d }));
+        Store.projects = projects.documents.map((d) => ({ id: d.$id, ...d }));
+        Store.versions = versions.documents.map((d) => ({ id: d.$id, ...d }));
+        Store.tickets = tickets.documents.map((d) => ({ id: d.$id, ...d }));
 
-        debug("Store loaded from Appwrite:", Store);
+        debug('Store loaded from Appwrite:', Store);
     } catch (error) {
-        console.error("Error loading Store from Appwrite:", error);
+        console.error('Error loading Store from Appwrite:', error);
     }
 }
 
@@ -58,7 +60,7 @@ function mapDoc(d) {
 function upsertStoreDoc(key, doc) {
     if (!Store[key]) return;
     const mapped = mapDoc(doc);
-    const idx = Store[key].findIndex(item => item.id === mapped.id);
+    const idx = Store[key].findIndex((item) => item.id === mapped.id);
     if (idx === -1) Store[key].push(mapped);
     else Store[key][idx] = mapped;
     return mapped;
@@ -67,7 +69,7 @@ function upsertStoreDoc(key, doc) {
 // Retire un document d'une collection locale du Store.
 function removeStoreDoc(key, id) {
     if (!Store[key]) return;
-    Store[key] = Store[key].filter(item => item.id !== id);
+    Store[key] = Store[key].filter((item) => item.id !== id);
 }
 
 // State Management
@@ -79,4 +81,3 @@ let filterUserId = '';
 let chartInstances = {};
 
 // Fonctions de calcul (round015Up, round05Up, formatFrenchFloat) migrées vers utils.js
-

@@ -6,14 +6,14 @@
  */
 function switchView(viewName) {
     if (!viewName) return;
-    debug("SWITCH_VIEW: target =", viewName);
+    debug('SWITCH_VIEW: target =', viewName);
 
     // Refresh DOM pour être sûr d'avoir les éléments à jour
     refreshDOM();
 
     // 1. Sidebar highlight
     const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(n => {
+    navItems.forEach((n) => {
         if (n.getAttribute('data-view') === viewName) {
             n.classList.add('active');
         } else {
@@ -23,17 +23,19 @@ function switchView(viewName) {
 
     // 2. Sections display
     const sections = document.querySelectorAll('.view-section');
-    sections.forEach(s => {
+    sections.forEach((s) => {
         const idSuffix = s.id.replace('view-', '');
         if (idSuffix === viewName) {
             s.classList.add('active');
             s.style.setProperty('display', 'flex', 'important');
             s.style.setProperty('visibility', 'visible', 'important');
             s.style.setProperty('opacity', '1', 'important');
-            
+
             // Log de diagnostic pour confirmer la présence à l'écran
             const rect = s.getBoundingClientRect();
-            debug(`SECTION_STATS [${s.id}]: Visible: true, Rect: w=${rect.width}, h=${rect.height}, top=${rect.top}`);
+            debug(
+                `SECTION_STATS [${s.id}]: Visible: true, Rect: w=${rect.width}, h=${rect.height}, top=${rect.top}`
+            );
         } else {
             s.classList.remove('active');
             s.style.setProperty('display', 'none', 'important');
@@ -55,44 +57,57 @@ function populateHeaderSelects() {
 
     validateAndSaveState();
 
-    const clients = Array.from(new Set(Store.projects.map(p => (p.client || '').trim()))).filter(c => c !== '').sort();
-    
-    debug("POPULATE_HEADER: Available clients:", clients);
-    
-    DOM.clientSelect.innerHTML = (clients.length > 0)
-        ? clients.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')
-        : '<option value="">Sans Client</option>';
+    const clients = Array.from(new Set(Store.projects.map((p) => (p.client || '').trim())))
+        .filter((c) => c !== '')
+        .sort();
+
+    debug('POPULATE_HEADER: Available clients:', clients);
+
+    DOM.clientSelect.innerHTML =
+        clients.length > 0
+            ? clients
+                  .map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`)
+                  .join('')
+            : '<option value="">Sans Client</option>';
     DOM.clientSelect.value = currentClientName;
 
-    const filteredProjects = Store.projects.filter(p => (p.client || '').trim() === currentClientName);
+    const filteredProjects = Store.projects.filter(
+        (p) => (p.client || '').trim() === currentClientName
+    );
     debug(`POPULATE_HEADER: Projects for [${currentClientName}]:`, filteredProjects.length);
-    
-    DOM.projectSelect.innerHTML = filteredProjects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
+
+    DOM.projectSelect.innerHTML = filteredProjects
+        .map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`)
+        .join('');
     DOM.projectSelect.value = currentProjectId;
 
     // Mise à jour de la liste dans le modal version
     if (DOM.vProject) {
-        DOM.vProject.innerHTML = Store.projects.map(p => {
-            const displayName = p.client ? `${p.client} - ${p.name}` : p.name;
-            return `<option value="${escapeHtml(p.id)}">${escapeHtml(displayName)}</option>`;
-        }).join('');
+        DOM.vProject.innerHTML = Store.projects
+            .map((p) => {
+                const displayName = p.client ? `${p.client} - ${p.name}` : p.name;
+                return `<option value="${escapeHtml(p.id)}">${escapeHtml(displayName)}</option>`;
+            })
+            .join('');
     }
 
     updateVersionSelect();
-    
+
     // Déclenchement automatique de la mise à jour UI pour peupler le tracker avec le premier projet s'il y en a un
     updateUI();
 }
 
 function updateVersionSelect() {
     if (!DOM.versionSelect) return;
-    
+
     validateAndSaveState(); // Au cas où
-    
-    const versions = Store.versions.filter(v => v.projectId === currentProjectId);
+
+    const versions = Store.versions.filter((v) => v.projectId === currentProjectId);
     debug(`UPDATE_VERSION: Versions for project [${currentProjectId}]:`, versions.length);
-    
-    DOM.versionSelect.innerHTML = versions.map(v => `<option value="${escapeHtml(v.id)}">${escapeHtml(v.name)}</option>`).join('');
+
+    DOM.versionSelect.innerHTML = versions
+        .map((v) => `<option value="${escapeHtml(v.id)}">${escapeHtml(v.name)}</option>`)
+        .join('');
     DOM.versionSelect.value = currentVersionId;
 }
 
@@ -105,9 +120,15 @@ let currentProjectStates = [];
 
 function populatePUserSelectToAdd() {
     if (!DOM.pUserSelectToAdd) return;
-    const available = Store.users.filter(u => !currentProjectUsers.includes(u.id));
-    DOM.pUserSelectToAdd.innerHTML = `<option value="">-- Sélectionner un utilisateur --</option>` +
-        available.map(u => `<option value="${escapeHtml(u.id)}">${escapeHtml(u.name)} (${escapeHtml(u.role)})</option>`).join('');
+    const available = Store.users.filter((u) => !currentProjectUsers.includes(u.id));
+    DOM.pUserSelectToAdd.innerHTML =
+        `<option value="">-- Sélectionner un utilisateur --</option>` +
+        available
+            .map(
+                (u) =>
+                    `<option value="${escapeHtml(u.id)}">${escapeHtml(u.name)} (${escapeHtml(u.role)})</option>`
+            )
+            .join('');
 }
 
 function renderProjectMembersBadge() {
@@ -116,16 +137,18 @@ function renderProjectMembersBadge() {
         DOM.projectMembersContainer.innerHTML = `<span class="members-placeholder">Aucun membre sélectionné.</span>`;
         return;
     }
-    DOM.projectMembersContainer.innerHTML = currentProjectUsers.map(uid => {
-        const u = Store.users.find(usr => usr.id === uid);
-        const name = u ? u.name : 'Inconnu';
-        return `
+    DOM.projectMembersContainer.innerHTML = currentProjectUsers
+        .map((uid) => {
+            const u = Store.users.find((usr) => usr.id === uid);
+            const name = u ? u.name : 'Inconnu';
+            return `
             <div class="member-badge">
                 ${escapeHtml(name)}
                 <i data-lucide="x" class="member-badge-remove" onclick="removeUserFromProjectUI('${escapeHtml(uid)}')"></i>
             </div>
         `;
-    }).join('');
+        })
+        .join('');
     lucide.createIcons();
     populatePUserSelectToAdd();
 }
@@ -136,44 +159,59 @@ function renderProjectStatesBadge() {
         DOM.projectStatesContainer.innerHTML = `<span class="members-placeholder">Aucun état défini.</span>`;
         return;
     }
-    DOM.projectStatesContainer.innerHTML = currentProjectStates.map(state => `
+    DOM.projectStatesContainer.innerHTML = currentProjectStates
+        .map(
+            (state) => `
         <div class="member-badge">
             ${escapeHtml(state)}
             <i data-lucide="x" class="member-badge-remove" onclick="removeProjectStateUI('${escapeHtml(state)}')"></i>
         </div>
-    `).join('');
+    `
+        )
+        .join('');
     lucide.createIcons();
 }
 
 window.removeUserFromProjectUI = (uid) => {
-    currentProjectUsers = currentProjectUsers.filter(id => id !== uid);
+    currentProjectUsers = currentProjectUsers.filter((id) => id !== uid);
     renderProjectMembersBadge();
 };
 
 window.removeProjectStateUI = (state) => {
-    currentProjectStates = currentProjectStates.filter(s => s !== state);
+    currentProjectStates = currentProjectStates.filter((s) => s !== state);
     renderProjectStatesBadge();
 };
 
 function updateFormUsers() {
-    const project = Store.projects.find(p => p.id === currentProjectId);
+    const project = Store.projects.find((p) => p.id === currentProjectId);
     let allowedUsers = Store.users;
     if (project && project.userIds && project.userIds.length > 0) {
-        allowedUsers = Store.users.filter(u => project.userIds.includes(u.id));
+        allowedUsers = Store.users.filter((u) => project.userIds.includes(u.id));
     }
 
-    const usersOptions = `<option value="">-- Aucun --</option>` + allowedUsers.map(u => `<option value="${escapeHtml(u.id)}">${escapeHtml(u.name)} (${escapeHtml(u.role)})</option>`).join('');
+    const usersOptions =
+        `<option value="">-- Aucun --</option>` +
+        allowedUsers
+            .map(
+                (u) =>
+                    `<option value="${escapeHtml(u.id)}">${escapeHtml(u.name)} (${escapeHtml(u.role)})</option>`
+            )
+            .join('');
     DOM.fAssC.innerHTML = usersOptions;
     DOM.fAssE.innerHTML = usersOptions;
 
-    DOM.filterUser.innerHTML = `<option value="">Tous les utilisateurs</option>` + allowedUsers.map(u => `<option value="${escapeHtml(u.id)}">${escapeHtml(u.name)}</option>`).join('');
+    DOM.filterUser.innerHTML =
+        `<option value="">Tous les utilisateurs</option>` +
+        allowedUsers
+            .map((u) => `<option value="${escapeHtml(u.id)}">${escapeHtml(u.name)}</option>`)
+            .join('');
 }
 
 // Project Modal Logic
 const openProjectModal = (p = null) => {
     DOM.projectForm.reset();
     if (p) {
-        DOM.projectModalTitle.textContent = "Modifier le Projet";
+        DOM.projectModalTitle.textContent = 'Modifier le Projet';
         DOM.pId.value = p.id;
         DOM.pClient.value = p.client || '';
         DOM.pName.value = p.name;
@@ -182,7 +220,7 @@ const openProjectModal = (p = null) => {
         DOM.pRatioE.value = p.executionRatio;
         currentProjectUsers = p.userIds ? [...p.userIds] : [];
     } else {
-        DOM.projectModalTitle.textContent = "Nouveau Projet";
+        DOM.projectModalTitle.textContent = 'Nouveau Projet';
         DOM.pId.value = '';
         DOM.pClient.value = '';
         currentProjectStates = ['Nouveau', 'Validé', 'Rejeté', 'Fermé'];
@@ -195,8 +233,18 @@ const openProjectModal = (p = null) => {
 };
 
 const MONTH_NAMES = [
-    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    'Janvier',
+    'Février',
+    'Mars',
+    'Avril',
+    'Mai',
+    'Juin',
+    'Juillet',
+    'Août',
+    'Septembre',
+    'Octobre',
+    'Novembre',
+    'Décembre'
 ];
 
 function getDaysInMonth(month, year) {
@@ -216,7 +264,7 @@ function updateDaysList(dEl, mEl, yEl) {
     const month = parseInt(mEl.value) || 1;
     const currentDay = dEl.value;
     const daysCount = getDaysInMonth(month, year);
-    
+
     let daysHtml = '<option value="">Jour</option>';
     for (let d = 1; d <= daysCount; d++) {
         daysHtml += `<option value="${d}">${d < 10 ? '0' + d : d}</option>`;
@@ -262,8 +310,8 @@ function setDateValues(dEl, mEl, yEl, dateStr) {
             return;
         }
     }
-    yEl.value = "";
-    mEl.value = "";
+    yEl.value = '';
+    mEl.value = '';
     populate31Days(dEl);
 }
 
@@ -278,21 +326,25 @@ function getDateStringFromSelectors(dEl, mEl, yEl) {
 // Version Modal Logic
 const openVersionModal = (v = null, fromHeader = false) => {
     DOM.versionForm.reset();
-    
+
     // 1. Peupler les clients dans la modale
-    const clients = Array.from(new Set(Store.projects.map(p => p.client || ''))).sort();
-    DOM.vClient.innerHTML = clients.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c || 'Sans Client')}</option>`).join('');
+    const clients = Array.from(new Set(Store.projects.map((p) => p.client || ''))).sort();
+    DOM.vClient.innerHTML = clients
+        .map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c || 'Sans Client')}</option>`)
+        .join('');
 
     const updateVProjectList = (clientName) => {
-        const filtered = Store.projects.filter(p => (p.client || '') === clientName);
-        DOM.vProject.innerHTML = filtered.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
+        const filtered = Store.projects.filter((p) => (p.client || '') === clientName);
+        DOM.vProject.innerHTML = filtered
+            .map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`)
+            .join('');
     };
 
     if (v) {
-        const p = Store.projects.find(proj => proj.id === v.projectId);
-        const cName = p ? (p.client || '') : '';
-        
-        DOM.versionModalTitle.textContent = "Modifier la Version";
+        const p = Store.projects.find((proj) => proj.id === v.projectId);
+        const cName = p ? p.client || '' : '';
+
+        DOM.versionModalTitle.textContent = 'Modifier la Version';
         DOM.vId.value = v.id;
         DOM.vClient.value = cName;
         updateVProjectList(cName);
@@ -301,20 +353,25 @@ const openVersionModal = (v = null, fromHeader = false) => {
         DOM.vProject.disabled = true;
         DOM.vName.value = v.name;
         setDateValues(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y, v.deliveryDateClient);
-        setDateValues(DOM.vDateActual_D, DOM.vDateActual_M, DOM.vDateActual_Y, v.deliveryDateActual);
+        setDateValues(
+            DOM.vDateActual_D,
+            DOM.vDateActual_M,
+            DOM.vDateActual_Y,
+            v.deliveryDateActual
+        );
     } else {
-        DOM.versionModalTitle.textContent = "Nouvelle Version";
+        DOM.versionModalTitle.textContent = 'Nouvelle Version';
         DOM.vId.value = '';
         setDateValues(DOM.vDate_D, DOM.vDate_M, DOM.vDate_Y, null);
         setDateValues(DOM.vDateActual_D, DOM.vDateActual_M, DOM.vDateActual_Y, null);
         DOM.vClient.disabled = false;
         DOM.vProject.disabled = false;
-        
+
         // Initialisation basée sur la sélection actuelle du header si possible
-        const initClient = fromHeader ? currentClientName : (clients[0] || '');
+        const initClient = fromHeader ? currentClientName : clients[0] || '';
         DOM.vClient.value = initClient;
         updateVProjectList(initClient);
-        
+
         if (fromHeader && currentProjectId) {
             DOM.vProject.value = currentProjectId;
         }
@@ -331,7 +388,7 @@ const openUserModal = (u = null) => {
         DOM.uiName.value = u.name;
         DOM.uRole.value = u.role;
     } else {
-        DOM.userModalTitle.textContent = "Nouvel Utilisateur";
+        DOM.userModalTitle.textContent = 'Nouvel Utilisateur';
         DOM.uId.value = '';
         DOM.uRole.value = 'Testeur';
     }
@@ -339,27 +396,33 @@ const openUserModal = (u = null) => {
 };
 
 function updateFormStates() {
-    const project = Store.projects.find(p => p.id === currentProjectId);
+    const project = Store.projects.find((p) => p.id === currentProjectId);
     if (project) {
-        DOM.fState.innerHTML = project.ticketStates.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+        DOM.fState.innerHTML = project.ticketStates
+            .map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`)
+            .join('');
     }
 }
 
 function updateFormVersions() {
-    const versions = Store.versions.filter(v => v.projectId === currentProjectId);
-    DOM.fVersion.innerHTML = versions.map(v => `<option value="${escapeHtml(v.id)}">${escapeHtml(v.name)}</option>`).join('');
+    const versions = Store.versions.filter((v) => v.projectId === currentProjectId);
+    DOM.fVersion.innerHTML = versions
+        .map((v) => `<option value="${escapeHtml(v.id)}">${escapeHtml(v.name)}</option>`)
+        .join('');
     DOM.fVersion.value = currentVersionId;
 }
 
 function updateFeatureDatalist() {
     if (!DOM.fFeatList) return;
     const features = new Set();
-    Store.tickets.forEach(t => {
-        const v = Store.versions.find(ver => ver.id === t.versionId);
+    Store.tickets.forEach((t) => {
+        const v = Store.versions.find((ver) => ver.id === t.versionId);
         if (v && v.projectId === currentProjectId && t.feature) {
             features.add(t.feature);
         }
     });
-    DOM.fFeatList.innerHTML = Array.from(features).sort().map(f => `<option value="${escapeHtml(f)}">`).join('');
+    DOM.fFeatList.innerHTML = Array.from(features)
+        .sort()
+        .map((f) => `<option value="${escapeHtml(f)}">`)
+        .join('');
 }
-

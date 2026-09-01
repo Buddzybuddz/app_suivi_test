@@ -3,27 +3,32 @@
 
 // --- Render Main Table ---
 function renderTicketsTable() {
-    const project = Store.projects.find(p => p.id === currentProjectId);
+    const project = Store.projects.find((p) => p.id === currentProjectId);
     if (!project) {
-        console.warn("RENDER_TICKETS: Missing project for ID", currentProjectId);
-        DOM.ticketsTbody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding: 2rem; color: var(--text-muted);">Veuillez créer un projet pour commencer.</td></tr>';
+        console.warn('RENDER_TICKETS: Missing project for ID', currentProjectId);
+        DOM.ticketsTbody.innerHTML =
+            '<tr><td colspan="15" style="text-align:center; padding: 2rem; color: var(--text-muted);">Veuillez créer un projet pour commencer.</td></tr>';
         return;
     }
-    
-    debug(`RENDER_TICKETS: Filtering for version [${currentVersionId}]. Total tickets in Store: ${Store.tickets.length}`);
+
+    debug(
+        `RENDER_TICKETS: Filtering for version [${currentVersionId}]. Total tickets in Store: ${Store.tickets.length}`
+    );
     if (Store.tickets.length > 0) {
-        debug("DEBUG_TICKET_SAMPLE:", Store.tickets[0]);
+        debug('DEBUG_TICKET_SAMPLE:', Store.tickets[0]);
     }
-    
-    let viewTickets = Store.tickets.filter(t => {
+
+    let viewTickets = Store.tickets.filter((t) => {
         const match = String(t.versionId) === String(currentVersionId);
         return match;
     });
-    
+
     debug(`RENDER_TICKETS: Filtered tickets: ${viewTickets.length}`);
 
     if (filterUserId) {
-        viewTickets = viewTickets.filter(t => t.assignDesignId === filterUserId || t.assignExecutionId === filterUserId);
+        viewTickets = viewTickets.filter(
+            (t) => t.assignDesignId === filterUserId || t.assignExecutionId === filterUserId
+        );
     }
 
     const filtered = filterData(viewTickets, 'tickets');
@@ -32,7 +37,14 @@ function renderTicketsTable() {
 
     // Calcul dynamique des largeurs basées sur le contenu possible
     const designOptions = ['À faire', 'En cours', 'Terminée'];
-    const execOptions = ['À exécuter', 'En attente livraison', 'Bloquée', 'En cours d\'exécution', 'Terminée OK', 'Terminée KO'];
+    const execOptions = [
+        'À exécuter',
+        'En attente livraison',
+        'Bloquée',
+        "En cours d'exécution",
+        'Terminée OK',
+        'Terminée KO'
+    ];
     const wState = getRequiredWidth(project.ticketStates || []);
     const wDesign = getRequiredWidth(designOptions);
     const wExec = getRequiredWidth(execOptions);
@@ -42,35 +54,64 @@ function renderTicketsTable() {
 
     // Application dynamique sur les en-têtes (On force la largeur pour éviter le squeeze)
     const thState = document.querySelector('th[data-col="ticketState"]');
-    if (thState) { thState.style.width = `${wState}px`; thState.style.minWidth = `${wState}px`; }
+    if (thState) {
+        thState.style.width = `${wState}px`;
+        thState.style.minWidth = `${wState}px`;
+    }
     const thDesign = document.querySelector('th[data-col="statusDesign"]');
-    if (thDesign) { thDesign.style.width = `${wDesign}px`; thDesign.style.minWidth = `${wDesign}px`; }
+    if (thDesign) {
+        thDesign.style.width = `${wDesign}px`;
+        thDesign.style.minWidth = `${wDesign}px`;
+    }
     const thExec = document.querySelector('th[data-col="statusExecution"]');
-    if (thExec) { thExec.style.width = `${wExec}px`; thExec.style.minWidth = `${wExec}px`; }
+    if (thExec) {
+        thExec.style.width = `${wExec}px`;
+        thExec.style.minWidth = `${wExec}px`;
+    }
     const thConso = document.querySelector('th[data-col="consumed"]');
-    if (thConso) { thConso.style.width = `${wConso}px`; thConso.style.minWidth = `${wConso}px`; }
+    if (thConso) {
+        thConso.style.width = `${wConso}px`;
+        thConso.style.minWidth = `${wConso}px`;
+    }
     const thJHC = document.querySelector('th[data-col="jConception"]');
-    if (thJHC) { thJHC.style.width = `${wJH}px`; thJHC.style.minWidth = `${wJH}px`; }
+    if (thJHC) {
+        thJHC.style.width = `${wJH}px`;
+        thJHC.style.minWidth = `${wJH}px`;
+    }
     const thJHE = document.querySelector('th[data-col="jExecution"]');
-    if (thJHE) { thJHE.style.width = `${wJH}px`; thJHE.style.minWidth = `${wJH}px`; }
+    if (thJHE) {
+        thJHE.style.width = `${wJH}px`;
+        thJHE.style.minWidth = `${wJH}px`;
+    }
     const thRAF = document.querySelector('th[data-col="raf"]');
-    if (thRAF) { thRAF.style.width = `${wRAF}px`; thRAF.style.minWidth = `${wRAF}px`; }
+    if (thRAF) {
+        thRAF.style.width = `${wRAF}px`;
+        thRAF.style.minWidth = `${wRAF}px`;
+    }
 
-    DOM.ticketsTbody.innerHTML = sorted.map(t => {
-        const calcs = getCalculations(t, project);
+    DOM.ticketsTbody.innerHTML = sorted
+        .map((t) => {
+            const calcs = getCalculations(t, project);
 
-        const execOptions = ['En attente livraison', 'Bloquée', 'À exécuter', 'En cours d\'exécution', 'Terminée OK', 'Terminée KO'];
-        const designOptions = ['À faire', 'En cours', 'Terminée'];
+            const execOptions = [
+                'En attente livraison',
+                'Bloquée',
+                'À exécuter',
+                "En cours d'exécution",
+                'Terminée OK',
+                'Terminée KO'
+            ];
+            const designOptions = ['À faire', 'En cours', 'Terminée'];
 
-        const getStatusClass = (status) => {
-            if (status.includes('OK') || status === 'Terminée') return 'done-ok';
-            if (status.includes('KO')) return 'done-ko';
-            if (status === 'Bloquée') return 'blocked';
-            return '';
-        };
+            const getStatusClass = (status) => {
+                if (status.includes('OK') || status === 'Terminée') return 'done-ok';
+                if (status.includes('KO')) return 'done-ko';
+                if (status === 'Bloquée') return 'blocked';
+                return '';
+            };
 
-        const tid = escapeHtml(t.id);
-        return `
+            const tid = escapeHtml(t.id);
+            return `
             <tr>
                 <td class="sticky-left-1">
                     <div style="display: flex; gap: 0.2rem;">
@@ -91,7 +132,7 @@ function renderTicketsTable() {
                 <td>${escapeHtml(t.nbTestCases)}</td>
                 <td style="min-width: ${wState}px">
                     <select class="status-select ${getStatusClass(t.ticketState || '')}" onchange="onTicketStateChange('${tid}', this.value)">
-                        ${(project.ticketStates || []).map(o => `<option value="${escapeHtml(o)}" ${t.ticketState === o ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
+                        ${(project.ticketStates || []).map((o) => `<option value="${escapeHtml(o)}" ${t.ticketState === o ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
                     </select>
                 </td>
                 <td style="color:var(--accent-primary); font-weight:600">${calcs.jConception}</td>
@@ -102,12 +143,12 @@ function renderTicketsTable() {
                 <td style="font-weight:700">${calcs.raf}</td>
                 <td style="width: ${wDesign}px; min-width: ${wDesign}px">
                     <select class="status-select ${getStatusClass(t.statusDesign || '')}" onchange="onDesignChange('${tid}', this.value)">
-                        ${designOptions.map(o => `<option value="${escapeHtml(o)}" ${t.statusDesign === o ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
+                        ${designOptions.map((o) => `<option value="${escapeHtml(o)}" ${t.statusDesign === o ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
                     </select>
                 </td>
                 <td style="width: ${wExec}px; min-width: ${wExec}px">
                     <select class="status-select ${getStatusClass(t.statusExecution || '')}" onchange="onExecChange('${tid}', this.value)">
-                        ${execOptions.map(o => `<option value="${escapeHtml(o)}" ${t.statusExecution === o ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
+                        ${execOptions.map((o) => `<option value="${escapeHtml(o)}" ${t.statusExecution === o ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
                     </select>
                 </td>
                 <td>
@@ -115,7 +156,8 @@ function renderTicketsTable() {
                 </td>
             </tr>
         `;
-    }).join('');
+        })
+        .join('');
 
     lucide.createIcons();
     updateSortIndicators('tickets');
@@ -128,29 +170,29 @@ function renderTicketsTable() {
  * pour chaque table indépendamment.
  */
 function updateStickyOffsets() {
-    document.querySelectorAll('.data-table').forEach(table => {
+    document.querySelectorAll('.data-table').forEach((table) => {
         const ref = table.querySelector('th.sticky-left-1');
         if (!ref) return;
-        
+
         // Utilisation de getBoundingClientRect pour une précision au sous-pixel
         // On soustrait un infime montant (0.2px) pour garantir un recouvrement parfait
         // et boucher toute fuite visuelle.
         const rect = ref.getBoundingClientRect();
         const w = (rect.width - 0.2).toFixed(2);
-        
-        table.querySelectorAll('.sticky-left-2').forEach(el => {
+
+        table.querySelectorAll('.sticky-left-2').forEach((el) => {
             el.style.left = w + 'px';
         });
     });
 }
 
 window.editTicket = (id) => {
-    const t = Store.tickets.find(tick => tick.id === id);
+    const t = Store.tickets.find((tick) => tick.id === id);
     if (t) {
         updateFormStates();
         DOM.ticketForm.reset();
         const mTitle = document.getElementById('modalTitle');
-        if (mTitle) mTitle.textContent = "Modifier le Ticket";
+        if (mTitle) mTitle.textContent = 'Modifier le Ticket';
 
         DOM.tId.value = t.id;
         DOM.fFeat.value = t.feature;
@@ -172,16 +214,15 @@ window.editTicket = (id) => {
 };
 
 window.deleteTicket = async (id) => {
-    if (confirm("Voulez-vous vraiment supprimer ce ticket ?")) {
+    if (confirm('Voulez-vous vraiment supprimer ce ticket ?')) {
         try {
             await databases.deleteDocument(DATABASE_ID, COLLECTIONS.TICKETS, id);
             removeStoreDoc('tickets', id);
             updateUI();
             notify('Ticket supprimé.', 'success');
         } catch (error) {
-            console.error("Error deleting ticket:", error);
-            notify("Échec de la suppression du ticket.", 'error');
+            console.error('Error deleting ticket:', error);
+            notify('Échec de la suppression du ticket.', 'error');
         }
     }
 };
-

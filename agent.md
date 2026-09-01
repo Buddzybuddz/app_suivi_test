@@ -14,41 +14,45 @@ Le projet est construit selon une architecture **Serverless / BaaS (Backend-as-a
 ## 2. Frameworks de Tests
 
 - **Environnement de développement :** Le projet de production reste en Vanilla JS sans bundler. Cependant, un environnement Node.js local (via `package.json`) est mis en place **exclusivement** pour l'exécution des tests.
-- **Framework de tests unitaires :** Le projet utilise **Vitest**. Les fichiers de tests doivent être nommés avec l'extension `.test.js` et placés à côté des fichiers qu'ils testent, ou dans un dossier `__tests__`.
-- **Testabilité et Architecture :** La logique métier pure (calculs, formatage de données, appels Appwrite) doit impérativement être découplée de la manipulation du DOM. Les fonctions purement algorithmiques (ex: `round015Up`, `formatFrenchFloat`, `getCalculations`) doivent être exportables et testables isolément.
-- **Règle d'or de développement :** Toute nouvelle logique métier générée par l'agent doit être livrée avec son fichier de test unitaire associé. Les modifications de code existant doivent vérifier que les tests existants passent toujours.
+- **Framework de tests unitaires :** Le projet utilise **Vitest**. Les fichiers de tests sont nommés `*.test.js` et placés à côté du fichier testé (`utils.test.js`, `js/calc-dates.test.js`).
+- **Testabilité et Architecture :** La logique métier pure doit être découplée du DOM et exportable. Les fonctions pures vivent dans `utils.js` (`round015Up`, `formatFrenchFloat`, `getCalculations`, `computeThresholds`, `deriveStatusesOnConsumed`, `escapeHtml`) et `js/calc-dates.js` (`getFrenchHolidays`, `addWorkingDays`, `getWorkingDaysPrecise`) — via un garde `if (typeof module !== 'undefined' && module.exports)` inerte dans le navigateur.
+- **Règle d'or de développement :** Toute nouvelle logique métier pure doit être livrée avec son test. Après toute modification : `npm run lint`, `npm run format:check` et `npm test` doivent passer (c'est ce que vérifie la CI).
+- **Outillage :** ESLint (flat config `eslint.config.js`) + Prettier (`.prettierrc.json`, 4 espaces, quotes simples). `no-undef` / `no-unused-vars` sont désactivés sur `js/**` car ces fichiers partagent un scope global implicite.
 
 ## 3. Standards de Code
 
 - **Vanilla JS (ES6+) :** Utilisation intensive de fonctionnalités modernes (Destructuring, Promises, `async/await`, Arrow functions).
 - **Gestion de l'État (State Management) :**
-  - Utilisation d'un objet global `Store` (dans `js/state.js`) contenant les collections (users, projects, versions, tickets) ainsi que l'état de l'interface (tri, filtres, largeurs de colonnes).
-  - Persistance de l'état de l'interface utilisateur (Client, Projet, Version sélectionnés) via `localStorage` (ex: `TestTracker_Client`).
-  - Un flag `DEBUG` (activable via `?debug` dans l'URL) et le helper `debug()` conditionnent tous les logs de debug.
+    - Utilisation d'un objet global `Store` (dans `js/state.js`) contenant les collections (users, projects, versions, tickets) ainsi que l'état de l'interface (tri, filtres, largeurs de colonnes).
+    - Persistance de l'état de l'interface utilisateur (Client, Projet, Version sélectionnés) via `localStorage` (ex: `TestTracker_Client`).
+    - Un flag `DEBUG` (activable via `?debug` dans l'URL) et le helper `debug()` conditionnent tous les logs de debug.
 - **Manipulation du DOM :**
-  - Approche déclarative manuelle via un objet `DOM` rafraîchi par `refreshDOM()`.
-  - Rendu et mise à jour de l'interface gérés par des fonctions dédiées (ex: `updateUI()`, `renderProjectsTable()`).
+    - Approche déclarative manuelle via un objet `DOM` rafraîchi par `refreshDOM()`.
+    - Rendu et mise à jour de l'interface gérés par des fonctions dédiées (ex: `updateUI()`, `renderProjectsTable()`).
 - **Design & UI :**
-  - Utilisation de la bibliothèque d'icônes `lucide` (`lucide.createIcons()`).
-  - L'interface suit des standards Vanilla CSS (définis dans `styles.css`).
+    - Utilisation de la bibliothèque d'icônes `lucide` (`lucide.createIcons()`).
+    - L'interface suit des standards Vanilla CSS (définis dans `styles.css`).
 - **Logique de Calculs Spécifique :**
-  - Les arrondis métier doivent utiliser les fonctions dédiées `round015Up` (multiple de 0.15) et `round05Up` (multiple de 0.5).
-  - L'affichage des flottants doit respecter le formatage français avec virgule via `formatFrenchFloat`.
+    - Les arrondis métier doivent utiliser les fonctions dédiées `round015Up` (multiple de 0.15) et `round05Up` (multiple de 0.5).
+    - L'affichage des flottants doit respecter le formatage français avec virgule via `formatFrenchFloat`.
 - **Sécurité du rendu :**
-  - Toute donnée dynamique interpolée dans un template `innerHTML` **doit** passer par `escapeHtml()` (défini dans `utils.js`). Ne jamais injecter de valeur utilisateur brute.
+    - Toute donnée dynamique interpolée dans un template `innerHTML` **doit** passer par `escapeHtml()` (défini dans `utils.js`). Ne jamais injecter de valeur utilisateur brute.
 - **Édition du code :**
-  - Éditer directement les fichiers de `js/`. Le dossier `scratch/` et ses scripts Python de "patch" ont été supprimés — ils n'ont plus lieu d'être depuis le découpage.
+    - Éditer directement les fichiers de `js/`. Le dossier `scratch/` et ses scripts Python de "patch" ont été supprimés — ils n'ont plus lieu d'être depuis le découpage.
 
 ## 4. Catalogue de Compétences (Skills)
+
 Pour exécuter des tâches complexes, tu as accès à une bibliothèque de compétences locales.
 **Chemin absolu de la bibliothèque :** `/Users/JeremyBaudouin/Library/Application Support/Antigravity/skills`
 
 **Règle de routage :**
+
 - Avant de tenter d'écrire un script complexe de zéro (par exemple pour une analyse de données, un déploiement ou un test de charge), tu **dois obligatoirement** lister le contenu de ce dossier.
 - Si le nom d'un sous-dossier ou d'un fichier `SKILL.md` correspond à l'intention de la tâche demandée, tu dois charger et suivre les instructions de cette compétence spécifique avant de poursuivre.
 
 **Auto-amélioration et Création de Compétences :**
 Si tu dois accomplir une tâche complexe et récurrente, mais qu'aucune compétence existante dans le répertoire source ne correspond à ce besoin, tu as l'autorisation de créer une nouvelle compétence :
+
 1. **Fait appel au Skill Smith :** Utilise en priorité la compétence `10-andruia-skill-smith` si elle est disponible pour t'aider à structurer le nouvel outil.
 2. **Création du dossier :** Crée un nouveau dossier avec un nom clair (sans espaces, séparé par des tirets) dans `/Users/JeremyBaudouin/Library/Application Support/Antigravity/skills/`.
 3. **Rédaction du contrat :** Rédige obligatoirement un fichier `SKILL.md` à la racine de ce nouveau dossier. Il doit contenir un titre, un "Trigger" très explicite, et les instructions de fonctionnement.

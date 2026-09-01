@@ -7,7 +7,9 @@ function renderProjectsTable() {
     updateFilterOptions('projects', Store.projects);
     const filtered = filterData(Store.projects, 'projects');
     const sorted = sortData(filtered, 'projects');
-    DOM.projectsTbody.innerHTML = sorted.map(p => `
+    DOM.projectsTbody.innerHTML = sorted
+        .map(
+            (p) => `
         <tr>
             <td>${escapeHtml(p.id)}</td>
             <td>${escapeHtml(p.client || '-')}</td>
@@ -23,21 +25,23 @@ function renderProjectsTable() {
                 </button>
             </td>
         </tr>
-    `).join('');
+    `
+        )
+        .join('');
     updateSortIndicators('projects');
     enableColumnResizing(DOM.projectsTbody.parentElement, 'projects');
     lucide.createIcons();
 }
 
 window.editProject = (id) => {
-    const p = Store.projects.find(proj => proj.id === id);
+    const p = Store.projects.find((proj) => proj.id === id);
     if (p) {
         openProjectModal(p);
     }
 };
 
 window.deleteProject = async (id) => {
-    if (!confirm("Supprimer ce projet et TOUTES ses données ?")) return;
+    if (!confirm('Supprimer ce projet et TOUTES ses données ?')) return;
     try {
         await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PROJECTS, id);
         removeStoreDoc('projects', id);
@@ -51,8 +55,8 @@ window.deleteProject = async (id) => {
         updateUI();
         notify('Projet supprimé.', 'success');
     } catch (error) {
-        console.error("Error deleting project:", error);
-        notify("Échec de la suppression du projet.", 'error');
+        console.error('Error deleting project:', error);
+        notify('Échec de la suppression du projet.', 'error');
     }
 };
 
@@ -62,11 +66,12 @@ function renderVersionsTable() {
     updateFilterOptions('versions', Store.versions);
     const filtered = filterData(Store.versions, 'versions');
     const sorted = sortData(filtered, 'versions');
-    DOM.versionsTbody.innerHTML = sorted.map(v => {
-        const proj = Store.projects.find(p => p.id === v.projectId);
-        const pName = proj ? proj.name : 'Inconnu';
-        
-        return `
+    DOM.versionsTbody.innerHTML = sorted
+        .map((v) => {
+            const proj = Store.projects.find((p) => p.id === v.projectId);
+            const pName = proj ? proj.name : 'Inconnu';
+
+            return `
             <tr>
                 <td>${escapeHtml(v.id)}</td>
                 <td><strong>${escapeHtml(v.name)}</strong></td>
@@ -84,21 +89,22 @@ function renderVersionsTable() {
                 </td>
             </tr>
         `;
-    }).join('');
+        })
+        .join('');
     updateSortIndicators('versions');
     enableColumnResizing(DOM.versionsTbody.parentElement, 'versions');
     lucide.createIcons();
 }
 
 window.editVersion = (id) => {
-    const v = Store.versions.find(ver => ver.id === id);
+    const v = Store.versions.find((ver) => ver.id === id);
     if (v) {
         openVersionModal(v);
     }
 };
 
 window.deleteVersion = async (id) => {
-    if (!confirm("Supprimer cette version ?")) return;
+    if (!confirm('Supprimer cette version ?')) return;
     try {
         await databases.deleteDocument(DATABASE_ID, COLLECTIONS.VERSIONS, id);
         removeStoreDoc('versions', id);
@@ -112,8 +118,8 @@ window.deleteVersion = async (id) => {
         updateUI();
         notify('Version supprimée.', 'success');
     } catch (error) {
-        console.error("Error deleting version:", error);
-        notify("Échec de la suppression de la version.", 'error');
+        console.error('Error deleting version:', error);
+        notify('Échec de la suppression de la version.', 'error');
     }
 };
 
@@ -123,7 +129,9 @@ function renderUsersTable() {
     updateFilterOptions('users', Store.users);
     const filtered = filterData(Store.users, 'users');
     const sorted = sortData(filtered, 'users');
-    DOM.usersTbody.innerHTML = sorted.map(u => `
+    DOM.usersTbody.innerHTML = sorted
+        .map(
+            (u) => `
         <tr>
             <td>${escapeHtml(u.id)}</td>
             <td><strong>${escapeHtml(u.name)}</strong></td>
@@ -137,14 +145,16 @@ function renderUsersTable() {
                 </button>
             </td>
         </tr>
-    `).join('');
+    `
+        )
+        .join('');
     updateSortIndicators('users');
     enableColumnResizing(DOM.usersTbody.parentElement, 'users');
     lucide.createIcons();
 }
 
 window.editUser = (id) => {
-    const u = Store.users.find(usr => usr.id === id);
+    const u = Store.users.find((usr) => usr.id === id);
     if (u) {
         DOM.userForm.reset();
         DOM.userModalTitle.textContent = "Modifier l'Utilisateur";
@@ -156,7 +166,7 @@ window.editUser = (id) => {
 };
 
 window.deleteUser = async (id) => {
-    if (!confirm("Supprimer cet utilisateur ?")) return;
+    if (!confirm('Supprimer cet utilisateur ?')) return;
     try {
         await databases.deleteDocument(DATABASE_ID, COLLECTIONS.USERS, id);
         removeStoreDoc('users', id);
@@ -166,8 +176,7 @@ window.deleteUser = async (id) => {
         renderTicketsTable();
         notify('Utilisateur supprimé.', 'success');
     } catch (error) {
-        console.error("Error deleting user:", error);
+        console.error('Error deleting user:', error);
         notify("Échec de la suppression de l'utilisateur.", 'error');
     }
 };
-

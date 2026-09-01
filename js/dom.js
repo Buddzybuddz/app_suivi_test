@@ -84,16 +84,19 @@ function refreshDOM() {
         dashVersionName: document.getElementById('dashVersionName'),
 
         // Form Inputs
-        fFeat: document.getElementById('fFeat'), fFeatList: document.getElementById('feature-list'),
+        fFeat: document.getElementById('fFeat'),
+        fFeatList: document.getElementById('feature-list'),
         fType: document.getElementById('fType'),
-        fNum: document.getElementById('fNum'), fPrio: document.getElementById('fPrio'),
-        fAssC: document.getElementById('fAssC'), fAssE: document.getElementById('fAssE'),
-        fTests: document.getElementById('fTests'), fState: document.getElementById('fState'),
+        fNum: document.getElementById('fNum'),
+        fPrio: document.getElementById('fPrio'),
+        fAssC: document.getElementById('fAssC'),
+        fAssE: document.getElementById('fAssE'),
+        fTests: document.getElementById('fTests'),
+        fState: document.getElementById('fState'),
         fVersion: document.getElementById('fVersion'),
         tId: document.getElementById('tId'),
         mainContent: document.querySelector('.main-content')
     };
 
-    debug("DOM elements refreshed. projectsTbody exists:", !!DOM.projectsTbody);
+    debug('DOM elements refreshed. projectsTbody exists:', !!DOM.projectsTbody);
 }
-
