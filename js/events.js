@@ -70,8 +70,9 @@ function setupEventListeners() {
                 name: DOM.pName.value,
                 ticketStates: selectedStates.length > 0 ? selectedStates : ['Nouveau'],
                 userIds: selectedUsers,
-                designRatio: parseFloat(DOM.pRatioC.value) || 1,
-                executionRatio: parseFloat(DOM.pRatioE.value) || 1
+                // Ratios = tests/jour : toujours > 0 (sinon division absurde dans les calculs de charge)
+                designRatio: Math.max(0.5, parseFloat(DOM.pRatioC.value) || 1),
+                executionRatio: Math.max(0.5, parseFloat(DOM.pRatioE.value) || 1)
             };
 
             try {

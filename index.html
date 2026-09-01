@@ -11,7 +11,7 @@
         -->
         <meta
             http-equiv="Content-Security-Policy"
-            content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://api.dicebear.com; connect-src 'self' https://fra.cloud.appwrite.io; base-uri 'none'; object-src 'none'; form-action 'self'"
+            content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://fra.cloud.appwrite.io; base-uri 'none'; object-src 'none'; form-action 'self'"
         />
         <link rel="icon" type="image/png" href="favicon.png" />
         <title>Suivi de Test Pro</title>
@@ -144,12 +144,8 @@
                                 <i data-lucide="plus"></i>
                                 Nouveau Ticket
                             </button>
-                            <div class="user-profile" data-html2canvas-ignore>
-                                <img
-                                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
-                                    alt="User"
-                                    class="avatar"
-                                />
+                            <div class="user-profile avatar" data-html2canvas-ignore>
+                                <i data-lucide="user"></i>
                             </div>
                         </div>
                     </header>

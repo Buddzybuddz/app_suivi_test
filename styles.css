@@ -1232,3 +1232,22 @@ body {
     width: 18px;
     height: 18px;
 }
+
+/* Pastille utilisateur dans le header (remplace l'ancien avatar dicebear) */
+.user-profile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--bg-app);
+    border: 1px solid var(--border-light);
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.user-profile i {
+    width: 20px;
+    height: 20px;
+}
