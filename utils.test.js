@@ -1,8 +1,26 @@
 import { describe, it, expect } from 'vitest';
 import utils from './utils.js';
-const { round015Up, round05Up, formatFrenchFloat, getCalculations } = utils;
+const { escapeHtml, round015Up, round05Up, formatFrenchFloat, getCalculations } = utils;
 
 describe('Utils', () => {
+    describe('escapeHtml', () => {
+        it('should return empty string for undefined or null', () => {
+            expect(escapeHtml(undefined)).toBe('');
+            expect(escapeHtml(null)).toBe('');
+        });
+
+        it('should neutralize HTML-significant characters', () => {
+            expect(escapeHtml('<img src=x onerror=alert(1)>')).toBe('&lt;img src=x onerror=alert(1)&gt;');
+            expect(escapeHtml('"><script>')).toBe('&quot;&gt;&lt;script&gt;');
+            expect(escapeHtml("O'Brien & fils")).toBe('O&#39;Brien &amp; fils');
+        });
+
+        it('should coerce non-string values', () => {
+            expect(escapeHtml(42)).toBe('42');
+            expect(escapeHtml(0)).toBe('0');
+        });
+    });
+
     describe('round015Up', () => {
         it('should round up to the nearest multiple of 0.15', () => {
             expect(round015Up(0)).toBe(0);

@@ -1,6 +1,18 @@
 // utils.js
 // Fonctions utilitaires pures découplées du DOM
 
+// Échappe une valeur destinée à être injectée dans du HTML (texte ou attribut).
+// À utiliser sur TOUTE donnée dynamique interpolée dans un template `innerHTML`.
+function escapeHtml(value) {
+    if (value === undefined || value === null) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // Arrondi au multiple de 0.15 supérieur
 function round015Up(val) {
     return Math.ceil(val / 0.15) * 0.15;
@@ -52,6 +64,7 @@ function getCalculations(ticket, project) {
 // Export pour l'environnement de test (Vitest/Node)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
+        escapeHtml,
         round015Up,
         round05Up,
         formatFrenchFloat,

@@ -1,6 +1,10 @@
 // Initialize Icons
 lucide.createIcons();
 
+// Logs de debug : activer en passant DEBUG à true (ou via ?debug dans l'URL).
+const DEBUG = /[?&]debug\b/.test(location.search);
+const debug = (...args) => { if (DEBUG) console.log(...args); };
+
 // --- Data Models and Persistence (Appwrite) ---
 
 const Store = {
@@ -35,7 +39,7 @@ async function loadStore() {
         Store.versions = versions.documents.map(d => ({ id: d.$id, ...d }));
         Store.tickets = tickets.documents.map(d => ({ id: d.$id, ...d }));
 
-        console.log("Store loaded from Appwrite:", Store);
+        debug("Store loaded from Appwrite:", Store);
     } catch (error) {
         console.error("Error loading Store from Appwrite:", error);
     }
@@ -108,7 +112,7 @@ function updateFilterOptions(tableKey, data) {
 
         // Preserve "Tout" and reconstruction
         select.innerHTML = '<option value="">Tout</option>' +
-            sortedValues.map(v => `<option value="${v}" ${v.toLowerCase() === currentVal.toLowerCase() ? 'selected' : ''}>${v}</option>`).join('');
+            sortedValues.map(v => `<option value="${escapeHtml(v)}" ${v.toLowerCase() === currentVal.toLowerCase() ? 'selected' : ''}>${escapeHtml(v)}</option>`).join('');
     });
 }
 
@@ -378,7 +382,7 @@ function refreshDOM() {
         mainContent: document.querySelector('.main-content')
     };
 
-    console.log("DOM elements refreshed. projectsTbody exists:", !!DOM.projectsTbody);
+    debug("DOM elements refreshed. projectsTbody exists:", !!DOM.projectsTbody);
 }
 
 // --- Initialization ---
@@ -386,14 +390,14 @@ function saveState() {
     localStorage.setItem('TestTracker_Client', currentClientName || '');
     localStorage.setItem('TestTracker_Project', currentProjectId || '');
     localStorage.setItem('TestTracker_Version', currentVersionId || '');
-    console.log("STATE_SAVE: Selection saved.");
+    debug("STATE_SAVE: Selection saved.");
 }
 
 function loadState() {
     currentClientName = localStorage.getItem('TestTracker_Client') || '';
     currentProjectId = localStorage.getItem('TestTracker_Project') || '';
     currentVersionId = localStorage.getItem('TestTracker_Version') || '';
-    console.log("STATE_LOAD: Selection restored from memory.");
+    debug("STATE_LOAD: Selection restored from memory.");
 }
 
 function validateAndSaveState() {
@@ -422,7 +426,7 @@ function validateAndSaveState() {
 }
 
 async function init() {
-    console.log("APP_JS: Initiating sequence (v_RELOAD_2k26_05)...");
+    debug("APP_JS: Initiating sequence (v_RELOAD_2k26_05)...");
     refreshDOM();
     setupEventListeners();
     
@@ -442,7 +446,7 @@ async function init() {
         // CRITIQUE : Rafraîchir l'interface globale après la restauration de sélection
         updateUI();
         
-        console.log("APP_JS: init success (STATE restored and UI updated).");
+        debug("APP_JS: init success (STATE restored and UI updated).");
     } catch (e) {
         console.error("APP_JS: Error during async init:", e);
         updateUI();
@@ -454,7 +458,7 @@ async function init() {
  */
 function switchView(viewName) {
     if (!viewName) return;
-    console.log("SWITCH_VIEW: target =", viewName);
+    debug("SWITCH_VIEW: target =", viewName);
 
     // Refresh DOM pour être sûr d'avoir les éléments à jour
     refreshDOM();
@@ -481,7 +485,7 @@ function switchView(viewName) {
             
             // Log de diagnostic pour confirmer la présence à l'écran
             const rect = s.getBoundingClientRect();
-            console.log(`SECTION_STATS [${s.id}]: Visible: true, Rect: w=${rect.width}, h=${rect.height}, top=${rect.top}`);
+            debug(`SECTION_STATS [${s.id}]: Visible: true, Rect: w=${rect.width}, h=${rect.height}, top=${rect.top}`);
         } else {
             s.classList.remove('active');
             s.style.setProperty('display', 'none', 'important');
@@ -505,24 +509,24 @@ function populateHeaderSelects() {
 
     const clients = Array.from(new Set(Store.projects.map(p => (p.client || '').trim()))).filter(c => c !== '').sort();
     
-    console.log("POPULATE_HEADER: Available clients:", clients);
+    debug("POPULATE_HEADER: Available clients:", clients);
     
-    DOM.clientSelect.innerHTML = (clients.length > 0) 
-        ? clients.map(c => `<option value="${c}">${c}</option>`).join('')
+    DOM.clientSelect.innerHTML = (clients.length > 0)
+        ? clients.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')
         : '<option value="">Sans Client</option>';
     DOM.clientSelect.value = currentClientName;
 
     const filteredProjects = Store.projects.filter(p => (p.client || '').trim() === currentClientName);
-    console.log(`POPULATE_HEADER: Projects for [${currentClientName}]:`, filteredProjects.length);
+    debug(`POPULATE_HEADER: Projects for [${currentClientName}]:`, filteredProjects.length);
     
-    DOM.projectSelect.innerHTML = filteredProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    DOM.projectSelect.innerHTML = filteredProjects.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
     DOM.projectSelect.value = currentProjectId;
 
     // Mise à jour de la liste dans le modal version
     if (DOM.vProject) {
         DOM.vProject.innerHTML = Store.projects.map(p => {
             const displayName = p.client ? `${p.client} - ${p.name}` : p.name;
-            return `<option value="${p.id}">${displayName}</option>`;
+            return `<option value="${escapeHtml(p.id)}">${escapeHtml(displayName)}</option>`;
         }).join('');
     }
 
@@ -538,9 +542,9 @@ function updateVersionSelect() {
     validateAndSaveState(); // Au cas où
     
     const versions = Store.versions.filter(v => v.projectId === currentProjectId);
-    console.log(`UPDATE_VERSION: Versions for project [${currentProjectId}]:`, versions.length);
+    debug(`UPDATE_VERSION: Versions for project [${currentProjectId}]:`, versions.length);
     
-    DOM.versionSelect.innerHTML = versions.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+    DOM.versionSelect.innerHTML = versions.map(v => `<option value="${escapeHtml(v.id)}">${escapeHtml(v.name)}</option>`).join('');
     DOM.versionSelect.value = currentVersionId;
 }
 
@@ -555,7 +559,7 @@ function populatePUserSelectToAdd() {
     if (!DOM.pUserSelectToAdd) return;
     const available = Store.users.filter(u => !currentProjectUsers.includes(u.id));
     DOM.pUserSelectToAdd.innerHTML = `<option value="">-- Sélectionner un utilisateur --</option>` +
-        available.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('');
+        available.map(u => `<option value="${escapeHtml(u.id)}">${escapeHtml(u.name)} (${escapeHtml(u.role)})</option>`).join('');
 }
 
 function renderProjectMembersBadge() {
@@ -569,8 +573,8 @@ function renderProjectMembersBadge() {
         const name = u ? u.name : 'Inconnu';
         return `
             <div class="member-badge">
-                ${name}
-                <i data-lucide="x" class="member-badge-remove" onclick="removeUserFromProjectUI('${uid}')"></i>
+                ${escapeHtml(name)}
+                <i data-lucide="x" class="member-badge-remove" onclick="removeUserFromProjectUI('${escapeHtml(uid)}')"></i>
             </div>
         `;
     }).join('');
@@ -586,8 +590,8 @@ function renderProjectStatesBadge() {
     }
     DOM.projectStatesContainer.innerHTML = currentProjectStates.map(state => `
         <div class="member-badge">
-            ${state}
-            <i data-lucide="x" class="member-badge-remove" onclick="removeProjectStateUI('${state}')"></i>
+            ${escapeHtml(state)}
+            <i data-lucide="x" class="member-badge-remove" onclick="removeProjectStateUI('${escapeHtml(state)}')"></i>
         </div>
     `).join('');
     lucide.createIcons();
@@ -610,11 +614,11 @@ function updateFormUsers() {
         allowedUsers = Store.users.filter(u => project.userIds.includes(u.id));
     }
 
-    const usersOptions = `<option value="">-- Aucun --</option>` + allowedUsers.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('');
+    const usersOptions = `<option value="">-- Aucun --</option>` + allowedUsers.map(u => `<option value="${escapeHtml(u.id)}">${escapeHtml(u.name)} (${escapeHtml(u.role)})</option>`).join('');
     DOM.fAssC.innerHTML = usersOptions;
     DOM.fAssE.innerHTML = usersOptions;
 
-    DOM.filterUser.innerHTML = `<option value="">Tous les utilisateurs</option>` + allowedUsers.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+    DOM.filterUser.innerHTML = `<option value="">Tous les utilisateurs</option>` + allowedUsers.map(u => `<option value="${escapeHtml(u.id)}">${escapeHtml(u.name)}</option>`).join('');
 }
 
 // Project Modal Logic
@@ -729,11 +733,11 @@ const openVersionModal = (v = null, fromHeader = false) => {
     
     // 1. Peupler les clients dans la modale
     const clients = Array.from(new Set(Store.projects.map(p => p.client || ''))).sort();
-    DOM.vClient.innerHTML = clients.map(c => `<option value="${c}">${c || 'Sans Client'}</option>`).join('');
-    
+    DOM.vClient.innerHTML = clients.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c || 'Sans Client')}</option>`).join('');
+
     const updateVProjectList = (clientName) => {
         const filtered = Store.projects.filter(p => (p.client || '') === clientName);
-        DOM.vProject.innerHTML = filtered.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        DOM.vProject.innerHTML = filtered.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
     };
 
     if (v) {
@@ -777,7 +781,6 @@ const openUserModal = (u = null) => {
         DOM.userModalTitle.textContent = "Modifier l'Utilisateur";
         DOM.uId.value = u.id;
         DOM.uiName.value = u.name;
-        DOM.uiEmail.value = u.email;
         DOM.uRole.value = u.role;
     } else {
         DOM.userModalTitle.textContent = "Nouvel Utilisateur";
@@ -790,13 +793,13 @@ const openUserModal = (u = null) => {
 function updateFormStates() {
     const project = Store.projects.find(p => p.id === currentProjectId);
     if (project) {
-        DOM.fState.innerHTML = project.ticketStates.map(s => `<option value="${s}">${s}</option>`).join('');
+        DOM.fState.innerHTML = project.ticketStates.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
     }
 }
 
 function updateFormVersions() {
     const versions = Store.versions.filter(v => v.projectId === currentProjectId);
-    DOM.fVersion.innerHTML = versions.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+    DOM.fVersion.innerHTML = versions.map(v => `<option value="${escapeHtml(v.id)}">${escapeHtml(v.name)}</option>`).join('');
     DOM.fVersion.value = currentVersionId;
 }
 
@@ -809,7 +812,7 @@ function updateFeatureDatalist() {
             features.add(t.feature);
         }
     });
-    DOM.fFeatList.innerHTML = Array.from(features).sort().map(f => `<option value="${f}">`).join('');
+    DOM.fFeatList.innerHTML = Array.from(features).sort().map(f => `<option value="${escapeHtml(f)}">`).join('');
 }
 
 // --- Event Listeners ---
@@ -906,7 +909,7 @@ function setupEventListeners() {
         DOM.vClient.addEventListener('change', (e) => {
             const clientName = e.target.value;
             const filtered = Store.projects.filter(p => (p.client || '') === clientName);
-            DOM.vProject.innerHTML = filtered.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            DOM.vProject.innerHTML = filtered.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
         });
     }
 
@@ -1329,7 +1332,7 @@ function getTicketThresholds(ticket) {
         if (v) projectId = v.projectId;
     }
     // Si toujours rien, on prend le projet sélectionné par défaut
-    const project = Store.projects.find(p => p.id === projectId) || Store.projects.find(p => p.id === Store.selectedProjectId);
+    const project = Store.projects.find(p => p.id === projectId) || Store.projects.find(p => p.id === currentProjectId);
     
     if (!project) return { jC: 0, jE: 0 };
     const jC = round015Up(ticket.nbTestCases / project.designRatio);
@@ -1411,16 +1414,16 @@ function renderProjectsTable() {
     const sorted = sortData(filtered, 'projects');
     DOM.projectsTbody.innerHTML = sorted.map(p => `
         <tr>
-            <td>${p.id}</td>
-            <td>${p.client || '-'}</td>
-            <td><strong>${p.name}</strong></td>
-            <td>${p.designRatio}</td>
-            <td>${p.executionRatio}</td>
+            <td>${escapeHtml(p.id)}</td>
+            <td>${escapeHtml(p.client || '-')}</td>
+            <td><strong>${escapeHtml(p.name)}</strong></td>
+            <td>${escapeHtml(p.designRatio)}</td>
+            <td>${escapeHtml(p.executionRatio)}</td>
             <td>
-                <button class="btn" style="padding: 0.4rem; background: var(--accent-primary);" onclick="editProject('${p.id}')" title="Modifier">
+                <button class="btn" style="padding: 0.4rem; background: var(--accent-primary);" onclick="editProject('${escapeHtml(p.id)}')" title="Modifier">
                     <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
                 </button>
-                <button class="btn" style="padding: 0.4rem; margin-left: 0.5rem; background: var(--danger);" onclick="deleteProject('${p.id}')" title="Supprimer">
+                <button class="btn" style="padding: 0.4rem; margin-left: 0.5rem; background: var(--danger);" onclick="deleteProject('${escapeHtml(p.id)}')" title="Supprimer">
                     <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
                 </button>
             </td>
@@ -1468,17 +1471,17 @@ function renderVersionsTable() {
         
         return `
             <tr>
-                <td>${v.id}</td>
-                <td><strong>${v.name}</strong></td>
-                <td>${pName}</td>
+                <td>${escapeHtml(v.id)}</td>
+                <td><strong>${escapeHtml(v.name)}</strong></td>
+                <td>${escapeHtml(pName)}</td>
 
                 <td>${v.deliveryDateClient ? new Date(v.deliveryDateClient).toLocaleDateString('fr-FR') : '-'}</td>
                 <td>${v.deliveryDateActual ? new Date(v.deliveryDateActual).toLocaleDateString('fr-FR') : '-'}</td>
                 <td>
-                    <button class="btn" style="padding: 0.4rem; background: var(--accent-primary);" onclick="editVersion('${v.id}')" title="Modifier">
+                    <button class="btn" style="padding: 0.4rem; background: var(--accent-primary);" onclick="editVersion('${escapeHtml(v.id)}')" title="Modifier">
                         <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
                     </button>
-                    <button class="btn" style="padding: 0.4rem; margin-left: 0.5rem; background: var(--danger);" onclick="deleteVersion('${v.id}')" title="Supprimer">
+                    <button class="btn" style="padding: 0.4rem; margin-left: 0.5rem; background: var(--danger);" onclick="deleteVersion('${escapeHtml(v.id)}')" title="Supprimer">
                         <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
                     </button>
                 </td>
@@ -1523,14 +1526,14 @@ function renderUsersTable() {
     const sorted = sortData(filtered, 'users');
     DOM.usersTbody.innerHTML = sorted.map(u => `
         <tr>
-            <td>${u.id}</td>
-            <td><strong>${u.name}</strong></td>
-            <td><span class="badge ${u.role === 'Admin' ? 'badge-prio-haute' : 'badge-prio-basse'}">${u.role}</span></td>
+            <td>${escapeHtml(u.id)}</td>
+            <td><strong>${escapeHtml(u.name)}</strong></td>
+            <td><span class="badge ${u.role === 'Admin' ? 'badge-prio-haute' : 'badge-prio-basse'}">${escapeHtml(u.role)}</span></td>
             <td>
-                <button class="btn" style="padding: 0.4rem; background: var(--accent-primary);" onclick="editUser('${u.id}')" title="Modifier">
+                <button class="btn" style="padding: 0.4rem; background: var(--accent-primary);" onclick="editUser('${escapeHtml(u.id)}')" title="Modifier">
                     <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
                 </button>
-                <button class="btn" style="padding: 0.4rem; margin-left: 0.5rem; background: var(--danger);" onclick="deleteUser('${u.id}')" title="Supprimer">
+                <button class="btn" style="padding: 0.4rem; margin-left: 0.5rem; background: var(--danger);" onclick="deleteUser('${escapeHtml(u.id)}')" title="Supprimer">
                     <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
                 </button>
             </td>
@@ -1576,9 +1579,9 @@ function renderTicketsTable() {
         return;
     }
     
-    console.log(`RENDER_TICKETS: Filtering for version [${currentVersionId}]. Total tickets in Store: ${Store.tickets.length}`);
+    debug(`RENDER_TICKETS: Filtering for version [${currentVersionId}]. Total tickets in Store: ${Store.tickets.length}`);
     if (Store.tickets.length > 0) {
-        console.log("DEBUG_TICKET_SAMPLE:", Store.tickets[0]);
+        debug("DEBUG_TICKET_SAMPLE:", Store.tickets[0]);
     }
     
     let viewTickets = Store.tickets.filter(t => {
@@ -1586,7 +1589,7 @@ function renderTicketsTable() {
         return match;
     });
     
-    console.log(`RENDER_TICKETS: Filtered tickets: ${viewTickets.length}`);
+    debug(`RENDER_TICKETS: Filtered tickets: ${viewTickets.length}`);
 
     if (filterUserId) {
         viewTickets = viewTickets.filter(t => t.assignDesignId === filterUserId || t.assignExecutionId === filterUserId);
@@ -1635,48 +1638,49 @@ function renderTicketsTable() {
             return '';
         };
 
+        const tid = escapeHtml(t.id);
         return `
             <tr>
                 <td class="sticky-left-1">
                     <div style="display: flex; gap: 0.2rem;">
-                        <button class="btn" style="padding: 0.2rem; background: var(--accent-primary);" onclick="editTicket('${t.id}')" title="Modifier">
+                        <button class="btn" style="padding: 0.2rem; background: var(--accent-primary);" onclick="editTicket('${tid}')" title="Modifier">
                             <i data-lucide="edit-2" style="width: 14px; height: 14px;"></i>
                         </button>
-                        <button class="btn" style="padding: 0.2rem; background: var(--danger);" onclick="deleteTicket('${t.id}')" title="Supprimer">
+                        <button class="btn" style="padding: 0.2rem; background: var(--danger);" onclick="deleteTicket('${tid}')" title="Supprimer">
                             <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
                         </button>
                     </div>
                 </td>
-                <td class="sticky-left-2" style="font-weight:600; color:var(--text-muted);">#${t.number}</td>
-                <td>${t.feature}</td>
-                <td><span style="padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.1); font-size:11px">${t.type}</span></td>
-                <td>${t.priority}</td>
-                <td>${getUserName(t.assignDesignId)}</td>
-                <td>${getUserName(t.assignExecutionId)}</td>
-                <td>${t.nbTestCases}</td>
+                <td class="sticky-left-2" style="font-weight:600; color:var(--text-muted);">#${escapeHtml(t.number)}</td>
+                <td>${escapeHtml(t.feature)}</td>
+                <td><span style="padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.1); font-size:11px">${escapeHtml(t.type)}</span></td>
+                <td>${escapeHtml(t.priority)}</td>
+                <td>${escapeHtml(getUserName(t.assignDesignId))}</td>
+                <td>${escapeHtml(getUserName(t.assignExecutionId))}</td>
+                <td>${escapeHtml(t.nbTestCases)}</td>
                 <td style="min-width: ${wState}px">
-                    <select class="status-select ${getStatusClass(t.ticketState)}" onchange="onTicketStateChange('${t.id}', this.value)">
-                        ${(project.ticketStates || []).map(o => `<option value="${o}" ${t.ticketState === o ? 'selected' : ''}>${o}</option>`).join('')}
+                    <select class="status-select ${getStatusClass(t.ticketState || '')}" onchange="onTicketStateChange('${tid}', this.value)">
+                        ${(project.ticketStates || []).map(o => `<option value="${escapeHtml(o)}" ${t.ticketState === o ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
                     </select>
                 </td>
                 <td style="color:var(--accent-primary); font-weight:600">${calcs.jConception}</td>
                 <td style="color:var(--accent-secondary); font-weight:600">${calcs.jExecution}</td>
                 <td>
-                    <input type="text" class="editable-field" value="${formatFrenchFloat(t.consumed)}" onchange="onConsommeChange('${t.id}', this.value)">
+                    <input type="text" class="editable-field" value="${formatFrenchFloat(t.consumed)}" onchange="onConsommeChange('${tid}', this.value)">
                 </td>
                 <td style="font-weight:700">${calcs.raf}</td>
                 <td style="width: ${wDesign}px; min-width: ${wDesign}px">
-                    <select class="status-select ${getStatusClass(t.statusDesign)}" onchange="onDesignChange('${t.id}', this.value)">
-                        ${designOptions.map(o => `<option value="${o}" ${t.statusDesign === o ? 'selected' : ''}>${o}</option>`).join('')}
+                    <select class="status-select ${getStatusClass(t.statusDesign || '')}" onchange="onDesignChange('${tid}', this.value)">
+                        ${designOptions.map(o => `<option value="${escapeHtml(o)}" ${t.statusDesign === o ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
                     </select>
                 </td>
                 <td style="width: ${wExec}px; min-width: ${wExec}px">
-                    <select class="status-select ${getStatusClass(t.statusExecution)}" onchange="onExecChange('${t.id}', this.value)">
-                        ${execOptions.map(o => `<option value="${o}" ${t.statusExecution === o ? 'selected' : ''}>${o}</option>`).join('')}
+                    <select class="status-select ${getStatusClass(t.statusExecution || '')}" onchange="onExecChange('${tid}', this.value)">
+                        ${execOptions.map(o => `<option value="${escapeHtml(o)}" ${t.statusExecution === o ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
                     </select>
                 </td>
                 <td>
-                    <input type="text" class="editable-field" style="text-align:left;" value="${t.comment}" onchange="onCommentChange('${t.id}', this.value)">
+                    <input type="text" class="editable-field" style="text-align:left;" value="${escapeHtml(t.comment)}" onchange="onCommentChange('${tid}', this.value)">
                 </td>
             </tr>
         `;
@@ -1996,8 +2000,8 @@ function renderDashboard() {
         breakdownEl.innerHTML = featEntries.map(([name, s]) => `
             <div class="kpi-card" style="padding: 1rem; flex-direction: column; align-items: flex-start; gap: 0.75rem; border: 1px solid rgba(0,0,0,0.03); background: rgba(255,255,255,0.4);">
                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; gap: 0.5rem;">
-                    <h3 style="margin: 0; font-size: 0.85rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;" title="${name}">
-                        ${name}
+                    <h3 style="margin: 0; font-size: 0.85rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;" title="${escapeHtml(name)}">
+                        ${escapeHtml(name)}
                     </h3>
                     <span style="background: var(--accent-primary); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; white-space: nowrap;">
                         ${s.total}

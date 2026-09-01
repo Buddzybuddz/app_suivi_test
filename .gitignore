@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Génération / médias temporaires
+generated-videos/
+
+# Outils de build / cache
+.vite/
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
