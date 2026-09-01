@@ -12,6 +12,9 @@ const debug = (...args) => {
 
 // --- Data Models and Persistence (Appwrite) ---
 
+// Plafond de documents récupérés par collection (limite dure de listDocuments).
+const STORE_FETCH_LIMIT = 5000;
+
 const Store = {
     users: [],
     projects: [],
@@ -33,16 +36,44 @@ async function loadStore() {
 
     try {
         const [users, projects, versions, tickets] = await Promise.all([
-            databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS, [Query.limit(5000)]),
-            databases.listDocuments(DATABASE_ID, COLLECTIONS.PROJECTS, [Query.limit(5000)]),
-            databases.listDocuments(DATABASE_ID, COLLECTIONS.VERSIONS, [Query.limit(5000)]),
-            databases.listDocuments(DATABASE_ID, COLLECTIONS.TICKETS, [Query.limit(5000)])
+            databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS, [
+                Query.limit(STORE_FETCH_LIMIT)
+            ]),
+            databases.listDocuments(DATABASE_ID, COLLECTIONS.PROJECTS, [
+                Query.limit(STORE_FETCH_LIMIT)
+            ]),
+            databases.listDocuments(DATABASE_ID, COLLECTIONS.VERSIONS, [
+                Query.limit(STORE_FETCH_LIMIT)
+            ]),
+            databases.listDocuments(DATABASE_ID, COLLECTIONS.TICKETS, [
+                Query.limit(STORE_FETCH_LIMIT)
+            ])
         ]);
 
         Store.users = users.documents.map((d) => ({ id: d.$id, ...d }));
         Store.projects = projects.documents.map((d) => ({ id: d.$id, ...d }));
         Store.versions = versions.documents.map((d) => ({ id: d.$id, ...d }));
         Store.tickets = tickets.documents.map((d) => ({ id: d.$id, ...d }));
+
+        // Alerte si une collection dépasse le plafond : le Store serait incomplet.
+        [
+            ['utilisateurs', users],
+            ['projets', projects],
+            ['versions', versions],
+            ['tickets', tickets]
+        ].forEach(([label, res]) => {
+            if (res.total > res.documents.length) {
+                console.warn(
+                    `loadStore: ${res.documents.length}/${res.total} ${label} chargés (plafond ${STORE_FETCH_LIMIT}). Données incomplètes.`
+                );
+                if (typeof notify === 'function') {
+                    notify(
+                        `Trop de ${label} : seuls ${res.documents.length} sur ${res.total} sont chargés.`,
+                        'warning'
+                    );
+                }
+            }
+        });
 
         debug('Store loaded from Appwrite:', Store);
     } catch (error) {

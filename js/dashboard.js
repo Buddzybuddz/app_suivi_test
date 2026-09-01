@@ -44,9 +44,12 @@ function renderDashboard() {
 
     viewTickets.forEach((t) => {
         const calcs = getCalculations(t, project);
-        totalRaf += calcs.rawRaf;
+        // Somme brute : l'arrondi 0.15 fait par ticket ne doit pas se cumuler
+        // (sinon le RAF global et la prévision de livraison sont gonflés).
+        // Conséquence : RAF Global == RAF Conception + RAF Exécution.
         rafC_total += calcs.rafC;
         rafE_total += calcs.rafE;
+        totalRaf += calcs.rafC + calcs.rafE;
 
         // Stats by Type and Feature
         if (!execByType[t.type]) execByType[t.type] = {};

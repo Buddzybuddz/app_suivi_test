@@ -30,8 +30,9 @@ function formatFrenchFloat(val) {
 
 function getCalculations(ticket, project) {
     if (!project) return { jConception: '0,00', jExecution: '0,00', raf: '0,00' };
-    const jConception = round015Up(ticket.nbTestCases / project.designRatio);
-    const jExecution = round015Up(ticket.nbTestCases / project.executionRatio);
+    const nbTestCases = ticket.nbTestCases || 0; // évite la propagation de NaN
+    const jConception = round015Up(nbTestCases / project.designRatio);
+    const jExecution = round015Up(nbTestCases / project.executionRatio);
     const consumed = ticket.consumed || 0;
 
     // Calcul du RAF par phase (on consomme d'abord la conception puis l'exécution)
@@ -64,9 +65,10 @@ function getCalculations(ticket, project) {
 // Fonction pure — la résolution du projet depuis le Store est faite par l'appelant.
 function computeThresholds(ticket, project) {
     if (!project) return { jC: 0, jE: 0 };
+    const nbTestCases = ticket.nbTestCases || 0;
     return {
-        jC: round015Up(ticket.nbTestCases / project.designRatio),
-        jE: round015Up(ticket.nbTestCases / project.executionRatio)
+        jC: round015Up(nbTestCases / project.designRatio),
+        jE: round015Up(nbTestCases / project.executionRatio)
     };
 }
 

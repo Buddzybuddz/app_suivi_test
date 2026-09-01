@@ -136,6 +136,46 @@ describe('Utils', () => {
             expect(result.rafE).toBe(0);
             expect(result.rawRaf).toBe(0);
         });
+
+        // --- Cas limites vérifiés en P5 ---
+
+        it('never produces NaN when nbTestCases is missing', () => {
+            const project = { designRatio: 10, executionRatio: 20 };
+            const result = getCalculations({ consumed: 0 }, project);
+            expect(result.rawJConception).toBe(0);
+            expect(result.rawRaf).toBe(0);
+            expect(result.raf).toBe('0,00');
+        });
+
+        it('design forcé "Terminée" sous le seuil : rafC=0, exécution intacte', () => {
+            const project = { designRatio: 10, executionRatio: 20 };
+            // jC=1.5, jE=0.75 ; on marque la conception finie alors que consumed=1.0 < jC
+            const ticket = {
+                nbTestCases: 15,
+                consumed: 1.0,
+                statusDesign: 'Terminée',
+                statusExecution: 'En attente livraison'
+            };
+            const result = getCalculations(ticket, project);
+            expect(result.rafC).toBe(0);
+            expect(result.rafE).toBe(0.75); // le budget conception non consommé n'est pas reporté sur l'exécution
+            expect(result.rawRaf).toBeCloseTo(0.75);
+        });
+
+        it('conception dépassée sans être marquée "Terminée" : le surplus paie l\'exécution', () => {
+            const project = { designRatio: 10, executionRatio: 20 };
+            // jC=1.5, jE=0.75 ; consumed=2.0 -> 0.5 au-delà de jC
+            const ticket = {
+                nbTestCases: 15,
+                consumed: 2.0,
+                statusDesign: 'En cours',
+                statusExecution: "En cours d'exécution"
+            };
+            const result = getCalculations(ticket, project);
+            expect(result.rafC).toBe(0);
+            expect(result.rafE).toBeCloseTo(0.25); // 0.75 - (2.0 - 1.5)
+            expect(result.rawRaf).toBeCloseTo(0.3); // round015Up(0.25)
+        });
     });
 
     describe('computeThresholds', () => {
