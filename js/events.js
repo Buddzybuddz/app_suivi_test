@@ -14,6 +14,18 @@ function setupEventListeners() {
         });
     });
 
+    // Fermeture générique des modales : clic sur l'arrière-plan + touche Échap
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('mousedown', (e) => {
+            if (e.target === modal) modal.classList.remove('show');
+        });
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
+        }
+    });
+
 
 
 
@@ -34,7 +46,7 @@ function setupEventListeners() {
             const uid = DOM.pUserSelectToAdd.value;
             if (!uid) return;
             if (currentProjectUsers.includes(uid)) {
-                alert("Erreur : Cet utilisateur est déjà attribué à ce projet.");
+                notify("Cet utilisateur est déjà attribué à ce projet.", 'warning');
                 return;
             }
             currentProjectUsers.push(uid);
@@ -67,23 +79,25 @@ function setupEventListeners() {
             };
 
             try {
+                let res;
                 if (pId) {
-                    await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROJECTS, pId, data);
+                    res = await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROJECTS, pId, data);
                 } else {
-                    const res = await databases.createDocument(DATABASE_ID, COLLECTIONS.PROJECTS, ID.unique(), data);
+                    res = await databases.createDocument(DATABASE_ID, COLLECTIONS.PROJECTS, ID.unique(), data);
                     currentProjectId = res.$id;
                 }
 
-                await loadStore(); // Refresh local store
+                upsertStoreDoc('projects', res); // MàJ locale ciblée (pas de rechargement complet)
                 DOM.projectModal.classList.remove('show');
                 renderProjectsTable();
                 populateHeaderSelects();
                 updateFormUsers();
                 if (typeof renderVersionsTable === 'function') renderVersionsTable();
                 updateUI();
+                notify(pId ? 'Projet mis à jour.' : 'Projet créé.', 'success');
             } catch (error) {
                 console.error("Error saving project:", error);
-                alert("Erreur lors de l'enregistrement du projet.");
+                notify("Échec de l'enregistrement du projet.", 'error');
             }
         });
     }
@@ -101,14 +115,14 @@ function setupEventListeners() {
 
     if (DOM.btnNewVersion) {
         DOM.btnNewVersion.addEventListener('click', () => {
-            if (!currentProjectId) return alert("Veuillez d'abord sélectionner un projet.");
+            if (!currentProjectId) return notify("Sélectionnez d'abord un projet.", 'warning');
             openVersionModal(null, true);
         });
     }
 
     if (DOM.btnNewVersionPage) {
         DOM.btnNewVersionPage.addEventListener('click', () => {
-            if (Store.projects.length === 0) return alert("Veuillez d'abord créer un projet.");
+            if (Store.projects.length === 0) return notify("Créez d'abord un projet.", 'warning');
             openVersionModal(null, false);
         });
     }
@@ -129,25 +143,26 @@ function setupEventListeners() {
             };
 
             try {
+                let res;
                 if (vId) {
-                    await databases.updateDocument(DATABASE_ID, COLLECTIONS.VERSIONS, vId, data);
+                    res = await databases.updateDocument(DATABASE_ID, COLLECTIONS.VERSIONS, vId, data);
                 } else {
-                    const res = await databases.createDocument(DATABASE_ID, COLLECTIONS.VERSIONS, ID.unique(), data);
+                    res = await databases.createDocument(DATABASE_ID, COLLECTIONS.VERSIONS, ID.unique(), data);
                     currentVersionId = res.$id;
                 }
 
-                await loadStore();
+                upsertStoreDoc('versions', res);
                 DOM.versionModal.classList.remove('show');
                 updateVersionSelect();
                 if (DOM.versionSelect.querySelector(`option[value="${currentVersionId}"]`)) {
                     DOM.versionSelect.value = currentVersionId;
                 }
                 updateUI();
-                if (activeTab === 'versions') renderVersionsTable();
                 renderVersionsTable();
+                notify(vId ? 'Version mise à jour.' : 'Version créée.', 'success');
             } catch (error) {
                 console.error("Error saving version:", error);
-                alert("Erreur lors de l'enregistrement de la version.");
+                notify("Échec de l'enregistrement de la version.", 'error');
             }
         });
     }
@@ -173,7 +188,7 @@ function setupEventListeners() {
             );
             
             if (isDuplicate) {
-                alert("Action impossible : Cet utilisateur existe déjà dans l'Annuaire.");
+                notify("Cet utilisateur existe déjà dans l'annuaire.", 'warning');
                 return;
             }
 
@@ -183,22 +198,24 @@ function setupEventListeners() {
             };
 
             try {
+                let res;
                 if (uid) {
-                    await databases.updateDocument(DATABASE_ID, COLLECTIONS.USERS, uid, data);
+                    res = await databases.updateDocument(DATABASE_ID, COLLECTIONS.USERS, uid, data);
                 } else {
-                    await databases.createDocument(DATABASE_ID, COLLECTIONS.USERS, ID.unique(), data);
+                    res = await databases.createDocument(DATABASE_ID, COLLECTIONS.USERS, ID.unique(), data);
                 }
 
-                await loadStore();
+                upsertStoreDoc('users', res);
                 DOM.userModal.classList.remove('show');
                 renderUsersTable();
                 populateFormSelects();
                 updateFormUsers();
                 renderTicketsTable();
                 updateUI();
+                notify(uid ? 'Utilisateur mis à jour.' : 'Utilisateur créé.', 'success');
             } catch (error) {
                 console.error("Error saving user:", error);
-                alert("Erreur lors de l'enregistrement de l'utilisateur.");
+                notify("Échec de l'enregistrement de l'utilisateur.", 'error');
             }
         });
     }
@@ -282,7 +299,7 @@ function setupEventListeners() {
                 });
             } catch (err) {
                 console.error(err);
-                alert("Erreur de capture du rapport.");
+                notify("Échec de la capture du rapport.", 'error');
                 DOM.btnCopyDashboard.innerHTML = originalText;
             }
         });
@@ -338,7 +355,7 @@ function setupEventListeners() {
                 });
             } catch (err) {
                 console.error(err);
-                alert("Erreur de capture des graphiques.");
+                notify("Échec de la capture des graphiques.", 'error');
                 DOM.btnCopyCharts.innerHTML = originalText;
             }
         });
@@ -399,7 +416,7 @@ function setupEventListeners() {
 
     // Modal
     DOM.btnNewTicket.addEventListener('click', () => {
-        if (!currentVersionId) return alert("Veuillez sélectionner une version d'abord.");
+        if (!currentVersionId) return notify("Sélectionnez d'abord une version.", 'warning');
         updateFormStates();
         updateFormVersions();
         updateFeatureDatalist();
@@ -439,7 +456,7 @@ function setupEventListeners() {
             });
 
             if (isDuplicate) {
-                alert("ce ticket existe deja dans la version");
+                notify("Un ticket porte déjà ce numéro dans cette version.", 'warning');
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i data-lucide="save" class="btn-icon-sm"></i> Enregistrer';
@@ -466,18 +483,20 @@ function setupEventListeners() {
         };
 
         try {
+            let res;
             if (tIdValue) {
-                await databases.updateDocument(DATABASE_ID, COLLECTIONS.TICKETS, tIdValue, data);
+                res = await databases.updateDocument(DATABASE_ID, COLLECTIONS.TICKETS, tIdValue, data);
             } else {
-                await databases.createDocument(DATABASE_ID, COLLECTIONS.TICKETS, ID.unique(), data);
+                res = await databases.createDocument(DATABASE_ID, COLLECTIONS.TICKETS, ID.unique(), data);
             }
 
-            await loadStore();
+            upsertStoreDoc('tickets', res);
             DOM.modal.classList.remove('show');
             updateUI();
+            notify(tIdValue ? 'Ticket mis à jour.' : 'Ticket créé.', 'success');
         } catch (error) {
             console.error("Error saving ticket:", error);
-            alert("Erreur lors de l'enregistrement du ticket.");
+            notify("Échec de l'enregistrement du ticket.", 'error');
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;
@@ -500,13 +519,21 @@ async function updateTicket(id, fieldOrUpdates, value) {
         updates[fieldOrUpdates] = value;
     }
 
+    // MàJ optimiste : on applique localement puis on confirme / on annule.
+    const ticket = Store.tickets.find(t => t.id === id);
+    const previous = ticket ? { ...ticket } : null;
+    if (ticket) Object.assign(ticket, updates);
+    updateUI();
+
     try {
-        await databases.updateDocument(DATABASE_ID, COLLECTIONS.TICKETS, id, updates);
-        const ticket = Store.tickets.find(t => t.id === id);
-        if (ticket) Object.assign(ticket, updates);
-        updateUI();
+        const res = await databases.updateDocument(DATABASE_ID, COLLECTIONS.TICKETS, id, updates);
+        if (ticket) Object.assign(ticket, mapDoc(res));
+        notify('Enregistré.', 'success', 1500);
     } catch (error) {
         console.error("Error updating ticket:", error);
+        if (ticket && previous) Object.assign(ticket, previous); // rollback
+        updateUI();
+        notify("Échec de l'enregistrement — modification annulée.", 'error');
     }
 }
 

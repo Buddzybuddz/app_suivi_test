@@ -48,6 +48,28 @@ async function loadStore() {
     }
 }
 
+// Normalise un document Appwrite (ajoute `id` copié depuis `$id`), comme loadStore().
+function mapDoc(d) {
+    return { id: d.$id, ...d };
+}
+
+// Insère ou remplace un document dans une collection locale du Store,
+// sans recharger toute la base. `key` ∈ {'users','projects','versions','tickets'}.
+function upsertStoreDoc(key, doc) {
+    if (!Store[key]) return;
+    const mapped = mapDoc(doc);
+    const idx = Store[key].findIndex(item => item.id === mapped.id);
+    if (idx === -1) Store[key].push(mapped);
+    else Store[key][idx] = mapped;
+    return mapped;
+}
+
+// Retire un document d'une collection locale du Store.
+function removeStoreDoc(key, id) {
+    if (!Store[key]) return;
+    Store[key] = Store[key].filter(item => item.id !== id);
+}
+
 // State Management
 let currentClientName = '';
 let currentProjectId = '';

@@ -175,10 +175,12 @@ window.deleteTicket = async (id) => {
     if (confirm("Voulez-vous vraiment supprimer ce ticket ?")) {
         try {
             await databases.deleteDocument(DATABASE_ID, COLLECTIONS.TICKETS, id);
-            await loadStore();
+            removeStoreDoc('tickets', id);
             updateUI();
+            notify('Ticket supprimé.', 'success');
         } catch (error) {
             console.error("Error deleting ticket:", error);
+            notify("Échec de la suppression du ticket.", 'error');
         }
     }
 };

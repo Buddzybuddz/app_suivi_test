@@ -40,7 +40,7 @@ window.deleteProject = async (id) => {
     if (!confirm("Supprimer ce projet et TOUTES ses données ?")) return;
     try {
         await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PROJECTS, id);
-        await loadStore();
+        removeStoreDoc('projects', id);
         renderProjectsTable();
 
         if (currentProjectId === id) {
@@ -49,8 +49,10 @@ window.deleteProject = async (id) => {
         validateAndSaveState();
         populateHeaderSelects();
         updateUI();
+        notify('Projet supprimé.', 'success');
     } catch (error) {
         console.error("Error deleting project:", error);
+        notify("Échec de la suppression du projet.", 'error');
     }
 };
 
@@ -99,7 +101,7 @@ window.deleteVersion = async (id) => {
     if (!confirm("Supprimer cette version ?")) return;
     try {
         await databases.deleteDocument(DATABASE_ID, COLLECTIONS.VERSIONS, id);
-        await loadStore();
+        removeStoreDoc('versions', id);
         renderVersionsTable();
 
         if (currentVersionId === id) {
@@ -108,8 +110,10 @@ window.deleteVersion = async (id) => {
         validateAndSaveState();
         updateVersionSelect();
         updateUI();
+        notify('Version supprimée.', 'success');
     } catch (error) {
         console.error("Error deleting version:", error);
+        notify("Échec de la suppression de la version.", 'error');
     }
 };
 
@@ -155,13 +159,15 @@ window.deleteUser = async (id) => {
     if (!confirm("Supprimer cet utilisateur ?")) return;
     try {
         await databases.deleteDocument(DATABASE_ID, COLLECTIONS.USERS, id);
-        await loadStore();
+        removeStoreDoc('users', id);
         renderUsersTable();
         populateFormSelects();
         updateFormUsers();
         renderTicketsTable();
+        notify('Utilisateur supprimé.', 'success');
     } catch (error) {
         console.error("Error deleting user:", error);
+        notify("Échec de la suppression de l'utilisateur.", 'error');
     }
 };
 
