@@ -3,6 +3,16 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <!--
+          CSP : contient l'exfiltration (connect-src limité à Appwrite), bloque les
+          plugins et le vol de <base>. script-src garde 'unsafe-inline' car l'app
+          utilise des handlers onclick= inline et un <script> inline (bootstrap) ;
+          une CSP stricte demanderait de refactorer tous les onclick=.
+        -->
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://api.dicebear.com; connect-src 'self' https://fra.cloud.appwrite.io; base-uri 'none'; object-src 'none'; form-action 'self'"
+        />
         <link rel="icon" type="image/png" href="favicon.png" />
         <title>Suivi de Test Pro</title>
         <!-- Google Fonts -->
@@ -10,14 +20,27 @@
             href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
             rel="stylesheet"
         />
-        <!-- Chart.js -->
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
-        <!-- html2canvas for image export -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-        <!-- Lucide Icons -->
-        <script src="https://unpkg.com/lucide@1.38.0"></script>
-        <!-- Appwrite SDK -->
-        <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
+        <!-- Libs CDN : version épinglée + Subresource Integrity (SRI) -->
+        <script
+            src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"
+            integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+            integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://unpkg.com/lucide@1.38.0/dist/umd/lucide.min.js"
+            integrity="sha384-yi0Nt4uuEMu/6z2xkzY7OkOlSzF+Spi8SreFE+kyQGlSDSV56UXyFUP0SPMo/xvL"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0/dist/iife/sdk.js"
+            integrity="sha384-nH2+fNuwk5d3dIG6hVVxPlTqQ5NmeXWsWFO27Ylz0ltUvOSKXmOaMGipI+JKye2q"
+            crossorigin="anonymous"
+        ></script>
         <link rel="stylesheet" href="styles.css" />
     </head>
 

@@ -16,7 +16,11 @@ risque de livraison).
 - **Auth :** session Appwrite email/mot de passe (`js/auth.js`). L'app exige une session
   avant de charger quoi que ce soit ; la session dure ~1 an (login demandé une fois par
   navigateur). Bouton « Déconnexion » en bas de la sidebar.
-- **Libs CDN :** Chart.js, Lucide, html2canvas (versions épinglées dans `index.html`).
+- **Libs CDN :** Chart.js, Lucide, html2canvas, SDK Appwrite — versions épinglées + hash
+  Subresource Integrity dans `index.html`.
+- **Durcissement :** en-tête `Content-Security-Policy` (`<meta>`) limitant `connect-src` à
+  Appwrite, bloquant `object-src` / `base-uri`. `script-src` garde `'unsafe-inline'` (handlers
+  `onclick=` inline).
 
 ## Démarrer en local
 
